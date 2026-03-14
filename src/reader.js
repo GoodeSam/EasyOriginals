@@ -580,6 +580,10 @@ function handleReaderMouseOut(e) {
   }
 }
 
+function closeAllSidePanels() {
+  document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('active'));
+}
+
 function handleReaderClick(e) {
   if (window.getSelection().toString().trim().length > 0) return;
 
@@ -607,6 +611,9 @@ function handleReaderClick(e) {
     }
     return;
   }
+
+  // Clicking empty area of reader content closes all side panels
+  closeAllSidePanels();
 }
 
 function handleReaderContextMenu(e) {
