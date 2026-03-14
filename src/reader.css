@@ -453,8 +453,14 @@ body {
   cursor: pointer;
   z-index: 50;
   display: none;
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 .side-toggle.visible { display: block; }
+.side-toggle.auto-hide {
+  transform: translateX(100px);
+  opacity: 0;
+  pointer-events: none;
+}
 .side-panel {
   display: none;
   position: fixed;

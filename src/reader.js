@@ -3187,6 +3187,14 @@ function startAutoHideTimer() {
     if (topBar) topBar.classList.add('auto-hide');
     if (bottomBar) bottomBar.classList.add('auto-hide');
     if (searchBarEl) searchBarEl.classList.add('auto-hide');
+    // Auto-hide side toggles (skip if their panel is open)
+    document.querySelectorAll('.side-toggle').forEach(toggle => {
+      const panelId = toggle.id.replace('Toggle', 'Panel');
+      const panel = document.getElementById(panelId);
+      if (!panel || !panel.classList.contains('active')) {
+        toggle.classList.add('auto-hide');
+      }
+    });
   }, AUTO_HIDE_DELAY);
 }
 
@@ -3204,6 +3212,8 @@ function showBars() {
   if (topBar) topBar.classList.remove('auto-hide');
   if (bottomBar) bottomBar.classList.remove('auto-hide');
   if (searchBarEl) searchBarEl.classList.remove('auto-hide');
+  // Reveal side-toggle buttons
+  document.querySelectorAll('.side-toggle').forEach(t => t.classList.remove('auto-hide'));
 }
 
 document.addEventListener('mousemove', (e) => {
@@ -3211,8 +3221,9 @@ document.addEventListener('mousemove', (e) => {
 
   const atTop = e.clientY < EDGE_TRIGGER_PX;
   const atBottom = e.clientY > (window.innerHeight - EDGE_TRIGGER_PX);
+  const atRight = e.clientX > (window.innerWidth - EDGE_TRIGGER_PX);
 
-  if (atTop || atBottom) {
+  if (atTop || atBottom || atRight) {
     showBars();
     clearAutoHideTimer();
   } else {
