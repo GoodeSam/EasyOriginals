@@ -1,9 +1,10 @@
 /**
  * Firebase initialization module.
  * Centralizes Firebase app, auth, and firestore setup.
+ * Uses Google Sign-In (no email/password required).
  */
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -20,5 +21,5 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 export { app, auth, db };
-export { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged };
+export { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged };
 export { doc, setDoc, getDoc };

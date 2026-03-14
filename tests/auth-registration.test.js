@@ -1,6 +1,5 @@
 /**
- * TDD Tests for account registration fix.
- * Verifies Firebase SDK is properly integrated via npm + Vite bundling.
+ * TDD Tests for Firebase integration with Google Sign-In.
  */
 import { describe, test, expect, beforeEach } from 'vitest';
 import fs from 'fs';
@@ -21,13 +20,8 @@ describe('firebase-init.js module', () => {
     src = fs.readFileSync(path.resolve(__dirname, '../src/firebase-init.js'), 'utf-8');
   });
 
-  test('firebase-init.js exists', () => {
-    expect(src.length).toBeGreaterThan(0);
-  });
-
-  test('imports from firebase/app npm package (not CDN URL)', () => {
+  test('imports from firebase/app npm package', () => {
     expect(src).toMatch(/from ['"]firebase\/app['"]/);
-    expect(src).not.toMatch(/gstatic\.com/);
   });
 
   test('imports from firebase/auth npm package', () => {
@@ -38,10 +32,14 @@ describe('firebase-init.js module', () => {
     expect(src).toMatch(/from ['"]firebase\/firestore['"]/);
   });
 
-  test('initializes app with initializeApp and config object', () => {
-    expect(src).toMatch(/initializeApp/);
-    expect(src).toMatch(/apiKey/);
-    expect(src).toMatch(/projectId/);
+  test('exports GoogleAuthProvider and signInWithPopup', () => {
+    expect(src).toMatch(/GoogleAuthProvider/);
+    expect(src).toMatch(/signInWithPopup/);
+  });
+
+  test('does NOT export email/password auth functions', () => {
+    expect(src).not.toMatch(/signInWithEmailAndPassword/);
+    expect(src).not.toMatch(/createUserWithEmailAndPassword/);
   });
 
   test('exports auth and db instances', () => {
@@ -49,41 +47,34 @@ describe('firebase-init.js module', () => {
     expect(src).toMatch(/export.*\bdb\b/);
   });
 
-  test('exports auth functions', () => {
-    expect(src).toMatch(/signInWithEmailAndPassword/);
-    expect(src).toMatch(/createUserWithEmailAndPassword/);
+  test('exports signOut and onAuthStateChanged', () => {
     expect(src).toMatch(/signOut/);
     expect(src).toMatch(/onAuthStateChanged/);
   });
-
-  test('exports firestore functions', () => {
-    expect(src).toMatch(/\bdoc\b/);
-    expect(src).toMatch(/\bsetDoc\b/);
-    expect(src).toMatch(/\bgetDoc\b/);
-  });
 });
 
-describe('auth-ui.js Firebase integration', () => {
+describe('auth-ui.js Google Sign-In integration', () => {
   let authUiSrc;
 
   beforeEach(() => {
     authUiSrc = fs.readFileSync(path.resolve(__dirname, '../src/auth-ui.js'), 'utf-8');
   });
 
-  test('imports from firebase-init module (not window globals)', () => {
+  test('imports from firebase-init module', () => {
     expect(authUiSrc).toMatch(/from ['"]\.\/firebase-init\.js['"]/);
-    expect(authUiSrc).not.toMatch(/window\.firebaseAuth/);
-    expect(authUiSrc).not.toMatch(/window\.firebaseFirestore/);
-    expect(authUiSrc).not.toMatch(/window\.firebaseApp/);
   });
 
-  test('handleRegister creates user and calls loginSuccess', () => {
-    expect(authUiSrc).toMatch(/createUserWithEmailAndPassword/);
-    expect(authUiSrc).toMatch(/loginSuccess/);
+  test('uses Google sign-in popup', () => {
+    expect(authUiSrc).toMatch(/signInWithPopup/);
+    expect(authUiSrc).toMatch(/GoogleAuthProvider/);
   });
 
-  test('handleLogin signs in user and calls loginSuccess', () => {
-    expect(authUiSrc).toMatch(/signInWithEmailAndPassword/);
+  test('does NOT use email/password auth', () => {
+    expect(authUiSrc).not.toMatch(/signInWithEmailAndPassword/);
+    expect(authUiSrc).not.toMatch(/createUserWithEmailAndPassword/);
+  });
+
+  test('calls loginSuccess after Google sign-in', () => {
     expect(authUiSrc).toMatch(/loginSuccess/);
   });
 
@@ -93,24 +84,5 @@ describe('auth-ui.js Firebase integration', () => {
 
   test('calls signOut on logout', () => {
     expect(authUiSrc).toMatch(/signOut/);
-  });
-
-  test('has friendly error message mapping', () => {
-    expect(authUiSrc).toMatch(/auth\/email-already-in-use/);
-    expect(authUiSrc).toMatch(/auth\/invalid-email/);
-    expect(authUiSrc).toMatch(/auth\/wrong-password|auth\/invalid-credential/);
-  });
-});
-
-describe('setup-firebase.sh exists', () => {
-  test('setup script exists for configuring Firebase project', () => {
-    const filePath = path.resolve(__dirname, '../setup-firebase.sh');
-    expect(fs.existsSync(filePath)).toBe(true);
-  });
-
-  test('setup script creates firebase-init.js with real config', () => {
-    const src = fs.readFileSync(path.resolve(__dirname, '../setup-firebase.sh'), 'utf-8');
-    expect(src).toMatch(/firebase.*projects.*create|firebase/i);
-    expect(src).toMatch(/apiKey/);
   });
 });

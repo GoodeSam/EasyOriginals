@@ -1,5 +1,5 @@
 /**
- * TDD Tests for auth UI — login screen with guest/account modes.
+ * TDD Tests for auth UI — login screen with guest/Google sign-in modes.
  */
 import { describe, test, expect, beforeEach } from 'vitest';
 import fs from 'fs';
@@ -20,20 +20,16 @@ describe('auth screen in index.html', () => {
     expect(indexHtml).toMatch(/id="guestModeBtn"/);
   });
 
-  test('auth screen has email input', () => {
-    expect(indexHtml).toMatch(/id="authEmail"/);
+  test('auth screen has Google sign-in button', () => {
+    expect(indexHtml).toMatch(/id="googleSignInBtn"/);
   });
 
-  test('auth screen has password input', () => {
-    expect(indexHtml).toMatch(/id="authPassword"/);
+  test('auth screen does NOT have email input', () => {
+    expect(indexHtml).not.toMatch(/id="authEmail"/);
   });
 
-  test('auth screen has login button', () => {
-    expect(indexHtml).toMatch(/id="loginBtn"/);
-  });
-
-  test('auth screen has register button', () => {
-    expect(indexHtml).toMatch(/id="registerBtn"/);
+  test('auth screen does NOT have password input', () => {
+    expect(indexHtml).not.toMatch(/id="authPassword"/);
   });
 
   test('auth screen has error display area', () => {
@@ -41,13 +37,11 @@ describe('auth screen in index.html', () => {
   });
 
   test('auth screen is the initial active screen', () => {
-    // authScreen should have class "active"
     const match = indexHtml.match(/id="authScreen"[^>]*class="[^"]*active[^"]*"/);
     expect(match).not.toBeNull();
   });
 
-  test('upload screen is no longer initially active', () => {
-    // uploadScreen should NOT have class "active" in the HTML
+  test('upload screen is not initially active', () => {
     const match = indexHtml.match(/id="uploadScreen"[^>]*class="[^"]*active[^"]*"/);
     expect(match).toBeNull();
   });
@@ -82,6 +76,18 @@ describe('auth-ui.js module', () => {
     const src = fs.readFileSync(path.resolve(__dirname, '../src/auth-ui.js'), 'utf-8');
     expect(src).toMatch(/from ['"]\.\/auth\.js['"]/);
   });
+
+  test('auth-ui.js uses Google sign-in (signInWithPopup + GoogleAuthProvider)', () => {
+    const src = fs.readFileSync(path.resolve(__dirname, '../src/auth-ui.js'), 'utf-8');
+    expect(src).toMatch(/GoogleAuthProvider/);
+    expect(src).toMatch(/signInWithPopup/);
+  });
+
+  test('auth-ui.js does NOT use email/password auth', () => {
+    const src = fs.readFileSync(path.resolve(__dirname, '../src/auth-ui.js'), 'utf-8');
+    expect(src).not.toMatch(/signInWithEmailAndPassword/);
+    expect(src).not.toMatch(/createUserWithEmailAndPassword/);
+  });
 });
 
 describe('CSS: auth screen styles', () => {
@@ -93,5 +99,10 @@ describe('CSS: auth screen styles', () => {
   test('reader.css has user-menu styles', () => {
     const css = fs.readFileSync(path.resolve(__dirname, '../src/reader.css'), 'utf-8');
     expect(css).toMatch(/\.user-menu/);
+  });
+
+  test('reader.css has Google sign-in button styles', () => {
+    const css = fs.readFileSync(path.resolve(__dirname, '../src/reader.css'), 'utf-8');
+    expect(css).toMatch(/\.auth-btn-google/);
   });
 });

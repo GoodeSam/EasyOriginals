@@ -1,11 +1,12 @@
 /**
  * Auth UI — binds the auth screen and user menu to auth state.
+ * Uses Google Sign-In (no email/password required).
  */
 import { getAuthState, enterGuestMode, loginSuccess, logout, onAuthChange } from './auth.js';
 import { setRemoteProvider, clearRemoteProvider, pullAll, pushAll } from './sync-storage.js';
 import {
   auth, db,
-  signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged,
+  GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
   doc, setDoc, getDoc,
 } from './firebase-init.js';
 
@@ -33,10 +34,7 @@ export function bindAuthUI() {
   const authScreen = document.getElementById('authScreen');
   const uploadScreen = document.getElementById('uploadScreen');
   const guestModeBtn = document.getElementById('guestModeBtn');
-  const loginBtn = document.getElementById('loginBtn');
-  const registerBtn = document.getElementById('registerBtn');
-  const authEmail = document.getElementById('authEmail');
-  const authPassword = document.getElementById('authPassword');
+  const googleSignInBtn = document.getElementById('googleSignInBtn');
   const authError = document.getElementById('authError');
   const userMenuBtn = document.getElementById('userMenuBtn');
   const userMenu = document.getElementById('userMenu');
@@ -70,76 +68,42 @@ export function bindAuthUI() {
     goToUpload();
   });
 
-  // Login
-  async function handleLogin() {
-    const email = authEmail.value.trim();
-    const password = authPassword.value;
-    if (!email || !password) {
-      showError('Please enter email and password.');
-      return;
-    }
+  // Google Sign-In
+  async function handleGoogleSignIn() {
     showError('');
-    loginBtn.disabled = true;
+    googleSignInBtn.disabled = true;
     try {
-      const cred = await signInWithEmailAndPassword(auth, email, password);
+      const provider = new GoogleAuthProvider();
+      const cred = await signInWithPopup(auth, provider);
       const user = cred.user;
-      loginSuccess({ uid: user.uid, email: user.email, displayName: user.displayName || email });
+      loginSuccess({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName || user.email,
+      });
       await setupRemoteSync(user.uid);
-      goToUpload();
-    } catch (err) {
-      showError(friendlyError(err));
-    } finally {
-      loginBtn.disabled = false;
-    }
-  }
-
-  // Register
-  async function handleRegister() {
-    const email = authEmail.value.trim();
-    const password = authPassword.value;
-    if (!email || !password) {
-      showError('Please enter email and password.');
-      return;
-    }
-    if (password.length < 6) {
-      showError('Password must be at least 6 characters.');
-      return;
-    }
-    showError('');
-    registerBtn.disabled = true;
-    try {
-      const cred = await createUserWithEmailAndPassword(auth, email, password);
-      const user = cred.user;
-      loginSuccess({ uid: user.uid, email: user.email, displayName: user.displayName || email });
-      await setupRemoteSync(user.uid);
-      // Push existing local data to the new account
+      // Push existing local data to account on first sign-in
       await pushAll();
       goToUpload();
     } catch (err) {
-      showError(friendlyError(err));
+      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        showError(friendlyError(err));
+      }
     } finally {
-      registerBtn.disabled = false;
+      googleSignInBtn.disabled = false;
     }
   }
 
-  loginBtn.addEventListener('click', handleLogin);
-  registerBtn.addEventListener('click', handleRegister);
-
-  // Allow Enter key to submit
-  authPassword.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleLogin();
-  });
+  googleSignInBtn.addEventListener('click', handleGoogleSignIn);
 
   // Listen for Firebase auth state changes (handles session restore & token refresh)
   onAuthStateChanged(auth, async (firebaseUser) => {
     if (firebaseUser) {
       const currentState = getAuthState();
-      // If already logged in via our auth module, just ensure sync is set up
       if (currentState.mode === 'account' && currentState.user && currentState.user.uid === firebaseUser.uid) {
         await setupRemoteSync(firebaseUser.uid);
         return;
       }
-      // Firebase session restored (e.g. page reload) — sync our auth state
       loginSuccess({
         uid: firebaseUser.uid,
         email: firebaseUser.email,
@@ -171,7 +135,6 @@ export function bindAuthUI() {
       clearRemoteProvider();
       logout();
       userMenu.classList.remove('active');
-      // Go back to auth screen
       uploadScreen.classList.remove('active');
       document.getElementById('readerScreen').classList.remove('active');
       authScreen.classList.add('active');
@@ -188,13 +151,12 @@ export function bindAuthUI() {
     }
   });
 
-  // Auto-skip auth screen if local session is restored (Firebase onAuthStateChanged will handle sync)
+  // Auto-skip auth screen if local session is restored
   const currentState = getAuthState();
   if (currentState.mode === 'account') {
     goToUpload();
   }
 
-  // Update user display on load
   if (userDisplayName) {
     userDisplayName.textContent = currentState.user
       ? (currentState.user.displayName || currentState.user.email)
@@ -202,16 +164,10 @@ export function bindAuthUI() {
   }
 }
 
-// Map Firebase error codes to user-friendly messages
 function friendlyError(err) {
   const code = err.code || '';
-  if (code === 'auth/email-already-in-use') return 'This email is already registered. Try signing in.';
-  if (code === 'auth/invalid-email') return 'Please enter a valid email address.';
-  if (code === 'auth/weak-password') return 'Password must be at least 6 characters.';
-  if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
-    return 'Invalid email or password.';
-  }
-  if (code === 'auth/too-many-requests') return 'Too many attempts. Please try again later.';
+  if (code === 'auth/popup-blocked') return 'Pop-up blocked. Please allow pop-ups for this site.';
   if (code === 'auth/network-request-failed') return 'Network error. Check your connection.';
-  return err.message || 'An error occurred. Please try again.';
+  if (code === 'auth/too-many-requests') return 'Too many attempts. Please try again later.';
+  return err.message || 'Sign-in failed. Please try again.';
 }
