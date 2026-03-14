@@ -13,8 +13,26 @@
   <script src="/lib/epub.min.js"></script>
 </head>
 <body>
+  <!-- Auth Screen -->
+  <div id="authScreen" class="screen active">
+    <div class="auth-card">
+      <div class="upload-icon">&#128214;</div>
+      <h2>English Reader</h2>
+      <p class="auth-subtitle">Sign in to sync across devices, or continue as guest</p>
+      <div class="auth-form">
+        <input type="email" id="authEmail" placeholder="Email" autocomplete="email" class="auth-input">
+        <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password" class="auth-input">
+        <div id="authError" class="auth-error" style="display:none"></div>
+        <button class="btn btn-primary auth-btn" id="loginBtn">Sign In</button>
+        <button class="btn auth-btn auth-btn-secondary" id="registerBtn">Create Account</button>
+        <div class="auth-divider"><span>or</span></div>
+        <button class="btn auth-btn auth-btn-guest" id="guestModeBtn">Continue as Guest</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Upload Screen -->
-  <div id="uploadScreen" class="screen active">
+  <div id="uploadScreen" class="screen">
     <div class="upload-area" id="dropZone">
       <div class="upload-icon">&#128214;</div>
       <h2>English Reader</h2>
@@ -52,6 +70,13 @@
         <button class="icon-btn" id="gestureModeBtn" title="Gesture: menu mode" aria-label="Toggle gesture mode">&#9776;</button>
         <button class="icon-btn" id="exportDocxBtn" title="Export to Word" aria-label="Export to Word">&#128230;</button>
         <button class="icon-btn" id="helpBtn" title="Feature Guide" aria-label="Feature Guide">?</button>
+        <div class="user-menu-wrapper">
+          <button class="icon-btn" id="userMenuBtn" title="Account" aria-label="Account">&#128100;</button>
+          <div class="user-menu" id="userMenu">
+            <div class="user-menu-name" id="userDisplayName">Guest</div>
+            <button class="btn btn-sm user-menu-logout" id="logoutBtn">Sign Out</button>
+          </div>
+        </div>
         <span class="page-info" id="pageInfo">Page 1</span>
       </div>
     </div>
