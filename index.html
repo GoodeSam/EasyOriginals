@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>English Reader</title>
+  <link rel="icon" href="/icons/icon48.png">
+  <link rel="stylesheet" href="/src/reader.css">
+  <!-- PDF.js -->
+  <script src="/lib/pdf.min.js"></script>
+  <!-- EPUB.js -->
+  <script src="/lib/jszip.min.js"></script>
+  <script src="/lib/epub.min.js"></script>
+</head>
+<body>
+  <!-- Upload Screen -->
+  <div id="uploadScreen" class="screen active">
+    <div class="upload-area" id="dropZone">
+      <div class="upload-icon">&#128214;</div>
+      <h2>English Reader</h2>
+      <p>Drop a PDF, EPUB, DOCX, TXT, or image file here, or click to browse</p>
+      <input type="file" id="fileInput" accept=".pdf,.epub,.docx,.txt,.png,.jpg,.jpeg,.webp" hidden>
+      <button class="btn btn-primary" id="browseBtn">Browse Files</button>
+    </div>
+  </div>
+
+  <!-- Reader Screen -->
+  <div id="readerScreen" class="screen">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <button class="icon-btn" id="backBtn" title="Back to upload" aria-label="Back to upload">&#8592;</button>
+      <span class="book-title" id="bookTitle">Untitled</span>
+      <div class="top-bar-actions">
+        <button class="icon-btn" id="searchToggle" title="Search (Ctrl+F)" aria-label="Search">&#128269;</button>
+        <button class="icon-btn bookmark-btn" id="bookmarkBtn" title="Bookmark this position" aria-label="Bookmark">&#9734;</button>
+        <div class="font-size-control">
+          <button class="icon-btn" id="fontDecrease" title="Decrease font size">A-</button>
+          <span class="font-size-label" id="fontSizeLabel">18</span>
+          <button class="icon-btn" id="fontIncrease" title="Increase font size">A+</button>
+        </div>
+        <div class="width-control">
+          <button class="icon-btn" id="widthDecrease" title="Narrower">&#8612;</button>
+          <span class="width-label" id="widthLabel">800</span>
+          <button class="icon-btn" id="widthIncrease" title="Wider">&#8614;</button>
+        </div>
+        <div class="theme-picker" id="themePicker">
+          <button class="theme-swatch" data-theme="white" title="White" aria-label="White theme" style="background:#ffffff"></button>
+          <button class="theme-swatch" data-theme="black" title="Dark" aria-label="Dark theme" style="background:#1a1a1a"></button>
+          <button class="theme-swatch active" data-theme="brown" title="Sepia" aria-label="Sepia theme" style="background:#f5f0e8"></button>
+          <button class="theme-swatch" data-theme="green" title="Green" aria-label="Green theme" style="background:#e8f5e9"></button>
+        </div>
+        <button class="icon-btn" id="gestureModeBtn" title="Gesture: menu mode" aria-label="Toggle gesture mode">&#9776;</button>
+        <button class="icon-btn" id="exportDocxBtn" title="Export to Word" aria-label="Export to Word">&#128230;</button>
+        <button class="icon-btn" id="helpBtn" title="Feature Guide" aria-label="Feature Guide">?</button>
+        <span class="page-info" id="pageInfo">Page 1</span>
+      </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-bar" id="searchBar">
+      <input type="text" id="searchInput" placeholder="Search in book..." autocomplete="off">
+      <span class="search-count" id="searchCount"></span>
+      <button class="icon-btn search-nav-btn" id="searchPrev" title="Previous match" aria-label="Previous match">&#8593;</button>
+      <button class="icon-btn search-nav-btn" id="searchNext" title="Next match" aria-label="Next match">&#8595;</button>
+      <button class="icon-btn" id="searchClose" title="Close search" aria-label="Close search">&times;</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="reader-content" id="readerContent">
+      <!-- Paragraphs with sentences will be injected here -->
+    </div>
+
+    <!-- Bottom Bar -->
+    <div class="bottom-bar">
+      <button class="btn btn-nav" id="prevPage">&#8592; Previous</button>
+      <span class="page-indicator" id="pageIndicator">1 / 1</span>
+      <button class="btn btn-nav" id="nextPage">Next &#8594;</button>
+    </div>
+  </div>
+
+  <!-- Sentence Panel (slide-up) -->
+  <div class="panel-overlay" id="panelOverlay"></div>
+  <div class="sentence-panel" id="sentencePanel">
+    <div class="panel-header">
+      <span class="panel-title">Sentence</span>
+      <button class="icon-btn panel-close" id="panelClose" aria-label="Close sentence panel">&times;</button>
+    </div>
+    <div class="panel-body">
+      <div class="panel-sentence" id="panelSentence"></div>
+      <div class="panel-actions">
+        <button class="btn btn-sm" id="btnTranslate">&#127760; Translate</button>
+        <button class="btn btn-sm" id="btnGrammar">&#128300; Grammar</button>
+        <button class="btn btn-sm" id="btnTTS">&#128264; Listen</button>
+        <button class="btn btn-sm" id="btnCopy">&#128203; Copy</button>
+      </div>
+      <div class="panel-result hidden" id="panelTranslation">
+        <div class="result-label">Translation</div>
+        <div class="result-text" id="translationText"></div>
+      </div>
+      <div class="panel-result hidden" id="panelGrammar">
+        <div class="result-label">Grammar Analysis</div>
+        <div class="result-text grammar-text" id="grammarText"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Word Definition Popup -->
+  <div class="word-popup" id="wordPopup">
+    <div class="word-popup-header">
+      <span class="word-popup-word" id="popupWord"></span>
+      <button class="icon-btn btn-pronounce" id="btnPronounce" title="Pronounce" aria-label="Pronounce word">&#128264;</button>
+      <button class="icon-btn word-popup-close" id="wordPopupClose" aria-label="Close word popup">&times;</button>
+    </div>
+    <div class="def-pronunciation hidden" id="defPronunciation"></div>
+    <div class="word-popup-body">
+      <div class="def-loading" id="defLoading">Looking up definition...</div>
+      <div class="def-section" id="defEnglish" style="display:none">
+        <div class="def-label">English Definition</div>
+        <div class="def-text" id="defEnText"></div>
+      </div>
+      <div class="def-section def-chinese-section" id="defChineseSection" style="display:none">
+        <button class="btn btn-toggle-cn" id="toggleChinese">Show Chinese Definition</button>
+        <div class="def-text def-cn-text" id="defCnText" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Selection Toolbar -->
+  <div class="selection-toolbar" id="selectionToolbar">
+    <button class="btn btn-sm" id="selCopy">&#128203; Copy</button>
+    <button class="btn btn-sm" id="selNote">&#128221; Note</button>
+  </div>
+
+  <!-- Notes Panel -->
+  <div class="side-panel notes-panel" id="notesPanel">
+    <div class="side-panel-header notes-header">
+      <span>My Notes</span>
+      <button class="icon-btn" id="notesClose" aria-label="Close notes panel">&times;</button>
+    </div>
+    <div class="side-panel-list notes-list" id="notesList"></div>
+    <button class="btn btn-sm side-panel-export notes-export" id="notesExport">Export Notes</button>
+  </div>
+  <button class="side-toggle notes-toggle" id="notesToggle" title="My Notes" aria-label="My Notes">&#128221;</button>
+
+  <!-- History Panel -->
+  <div class="side-panel history-panel" id="historyPanel">
+    <div class="side-panel-header history-header">
+      <span>Reading History</span>
+      <button class="icon-btn" id="historyClose" aria-label="Close history panel">&times;</button>
+    </div>
+    <div class="side-panel-list history-list" id="historyList"></div>
+    <button class="btn btn-sm side-panel-export history-clear" id="historyClear">Clear History</button>
+  </div>
+  <button class="side-toggle history-toggle" id="historyToggle" title="Reading History" aria-label="Reading History">&#128337;</button>
+
+  <!-- Word List Panel -->
+  <div class="side-panel wordlist-panel" id="wordListPanel">
+    <div class="side-panel-header wordlist-header">
+      <span>Word List</span>
+      <button class="icon-btn" id="wordListClose" aria-label="Close word list panel">&times;</button>
+    </div>
+    <div class="side-panel-list wordlist-entries" id="wordListEntries"></div>
+    <button class="btn btn-sm side-panel-export wordlist-export" id="wordListExport">Export Word List</button>
+  </div>
+  <button class="side-toggle wordlist-toggle" id="wordListToggle" title="Word List" aria-label="Word List">Aa</button>
+
+  <!-- Settings Panel (replaces popup) -->
+  <button class="side-toggle settings-toggle" id="settingsToggle" title="Settings" aria-label="Settings">&#9881;</button>
+
+  <!-- Paragraph Translation Popup -->
+  <div class="para-popup-overlay" id="paraPopupOverlay"></div>
+  <div class="para-popup" id="paraPopup">
+    <div class="para-popup-header">
+      <span class="panel-title">Paragraph Translation</span>
+      <button class="icon-btn panel-close" id="paraPopupClose" aria-label="Close paragraph translation">&times;</button>
+    </div>
+    <div class="para-popup-body">
+      <div class="para-popup-text" id="paraPopupText"></div>
+      <div class="para-popup-actions" id="paraPopupActions">
+        <button class="btn btn-sm" id="paraTranslateBtn">&#127760; Translate</button>
+        <button class="btn btn-sm" id="paraTTSBtn">&#128264; Listen</button>
+        <button class="btn btn-sm" id="paraCopyBtn">&#128203; Copy</button>
+      </div>
+      <div class="para-popup-translation" id="paraPopupTranslation"></div>
+    </div>
+  </div>
+
+  <!-- Feature Guide Overlay -->
+  <div class="feature-guide" id="featureGuide">
+    <div class="guide-inner">
+      <div class="guide-header">
+        <span class="guide-title">Feature Guide / 功能指南</span>
+        <button class="icon-btn" id="featureGuideClose" aria-label="Close feature guide">&times;</button>
+      </div>
+      <div class="guide-body" id="featureGuideBody"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
