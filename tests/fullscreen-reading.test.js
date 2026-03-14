@@ -111,3 +111,21 @@ describe('scroll reveals UI temporarily', () => {
     expect(readerSrc).toMatch(/scroll.*showBars|readerContent.*scroll/);
   });
 });
+
+describe('browser Fullscreen API', () => {
+  test('startAutoHideTimer calls requestFullscreen to hide browser chrome', () => {
+    const fnMatch = readerSrc.match(/function startAutoHideTimer[\s\S]*?\n\}/);
+    expect(fnMatch).not.toBeNull();
+    expect(fnMatch[0]).toMatch(/requestFullscreen/);
+  });
+
+  test('showBars calls exitFullscreen to restore browser chrome', () => {
+    const fnMatch = readerSrc.match(/function showBars[\s\S]*?\n\}/);
+    expect(fnMatch).not.toBeNull();
+    expect(fnMatch[0]).toMatch(/exitFullscreen/);
+  });
+
+  test('fullscreenchange listener syncs state when user presses Escape', () => {
+    expect(readerSrc).toMatch(/fullscreenchange/);
+  });
+});

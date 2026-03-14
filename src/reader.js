@@ -3309,6 +3309,10 @@ function startAutoHideTimer() {
     document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('active'));
     // Enter fullscreen reading mode
     readerScreen.classList.add('fullscreen-reading');
+    // Request browser fullscreen to hide address bar and tab bar
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
   }, AUTO_HIDE_DELAY);
 }
 
@@ -3330,6 +3334,10 @@ function showBars() {
   document.querySelectorAll('.side-toggle').forEach(t => t.classList.remove('auto-hide'));
   // Exit fullscreen reading mode
   readerScreen.classList.remove('fullscreen-reading');
+  // Exit browser fullscreen to restore address bar and tab bar
+  if (document.fullscreenElement && document.exitFullscreen) {
+    document.exitFullscreen().catch(() => {});
+  }
 }
 
 document.addEventListener('mousemove', (e) => {
@@ -3364,5 +3372,13 @@ readerContent.addEventListener('scroll', () => {
   showBars();
   startAutoHideTimer();
 }, { passive: true });
+
+// Sync app state when user exits browser fullscreen (e.g. pressing Escape)
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && readerScreen.classList.contains('fullscreen-reading')) {
+    showBars();
+    startAutoHideTimer();
+  }
+});
 
 // Auto-hide and side toggles handled by init() via DOMContentLoaded
