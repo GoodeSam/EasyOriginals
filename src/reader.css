@@ -226,6 +226,7 @@ body {
   margin: 0 auto;
   width: 100%;
   scroll-behavior: smooth;
+  transition: max-width 0.3s ease, padding 0.3s ease;
 }
 @media (max-width: 640px) {
   .reader-content { padding: 24px 20px; }
@@ -908,3 +909,35 @@ body {
   word-break: break-all;
 }
 .user-menu-logout { width: 100%; }
+
+/* ===== Fullscreen Reading Mode ===== */
+.fullscreen-reading {
+  cursor: none;
+}
+.fullscreen-reading .top-bar {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+.fullscreen-reading .bottom-bar {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+.fullscreen-reading .search-bar {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+.fullscreen-reading .reader-content {
+  max-width: none;
+  padding: 40px 80px;
+}
+.fullscreen-reading ~ .side-toggle {
+  transform: translateX(100px);
+  opacity: 0;
+  pointer-events: none;
+}
+.fullscreen-reading ~ .side-panel {
+  display: none;
+}

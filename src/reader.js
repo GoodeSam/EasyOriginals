@@ -3289,7 +3289,7 @@ featureGuide.addEventListener('click', (e) => {
 });
 
 // ===== Auto-Hide Bars =====
-const AUTO_HIDE_DELAY = 3000;
+const AUTO_HIDE_DELAY = 5000;
 const EDGE_TRIGGER_PX = 50;
 let autoHideTimer = null;
 
@@ -3303,14 +3303,12 @@ function startAutoHideTimer() {
     if (topBar) topBar.classList.add('auto-hide');
     if (bottomBar) bottomBar.classList.add('auto-hide');
     if (searchBarEl) searchBarEl.classList.add('auto-hide');
-    // Auto-hide side toggles (skip if their panel is open)
-    document.querySelectorAll('.side-toggle').forEach(toggle => {
-      const panelId = toggle.id.replace('Toggle', 'Panel');
-      const panel = document.getElementById(panelId);
-      if (!panel || !panel.classList.contains('active')) {
-        toggle.classList.add('auto-hide');
-      }
-    });
+    // Auto-hide all side toggles
+    document.querySelectorAll('.side-toggle').forEach(t => t.classList.add('auto-hide'));
+    // Close all side panels for fullscreen reading
+    document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('active'));
+    // Enter fullscreen reading mode
+    readerScreen.classList.add('fullscreen-reading');
   }, AUTO_HIDE_DELAY);
 }
 
@@ -3330,6 +3328,8 @@ function showBars() {
   if (searchBarEl) searchBarEl.classList.remove('auto-hide');
   // Reveal side-toggle buttons
   document.querySelectorAll('.side-toggle').forEach(t => t.classList.remove('auto-hide'));
+  // Exit fullscreen reading mode
+  readerScreen.classList.remove('fullscreen-reading');
 }
 
 document.addEventListener('mousemove', (e) => {
@@ -3357,5 +3357,12 @@ document.querySelector('.top-bar').addEventListener('touchstart', () => {
   showBars();
   startAutoHideTimer();
 });
+
+// Scrolling in reader content reveals UI temporarily
+readerContent.addEventListener('scroll', () => {
+  if (!readerScreen.classList.contains('active')) return;
+  showBars();
+  startAutoHideTimer();
+}, { passive: true });
 
 // Auto-hide and side toggles handled by init() via DOMContentLoaded
