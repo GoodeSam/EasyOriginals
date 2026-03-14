@@ -334,6 +334,15 @@ function bindFileUploadEvents() {
     dropZone.classList.remove('dragover');
     handleFile(e.dataTransfer.files[0]);
   });
+
+  const urlLoadBtn = document.getElementById('urlLoadBtn');
+  const urlInput = document.getElementById('urlInput');
+  if (urlLoadBtn && urlInput) {
+    urlLoadBtn.addEventListener('click', () => handleURL(urlInput.value.trim()));
+    urlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleURL(urlInput.value.trim());
+    });
+  }
 }
 
 function bindNavigationEvents() {
@@ -740,6 +749,106 @@ async function handleFile(file) {
     alert('Failed to parse file: ' + err.message);
   }
 }
+
+// ===== URL Handling =====
+const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+
+function extractTextFromHTML(html) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  // Remove script, style, nav, header, footer elements
+  doc.querySelectorAll('script, style, nav, header, footer, aside, [role="navigation"]').forEach(el => el.remove());
+  // Try to find main content area
+  const main = doc.querySelector('article, [role="main"], main, .post-content, .entry-content, .article-body');
+  const source = main || doc.body;
+  if (!source) return '';
+  // Extract text from paragraphs and headings for structure
+  const blocks = source.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre');
+  if (blocks.length > 0) {
+    return Array.from(blocks)
+      .map(el => el.textContent.trim())
+      .filter(t => t.length > 0)
+      .join('\n\n');
+  }
+  // Fallback: use full textContent
+  return (source.textContent || '').trim();
+}
+
+window.extractTextFromHTML = extractTextFromHTML;
+
+async function handleURL(url) {
+  if (!url) return;
+
+  const urlError = document.getElementById('urlError');
+  const urlLoadBtn = document.getElementById('urlLoadBtn');
+
+  function showUrlError(msg) {
+    if (urlError) {
+      urlError.textContent = msg;
+      urlError.style.display = msg ? 'block' : 'none';
+    }
+  }
+
+  // Validate URL
+  try {
+    new URL(url);
+  } catch (e) {
+    showUrlError('Please enter a valid URL (e.g. https://example.com)');
+    return;
+  }
+
+  showUrlError('');
+  if (urlLoadBtn) urlLoadBtn.disabled = true;
+
+  try {
+    const response = await fetch(CORS_PROXY + encodeURIComponent(url));
+    if (!response.ok) throw new Error('Failed to fetch page (HTTP ' + response.status + ')');
+
+    const html = await response.text();
+    const text = extractTextFromHTML(html);
+
+    if (!text || text.trim().length === 0) {
+      showUrlError('No readable content found on this page.');
+      return;
+    }
+
+    // Extract title from URL or HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const pageTitle = doc.querySelector('title')?.textContent?.trim() || new URL(url).hostname;
+
+    state.fileName = pageTitle;
+    const paragraphs = splitIntoParagraphs(text);
+    paginateParagraphs(paragraphs);
+
+    if (state.totalPages === 0) {
+      showUrlError('No readable content found on this page.');
+      return;
+    }
+
+    bookTitle.textContent = pageTitle;
+    uploadScreen.classList.remove('active');
+    readerScreen.classList.add('active');
+    notesToggle.classList.add('visible');
+    historyToggle.classList.add('visible');
+    wordListToggle.classList.add('visible');
+
+    updateBookmarkIcon();
+
+    if (!restoreBookmark()) {
+      goToPage(0);
+    }
+
+    startAutoHideTimer();
+  } catch (err) {
+    console.error(err);
+    showUrlError('Failed to load page: ' + err.message);
+  } finally {
+    if (urlLoadBtn) urlLoadBtn.disabled = false;
+  }
+}
+
+window.handleURL = handleURL;
 
 async function extractPDFPageImages(page, pageNum) {
   const images = [];

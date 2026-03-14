@@ -36,7 +36,13 @@
     <div class="upload-area" id="dropZone">
       <div class="upload-icon">&#128214;</div>
       <h2>English Reader</h2>
-      <p>Drop a PDF, EPUB, DOCX, TXT, or image file here, or click to browse</p>
+      <p>Enter a web address, or drop a file to start reading</p>
+      <div class="url-input-group">
+        <input type="url" id="urlInput" placeholder="https://example.com/article" autocomplete="url" class="url-input">
+        <button class="btn btn-primary" id="urlLoadBtn">Load</button>
+      </div>
+      <div id="urlError" class="url-error" style="display:none"></div>
+      <div class="upload-divider"><span>or drop / browse a file</span></div>
       <input type="file" id="fileInput" accept=".pdf,.epub,.docx,.txt,.png,.jpg,.jpeg,.webp" hidden>
       <button class="btn btn-primary" id="browseBtn">Browse Files</button>
     </div>

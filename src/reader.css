@@ -33,6 +33,48 @@ body {
 .upload-area p { color: #777; margin-bottom: 24px; font-size: 15px; font-family: sans-serif; }
 .upload-area.dragover { border: 3px dashed #4f46e5; background: #f0f0ff; }
 
+/* ===== URL Input ===== */
+.url-input-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+.url-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: -apple-system, sans-serif;
+  outline: none;
+}
+.url-input:focus { border-color: #4f46e5; }
+.url-error {
+  color: #e11d48;
+  font-size: 13px;
+  font-family: sans-serif;
+  text-align: left;
+  margin-bottom: 8px;
+}
+.upload-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #aaa;
+  font-size: 13px;
+  font-family: sans-serif;
+  margin: 12px 0;
+  width: 100%;
+}
+.upload-divider::before,
+.upload-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #ddd;
+}
+
 /* ===== Buttons ===== */
 .btn {
   display: inline-block;
