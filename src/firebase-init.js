@@ -1,13 +1,10 @@
 /**
  * Firebase initialization module.
  * Centralizes Firebase app, auth, and firestore setup.
- *
- * To configure: replace the firebaseConfig values with your project's credentials.
- * Get them from Firebase Console > Project Settings > Your apps > Web app.
  */
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.7.1/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.7.1/firebase-auth.js';
-import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/11.7.1/firebase-firestore.js';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyD_placeholder_replace_me",
