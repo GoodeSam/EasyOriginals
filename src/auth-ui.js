@@ -3,32 +3,26 @@
  */
 import { getAuthState, enterGuestMode, loginSuccess, logout, onAuthChange } from './auth.js';
 import { setRemoteProvider, clearRemoteProvider, pullAll, pushAll } from './sync-storage.js';
+import {
+  auth, db,
+  signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged,
+  doc, setDoc, getDoc,
+} from './firebase-init.js';
 
-// ===== Firebase-compatible remote provider =====
-function createFirebaseProvider(firebaseApp) {
-  const { getFirestore, doc, setDoc, getDoc } = window.firebaseFirestore || {};
-  if (!getFirestore) return null;
-
-  const db = getFirestore(firebaseApp);
-
+// ===== Firestore remote provider =====
+function createFirestoreProvider(uid) {
   return {
     async push(key, value) {
-      const state = getAuthState();
-      if (!state.user) return;
-      const ref = doc(db, 'users', state.user.uid);
+      const ref = doc(db, 'users', uid);
       await setDoc(ref, { [key]: value }, { merge: true });
     },
     async pull() {
-      const state = getAuthState();
-      if (!state.user) return {};
-      const ref = doc(db, 'users', state.user.uid);
+      const ref = doc(db, 'users', uid);
       const snap = await getDoc(ref);
       return snap.exists() ? snap.data() : {};
     },
     async pushAll(data) {
-      const state = getAuthState();
-      if (!state.user) return;
-      const ref = doc(db, 'users', state.user.uid);
+      const ref = doc(db, 'users', uid);
       await setDoc(ref, data, { merge: true });
     },
   };
@@ -63,6 +57,12 @@ export function bindAuthUI() {
     uploadScreen.classList.add('active');
   }
 
+  function setupRemoteSync(uid) {
+    const provider = createFirestoreProvider(uid);
+    setRemoteProvider(provider);
+    return pullAll();
+  }
+
   // Guest mode
   guestModeBtn.addEventListener('click', () => {
     enterGuestMode();
@@ -70,7 +70,7 @@ export function bindAuthUI() {
     goToUpload();
   });
 
-  // Login with Firebase
+  // Login
   async function handleLogin() {
     const email = authEmail.value.trim();
     const password = authPassword.value;
@@ -79,24 +79,21 @@ export function bindAuthUI() {
       return;
     }
     showError('');
+    loginBtn.disabled = true;
     try {
-      const { getAuth, signInWithEmailAndPassword } = window.firebaseAuth || {};
-      if (!getAuth) {
-        showError('Firebase not loaded. Use guest mode or try again later.');
-        return;
-      }
-      const auth = getAuth();
       const cred = await signInWithEmailAndPassword(auth, email, password);
       const user = cred.user;
       loginSuccess({ uid: user.uid, email: user.email, displayName: user.displayName || email });
-      await setupRemoteSync();
+      await setupRemoteSync(user.uid);
       goToUpload();
     } catch (err) {
-      showError(err.message || 'Login failed.');
+      showError(friendlyError(err));
+    } finally {
+      loginBtn.disabled = false;
     }
   }
 
-  // Register with Firebase
+  // Register
   async function handleRegister() {
     const email = authEmail.value.trim();
     const password = authPassword.value;
@@ -109,32 +106,19 @@ export function bindAuthUI() {
       return;
     }
     showError('');
+    registerBtn.disabled = true;
     try {
-      const { getAuth, createUserWithEmailAndPassword } = window.firebaseAuth || {};
-      if (!getAuth) {
-        showError('Firebase not loaded. Use guest mode or try again later.');
-        return;
-      }
-      const auth = getAuth();
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       const user = cred.user;
       loginSuccess({ uid: user.uid, email: user.email, displayName: user.displayName || email });
-      await setupRemoteSync();
-      // Push existing local data to new account
+      await setupRemoteSync(user.uid);
+      // Push existing local data to the new account
       await pushAll();
       goToUpload();
     } catch (err) {
-      showError(err.message || 'Registration failed.');
-    }
-  }
-
-  async function setupRemoteSync() {
-    if (window.firebaseApp && window.firebaseFirestore) {
-      const provider = createFirebaseProvider(window.firebaseApp);
-      if (provider) {
-        setRemoteProvider(provider);
-        await pullAll();
-      }
+      showError(friendlyError(err));
+    } finally {
+      registerBtn.disabled = false;
     }
   }
 
@@ -144,6 +128,26 @@ export function bindAuthUI() {
   // Allow Enter key to submit
   authPassword.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') handleLogin();
+  });
+
+  // Listen for Firebase auth state changes (handles session restore & token refresh)
+  onAuthStateChanged(auth, async (firebaseUser) => {
+    if (firebaseUser) {
+      const currentState = getAuthState();
+      // If already logged in via our auth module, just ensure sync is set up
+      if (currentState.mode === 'account' && currentState.user && currentState.user.uid === firebaseUser.uid) {
+        await setupRemoteSync(firebaseUser.uid);
+        return;
+      }
+      // Firebase session restored (e.g. page reload) — sync our auth state
+      loginSuccess({
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        displayName: firebaseUser.displayName || firebaseUser.email,
+      });
+      await setupRemoteSync(firebaseUser.uid);
+      goToUpload();
+    }
   });
 
   // User menu
@@ -162,8 +166,7 @@ export function bindAuthUI() {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
       try {
-        const { getAuth, signOut } = window.firebaseAuth || {};
-        if (getAuth) await signOut(getAuth());
+        await signOut(auth);
       } catch (e) { /* ignore */ }
       clearRemoteProvider();
       logout();
@@ -185,10 +188,9 @@ export function bindAuthUI() {
     }
   });
 
-  // Auto-skip auth screen if session is restored
+  // Auto-skip auth screen if local session is restored (Firebase onAuthStateChanged will handle sync)
   const currentState = getAuthState();
   if (currentState.mode === 'account') {
-    setupRemoteSync();
     goToUpload();
   }
 
@@ -198,4 +200,18 @@ export function bindAuthUI() {
       ? (currentState.user.displayName || currentState.user.email)
       : 'Guest';
   }
+}
+
+// Map Firebase error codes to user-friendly messages
+function friendlyError(err) {
+  const code = err.code || '';
+  if (code === 'auth/email-already-in-use') return 'This email is already registered. Try signing in.';
+  if (code === 'auth/invalid-email') return 'Please enter a valid email address.';
+  if (code === 'auth/weak-password') return 'Password must be at least 6 characters.';
+  if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+    return 'Invalid email or password.';
+  }
+  if (code === 'auth/too-many-requests') return 'Too many attempts. Please try again later.';
+  if (code === 'auth/network-request-failed') return 'Network error. Check your connection.';
+  return err.message || 'An error occurred. Please try again.';
 }
