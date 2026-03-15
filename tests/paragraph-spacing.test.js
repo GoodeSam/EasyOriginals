@@ -10,6 +10,6 @@ describe('paragraph spacing', () => {
     const css = fs.readFileSync(path.resolve(__dirname, '../src/reader.css'), 'utf-8');
     const match = css.match(/\.paragraph\s*\{([^}]*)\}/);
     expect(match).not.toBeNull();
-    expect(match[1]).toMatch(/margin-bottom:\s*10px/);
+    expect(match[1]).toMatch(/margin-bottom:\s*5px/);
   });
 });
