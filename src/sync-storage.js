@@ -50,7 +50,7 @@ export function setItem(key, value) {
 export function removeItem(key) {
   localStorage.removeItem(key);
   if (_remoteProvider) {
-    _remoteProvider.push(key, null).catch(err => {
+    _remoteProvider.push(key, '__deleted__').catch(err => {
       console.warn('Sync remove failed for', key, err);
     });
   }
@@ -60,12 +60,19 @@ export function removeItem(key) {
  * Pull all data from remote and merge into localStorage.
  * Returns the merged data object.
  */
+function isAllowedKey(key) {
+  return SYNC_KEYS.includes(key) || (typeof key === 'string' && key.startsWith('reader-bookmark-'));
+}
+
 export async function pullAll() {
   if (!_remoteProvider) return {};
   const remoteData = await _remoteProvider.pull();
   if (remoteData) {
     for (const [key, value] of Object.entries(remoteData)) {
-      if (value !== null && value !== undefined) {
+      if (!isAllowedKey(key)) continue;
+      if (value === null || value === '__deleted__') {
+        localStorage.removeItem(key);
+      } else if (value !== undefined) {
         localStorage.setItem(key, value);
       }
     }

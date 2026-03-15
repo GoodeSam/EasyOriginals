@@ -78,7 +78,7 @@ describe('account mode storage', () => {
     localStorage.setItem('reader-theme', 'brown');
     syncStorage.removeItem('reader-theme');
     expect(localStorage.getItem('reader-theme')).toBeNull();
-    expect(provider.push).toHaveBeenCalledWith('reader-theme', null);
+    expect(provider.push).toHaveBeenCalledWith('reader-theme', '__deleted__');
   });
 
   test('clearRemoteProvider removes remote sync', () => {

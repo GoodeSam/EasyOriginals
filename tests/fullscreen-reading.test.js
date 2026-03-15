@@ -77,8 +77,8 @@ describe('CSS: fullscreen reading mode', () => {
 });
 
 describe('cursor hides in fullscreen mode', () => {
-  test('CSS hides cursor in fullscreen-reading mode', () => {
-    expect(css).toMatch(/\.fullscreen-reading[\s\S]*?cursor:\s*none/);
+  test('CSS hides cursor via .cursor-hidden class (applied by timer in fullscreen)', () => {
+    expect(css).toMatch(/\.cursor-hidden[\s\S]*?cursor:\s*none/);
   });
 });
 

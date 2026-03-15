@@ -1,6 +1,7 @@
 // ===== Web App Storage (replaces chrome.storage) =====
 import { loadSettings as loadStorageSettings, DEFAULT_MODEL } from './storage.js';
 import { createSettingsPanel } from './settings-ui.js';
+import { setItem as syncSetItem, getItem as syncGetItem, removeItem as syncRemoveItem } from './sync-storage.js';
 const TTS_MODEL = 'tts-1';
 const TTS_VOICE = 'alloy';
 const SENTENCES_PER_PAGE = 40;
@@ -175,7 +176,7 @@ function applyFontSize() {
 
 function changeFontSize(delta) {
   state.fontSize = Math.min(32, Math.max(12, state.fontSize + delta));
-  localStorage.setItem('reader-font-size', state.fontSize);
+  syncSetItem('reader-font-size', state.fontSize);
   applyFontSize();
 }
 
@@ -195,7 +196,7 @@ function applyContentWidth() {
 
 function changeContentWidth(delta) {
   state.contentWidth = Math.min(1600, Math.max(500, state.contentWidth + delta));
-  localStorage.setItem('reader-content-width', state.contentWidth);
+  syncSetItem('reader-content-width', state.contentWidth);
   applyContentWidth();
 }
 
@@ -242,7 +243,7 @@ function applyTheme(theme) {
 
 function setTheme(theme) {
   applyTheme(theme);
-  localStorage.setItem('reader-theme', theme);
+  syncSetItem('reader-theme', theme);
 }
 window.setTheme = setTheme;
 
@@ -269,7 +270,7 @@ function loadNotes() {
 }
 
 function saveNotes() {
-  localStorage.setItem('reader-notes', JSON.stringify(state.notes));
+  syncSetItem('reader-notes', JSON.stringify(state.notes));
 }
 
 // ===== Bookmark Persistence =====
@@ -282,7 +283,7 @@ function saveBookmark() {
     page: state.currentPage,
     scrollTop: readerContent.scrollTop,
   };
-  localStorage.setItem(getBookmarkKey(), JSON.stringify(data));
+  syncSetItem(getBookmarkKey(), JSON.stringify(data));
   updateBookmarkIcon();
 }
 
@@ -292,7 +293,7 @@ function loadBookmark() {
 }
 
 function removeBookmark() {
-  localStorage.removeItem(getBookmarkKey());
+  syncRemoveItem(getBookmarkKey());
   updateBookmarkIcon();
 }
 
@@ -822,9 +823,13 @@ async function handleURL(url) {
     }
   }
 
-  // Validate URL
+  // Validate URL — only allow http/https
   try {
-    new URL(url);
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      showUrlError('Only http:// and https:// URLs are supported.');
+      return;
+    }
   } catch (e) {
     showUrlError('Please enter a valid URL (e.g. https://example.com)');
     return;
@@ -2603,13 +2608,20 @@ function rebuildSentenceWithHighlights(sentEl, sentenceText, matches) {
       m.offset < nodeStart + nodeText.length && m.offset + m.length > nodeStart
     );
 
+    function makeWordSpan(content) {
+      const w = document.createElement('span');
+      w.className = 'word';
+      w.setAttribute('tabindex', '0');
+      w.setAttribute('role', 'button');
+      if (typeof content === 'string') w.textContent = content;
+      else w.appendChild(content);
+      return w;
+    }
+
     if (overlapping.length === 0) {
       // No highlight needed
       if (isWord) {
-        const w = document.createElement('span');
-        w.className = 'word';
-        w.textContent = nodeText;
-        fragment.appendChild(w);
+        fragment.appendChild(makeWordSpan(nodeText));
       } else {
         fragment.appendChild(document.createTextNode(nodeText));
       }
@@ -2622,19 +2634,13 @@ function rebuildSentenceWithHighlights(sentEl, sentenceText, matches) {
           mark.className = 'search-highlight' + (piece.isCurrent ? ' current' : '');
           mark.textContent = piece.text;
           if (isWord) {
-            const w = document.createElement('span');
-            w.className = 'word';
-            w.appendChild(mark);
-            fragment.appendChild(w);
+            fragment.appendChild(makeWordSpan(mark));
           } else {
             fragment.appendChild(mark);
           }
         } else {
           if (isWord) {
-            const w = document.createElement('span');
-            w.className = 'word';
-            w.textContent = piece.text;
-            fragment.appendChild(w);
+            fragment.appendChild(makeWordSpan(piece.text));
           } else {
             fragment.appendChild(document.createTextNode(piece.text));
           }
@@ -2846,7 +2852,7 @@ function loadWordList() {
 }
 
 function saveWordList(list) {
-  localStorage.setItem('reader-wordlist', JSON.stringify(list));
+  syncSetItem('reader-wordlist', JSON.stringify(list));
 }
 
 function recordWord({ word, englishDef, chineseDef, pronunciation, sentenceContext }) {
@@ -2992,7 +2998,7 @@ function loadHistory() {
 }
 
 function saveHistoryToStorage(history) {
-  localStorage.setItem('reader-history', JSON.stringify(history));
+  syncSetItem('reader-history', JSON.stringify(history));
 }
 
 function saveReadingHistory() {
