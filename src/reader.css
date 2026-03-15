@@ -421,10 +421,10 @@ body {
   padding: 14px 18px 10px;
   border-bottom: 1px solid #eee;
 }
-.word-popup-word { font-size: 20px; font-weight: 700; color: #4f46e5; }
+.word-popup-word { font-size: calc(var(--reader-font-size, 18px) + 2px); font-weight: 700; color: #4f46e5; }
 .word-popup-close { font-size: 20px; }
 .word-popup-body { padding: 14px 18px 18px; }
-.def-loading { color: #999; font-size: 14px; font-family: sans-serif; }
+.def-loading { color: #999; font-size: var(--reader-font-size, 14px); font-family: sans-serif; }
 .def-section { margin-bottom: 12px; }
 .def-label {
   font-size: 12px;
@@ -434,7 +434,7 @@ body {
   margin-bottom: 4px;
   font-family: sans-serif;
 }
-.def-text { font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+.def-text { font-size: var(--reader-font-size, 14px); line-height: 1.6; white-space: pre-wrap; }
 .def-cn-text { color: #555; }
 .btn-toggle-cn {
   padding: 5px 12px;
@@ -449,7 +449,7 @@ body {
 .btn-toggle-cn:hover { background: #ddd; }
 .def-pronunciation {
   padding: 0 18px 8px;
-  font-size: 14px;
+  font-size: var(--reader-font-size, 14px);
   color: #666;
   font-family: sans-serif;
 }
@@ -462,7 +462,7 @@ body {
 .pos-tag {
   display: inline;
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--reader-font-size, 14px);
   font-family: sans-serif;
 }
 .pos-spacer {

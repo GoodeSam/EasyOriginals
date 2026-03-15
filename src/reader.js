@@ -171,6 +171,7 @@ function loadFontSize() {
 function applyFontSize() {
   readerContent.style.fontSize = state.fontSize + 'px';
   fontSizeLabel.textContent = state.fontSize;
+  document.documentElement.style.setProperty('--reader-font-size', state.fontSize + 'px');
 }
 
 function changeFontSize(delta) {
