@@ -628,7 +628,7 @@ function handleReaderClick(e) {
     e.stopPropagation();
     const sentenceEl = wordEl.closest('.sentence');
     const sentenceText = sentenceEl ? sentenceEl.dataset.sentence : '';
-    const raw = wordEl.textContent;
+    const raw = wordEl.dataset.word || wordEl.textContent;
     const cleanWord = raw.replace(/[^a-zA-Z'\u2019-]/g, '');
     if (cleanWord.length > 0) {
       showWordPopup(cleanWord, sentenceText, e);
@@ -672,7 +672,7 @@ function handleReaderKeydown(e) {
     e.preventDefault();
     const sentenceEl = wordEl.closest('.sentence');
     const sentenceText = sentenceEl ? sentenceEl.dataset.sentence : '';
-    const cleanWord = wordEl.textContent.replace(/[^a-zA-Z'\u2019-]/g, '');
+    const cleanWord = (wordEl.dataset.word || wordEl.textContent).replace(/[^a-zA-Z'\u2019-]/g, '');
     if (cleanWord.length > 0) showWordPopup(cleanWord, sentenceText, e);
     return;
   }
@@ -2608,11 +2608,12 @@ function rebuildSentenceWithHighlights(sentEl, sentenceText, matches) {
       m.offset < nodeStart + nodeText.length && m.offset + m.length > nodeStart
     );
 
-    function makeWordSpan(content) {
+    function makeWordSpan(content, originalWord) {
       const w = document.createElement('span');
       w.className = 'word';
       w.setAttribute('tabindex', '0');
       w.setAttribute('role', 'button');
+      if (originalWord) w.dataset.word = originalWord;
       if (typeof content === 'string') w.textContent = content;
       else w.appendChild(content);
       return w;
@@ -2634,13 +2635,13 @@ function rebuildSentenceWithHighlights(sentEl, sentenceText, matches) {
           mark.className = 'search-highlight' + (piece.isCurrent ? ' current' : '');
           mark.textContent = piece.text;
           if (isWord) {
-            fragment.appendChild(makeWordSpan(mark));
+            fragment.appendChild(makeWordSpan(mark, nodeText));
           } else {
             fragment.appendChild(mark);
           }
         } else {
           if (isWord) {
-            fragment.appendChild(makeWordSpan(piece.text));
+            fragment.appendChild(makeWordSpan(piece.text, nodeText));
           } else {
             fragment.appendChild(document.createTextNode(piece.text));
           }
