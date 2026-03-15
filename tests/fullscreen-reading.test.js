@@ -3,6 +3,7 @@
  * After 5 seconds of inactivity, all UI chrome hides.
  * Fullscreen stays active during reading (scroll, clicks).
  * Only mouse at screen edges exits fullscreen.
+ * Browser fullscreen is entered on first user click (gesture-driven).
  */
 import { describe, test, expect, beforeEach } from 'vitest';
 import fs from 'fs';
@@ -69,6 +70,10 @@ describe('CSS: fullscreen reading mode', () => {
   test('.fullscreen-reading uses a smooth transition on reader-content', () => {
     expect(css).toMatch(/\.reader-content[\s\S]*?transition:/);
   });
+
+  test('.fullscreen-reading .top-bar has pointer-events none', () => {
+    expect(css).toMatch(/\.fullscreen-reading\s+\.top-bar[\s\S]*?pointer-events:\s*none/);
+  });
 });
 
 describe('cursor hides in fullscreen mode', () => {
@@ -77,11 +82,30 @@ describe('cursor hides in fullscreen mode', () => {
   });
 });
 
-describe('browser Fullscreen API', () => {
-  test('startAutoHideTimer calls requestFullscreen to hide browser chrome', () => {
+describe('browser fullscreen via user gesture', () => {
+  test('requestFullscreen is NOT in startAutoHideTimer (timer has no gesture)', () => {
     const fnMatch = readerSrc.match(/function startAutoHideTimer[\s\S]*?\n\}/);
     expect(fnMatch).not.toBeNull();
+    expect(fnMatch[0]).not.toMatch(/requestFullscreen/);
+  });
+
+  test('enterBrowserFullscreen function exists', () => {
+    expect(readerSrc).toMatch(/function enterBrowserFullscreen/);
+  });
+
+  test('enterBrowserFullscreen calls requestFullscreen', () => {
+    const fnMatch = readerSrc.match(/function enterBrowserFullscreen[\s\S]*?\n\}/);
+    expect(fnMatch).not.toBeNull();
     expect(fnMatch[0]).toMatch(/requestFullscreen/);
+  });
+
+  test('reader content click triggers enterBrowserFullscreen', () => {
+    // handleReaderClick or a click listener on readerContent should
+    // call enterBrowserFullscreen so fullscreen is entered via user gesture
+    expect(readerSrc).toMatch(/enterBrowserFullscreen/);
+    // It should be called in handleReaderClick or a click handler
+    const clickContext = readerSrc.match(/handleReaderClick[\s\S]*?enterBrowserFullscreen|click[\s\S]*?enterBrowserFullscreen/);
+    expect(clickContext).not.toBeNull();
   });
 
   test('showBars calls exitFullscreen to restore browser chrome', () => {
@@ -95,11 +119,8 @@ describe('browser Fullscreen API', () => {
   });
 });
 
-// ===== NEW: Fullscreen persistence during reading =====
-
 describe('scrolling does NOT exit fullscreen', () => {
   test('scroll listener does NOT call showBars', () => {
-    // The scroll handler should NOT call showBars() — it must not exit fullscreen
     const scrollMatch = readerSrc.match(/readerContent\.addEventListener\('scroll'[\s\S]*?\}\s*,/);
     expect(scrollMatch).not.toBeNull();
     expect(scrollMatch[0]).not.toMatch(/showBars\(\)/);
@@ -108,12 +129,9 @@ describe('scrolling does NOT exit fullscreen', () => {
 
 describe('mouse movement in center does NOT exit fullscreen', () => {
   test('mousemove handler only calls showBars when at screen edge', () => {
-    // The mousemove handler should only call showBars inside the edge condition
     const moveMatch = readerSrc.match(/document\.addEventListener\('mousemove'[\s\S]*?\}\);/);
     expect(moveMatch).not.toBeNull();
     const handler = moveMatch[0];
-    // showBars should only appear inside the atTop/atBottom/atRight branch
-    // There should NOT be a showBars in the else branch
     const elseMatch = handler.match(/\}\s*else\s*\{([\s\S]*?)\}/);
     expect(elseMatch).not.toBeNull();
     expect(elseMatch[1]).not.toMatch(/showBars\(\)/);
@@ -123,7 +141,6 @@ describe('mouse movement in center does NOT exit fullscreen', () => {
     const moveMatch = readerSrc.match(/document\.addEventListener\('mousemove'[\s\S]*?\}\);/);
     expect(moveMatch).not.toBeNull();
     const handler = moveMatch[0];
-    // The else branch should call startAutoHideTimer (to re-arm the hide)
     const elseMatch = handler.match(/\}\s*else\s*\{([\s\S]*?)\}/);
     expect(elseMatch).not.toBeNull();
     expect(elseMatch[1]).toMatch(/startAutoHideTimer\(\)/);
@@ -135,20 +152,9 @@ describe('edge detection exits fullscreen', () => {
     const moveMatch = readerSrc.match(/document\.addEventListener\('mousemove'[\s\S]*?\}\);/);
     expect(moveMatch).not.toBeNull();
     const handler = moveMatch[0];
-    // The edge branch (atTop || atBottom || atRight) should call showBars
     const edgeMatch = handler.match(/if\s*\(atTop\s*\|\|\s*atBottom\s*\|\|\s*atRight\)\s*\{([\s\S]*?)\}/);
     expect(edgeMatch).not.toBeNull();
     expect(edgeMatch[1]).toMatch(/showBars\(\)/);
-  });
-});
-
-describe('reading interactions stay in fullscreen', () => {
-  test('top-bar click handler does NOT call showBars when in fullscreen', () => {
-    // Top bar is hidden in fullscreen anyway, but the click handler
-    // should not blindly call showBars. It should check fullscreen state.
-    // OR the top-bar has pointer-events: none in fullscreen CSS.
-    // We verify via CSS that top-bar is non-interactive in fullscreen.
-    expect(css).toMatch(/\.fullscreen-reading\s+\.top-bar[\s\S]*?pointer-events:\s*none/);
   });
 });
 
