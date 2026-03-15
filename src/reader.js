@@ -3346,8 +3346,36 @@ function showBars() {
   }
 }
 
+// ===== Cursor Auto-Hide =====
+const CURSOR_HIDE_DELAY = 5000;
+let cursorHideTimer = null;
+
+function startCursorHideTimer() {
+  clearCursorHideTimer();
+  cursorHideTimer = setTimeout(() => {
+    if (readerScreen.classList.contains('fullscreen-reading')) {
+      readerScreen.classList.add('cursor-hidden');
+    }
+  }, CURSOR_HIDE_DELAY);
+}
+
+function clearCursorHideTimer() {
+  if (cursorHideTimer !== null) {
+    clearTimeout(cursorHideTimer);
+    cursorHideTimer = null;
+  }
+}
+
+function showCursor() {
+  readerScreen.classList.remove('cursor-hidden');
+  clearCursorHideTimer();
+}
+
 document.addEventListener('mousemove', (e) => {
   if (!readerScreen.classList.contains('active')) return;
+
+  showCursor();
+  startCursorHideTimer();
 
   const atTop = e.clientY < EDGE_TRIGGER_PX;
   const atBottom = e.clientY > (window.innerHeight - EDGE_TRIGGER_PX);

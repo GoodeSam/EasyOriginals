@@ -912,7 +912,9 @@ body {
 
 /* ===== Fullscreen Reading Mode ===== */
 .fullscreen-reading {
-  cursor: none;
+}
+.cursor-hidden, .cursor-hidden * {
+  cursor: none !important;
 }
 .fullscreen-reading .top-bar {
   transform: translateY(-100%);
