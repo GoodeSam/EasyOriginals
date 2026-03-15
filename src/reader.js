@@ -3351,7 +3351,7 @@ document.addEventListener('mousemove', (e) => {
     showBars();
     clearAutoHideTimer();
   } else {
-    showBars();
+    // Mouse in center: reset timer but do NOT exit fullscreen
     startAutoHideTimer();
   }
 });
@@ -3366,10 +3366,9 @@ document.querySelector('.top-bar').addEventListener('touchstart', () => {
   startAutoHideTimer();
 });
 
-// Scrolling in reader content reveals UI temporarily
+// Scrolling resets the auto-hide timer but does NOT exit fullscreen
 readerContent.addEventListener('scroll', () => {
   if (!readerScreen.classList.contains('active')) return;
-  showBars();
   startAutoHideTimer();
 }, { passive: true });
 
