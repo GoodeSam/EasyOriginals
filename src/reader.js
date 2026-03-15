@@ -2299,7 +2299,7 @@ function showWordPopup(word, sentenceContext, event) {
   defPronunciation.style.display = 'none';
   clearPosTag();
 
-  const x = Math.max(0, Math.min(event.clientX, window.innerWidth - 360));
+  const x = Math.max(0, Math.min(event.clientX, window.innerWidth - 700));
   const y = event.clientY > window.innerHeight / 2
     ? event.clientY - 20
     : event.clientY + 20;
