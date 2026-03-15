@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://apis.google.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://api.openai.com https://edge.microsoft.com https://api.cognitive.microsofttranslator.com https://translate.googleapis.com https://api.allorigins.win; img-src 'self' data: blob:; font-src 'self';">
   <title>English Reader</title>
   <link rel="icon" href="/icons/icon48.png">
   <link rel="stylesheet" href="/src/reader.css">
@@ -78,7 +79,7 @@
         <button class="icon-btn" id="helpBtn" title="Feature Guide" aria-label="Feature Guide">?</button>
         <div class="user-menu-wrapper">
           <button class="icon-btn" id="userMenuBtn" title="Account" aria-label="Account">&#128100;</button>
-          <div class="user-menu" id="userMenu">
+          <div class="user-menu" id="userMenu" role="menu" aria-label="Account menu">
             <div class="user-menu-name" id="userDisplayName">Guest</div>
             <button class="btn btn-sm user-menu-logout" id="logoutBtn">Sign Out</button>
           </div>
@@ -104,14 +105,14 @@
     <!-- Bottom Bar -->
     <div class="bottom-bar">
       <button class="btn btn-nav" id="prevPage">&#8592; Previous</button>
-      <span class="page-indicator" id="pageIndicator">1 / 1</span>
+      <button class="page-indicator" id="pageIndicator" aria-label="Jump to page">1 / 1</button>
       <button class="btn btn-nav" id="nextPage">Next &#8594;</button>
     </div>
   </div>
 
   <!-- Sentence Panel (slide-up) -->
   <div class="panel-overlay" id="panelOverlay"></div>
-  <div class="sentence-panel" id="sentencePanel">
+  <div class="sentence-panel" id="sentencePanel" role="dialog" aria-label="Sentence details">
     <div class="panel-header">
       <span class="panel-title">Sentence</span>
       <button class="icon-btn panel-close" id="panelClose" aria-label="Close sentence panel">&times;</button>
@@ -136,7 +137,7 @@
   </div>
 
   <!-- Word Definition Popup -->
-  <div class="word-popup" id="wordPopup">
+  <div class="word-popup" id="wordPopup" role="dialog" aria-label="Word definition">
     <div class="word-popup-header">
       <span class="word-popup-word" id="popupWord"></span>
       <button class="icon-btn btn-pronounce" id="btnPronounce" title="Pronounce" aria-label="Pronounce word">&#128264;</button>
@@ -200,7 +201,7 @@
 
   <!-- Paragraph Translation Popup -->
   <div class="para-popup-overlay" id="paraPopupOverlay"></div>
-  <div class="para-popup" id="paraPopup">
+  <div class="para-popup" id="paraPopup" role="dialog" aria-label="Paragraph translation">
     <div class="para-popup-header">
       <span class="panel-title">Paragraph Translation</span>
       <button class="icon-btn panel-close" id="paraPopupClose" aria-label="Close paragraph translation">&times;</button>
@@ -217,7 +218,7 @@
   </div>
 
   <!-- Feature Guide Overlay -->
-  <div class="feature-guide" id="featureGuide">
+  <div class="feature-guide" id="featureGuide" role="dialog" aria-label="Feature guide">
     <div class="guide-inner">
       <div class="guide-header">
         <span class="guide-title">Feature Guide / 功能指南</span>

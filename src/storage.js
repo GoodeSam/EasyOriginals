@@ -9,10 +9,12 @@ const KEYS = {
   openaiModel: 'reader-model',
 };
 
+export const DEFAULT_MODEL = 'gpt-4o-mini';
+
 const DEFAULTS = {
   translationProvider: 'chatgpt',
   openaiApiKey: '',
-  openaiModel: 'gpt-4o-mini',
+  openaiModel: DEFAULT_MODEL,
 };
 
 let _cache = null;

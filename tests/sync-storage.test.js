@@ -22,7 +22,6 @@ const SYNC_KEYS = [
   'reader-wordlist',
   'reader-history',
   'reader-provider',
-  'reader-api-key',
   'reader-model',
 ];
 

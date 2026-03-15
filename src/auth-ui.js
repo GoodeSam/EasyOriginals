@@ -3,7 +3,7 @@
  * Uses Google Sign-In (no email/password required).
  */
 import { getAuthState, enterGuestMode, loginSuccess, logout, onAuthChange } from './auth.js';
-import { setRemoteProvider, clearRemoteProvider, pullAll, pushAll } from './sync-storage.js';
+import { setRemoteProvider, clearRemoteProvider, pullAll, pushAll, SYNC_KEYS } from './sync-storage.js';
 import {
   auth, db,
   GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
@@ -55,10 +55,12 @@ export function bindAuthUI() {
     uploadScreen.classList.add('active');
   }
 
-  function setupRemoteSync(uid) {
+  async function setupRemoteSync(uid) {
     const provider = createFirestoreProvider(uid);
     setRemoteProvider(provider);
-    return pullAll();
+    // Push local data first to preserve newer local changes, then pull remote
+    await pushAll();
+    await pullAll();
   }
 
   // Guest mode
@@ -82,8 +84,6 @@ export function bindAuthUI() {
         displayName: user.displayName || user.email,
       });
       await setupRemoteSync(user.uid);
-      // Push existing local data to account on first sign-in
-      await pushAll();
       goToUpload();
     } catch (err) {
       if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
@@ -101,7 +101,7 @@ export function bindAuthUI() {
     if (firebaseUser) {
       const currentState = getAuthState();
       if (currentState.mode === 'account' && currentState.user && currentState.user.uid === firebaseUser.uid) {
-        await setupRemoteSync(firebaseUser.uid);
+        try { await setupRemoteSync(firebaseUser.uid); } catch (e) { showError('Sync failed: ' + e.message); }
         return;
       }
       loginSuccess({
@@ -109,8 +109,18 @@ export function bindAuthUI() {
         email: firebaseUser.email,
         displayName: firebaseUser.displayName || firebaseUser.email,
       });
-      await setupRemoteSync(firebaseUser.uid);
+      try { await setupRemoteSync(firebaseUser.uid); } catch (e) { showError('Sync failed: ' + e.message); }
       goToUpload();
+    } else {
+      // Firebase session expired or user signed out externally — downgrade to guest
+      const currentState = getAuthState();
+      if (currentState.mode === 'account') {
+        clearRemoteProvider();
+        enterGuestMode();
+        uploadScreen.classList.remove('active');
+        document.getElementById('readerScreen').classList.remove('active');
+        authScreen.classList.add('active');
+      }
     }
   });
 
@@ -134,6 +144,13 @@ export function bindAuthUI() {
       } catch (e) { /* ignore */ }
       clearRemoteProvider();
       logout();
+      // Clear user-scoped data from localStorage on sign-out
+      SYNC_KEYS.forEach(k => localStorage.removeItem(k));
+      localStorage.removeItem('reader-api-key');
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('reader-bookmark-')) localStorage.removeItem(key);
+      }
       userMenu.classList.remove('active');
       uploadScreen.classList.remove('active');
       document.getElementById('readerScreen').classList.remove('active');

@@ -17,7 +17,6 @@ export const SYNC_KEYS = [
   'reader-wordlist',
   'reader-history',
   'reader-provider',
-  'reader-api-key',
   'reader-model',
 ];
 
@@ -42,14 +41,18 @@ export function getItem(key) {
 export function setItem(key, value) {
   localStorage.setItem(key, value);
   if (_remoteProvider) {
-    _remoteProvider.push(key, value);
+    _remoteProvider.push(key, value).catch(err => {
+      console.warn('Sync push failed for', key, err);
+    });
   }
 }
 
 export function removeItem(key) {
   localStorage.removeItem(key);
   if (_remoteProvider) {
-    _remoteProvider.push(key, null);
+    _remoteProvider.push(key, null).catch(err => {
+      console.warn('Sync remove failed for', key, err);
+    });
   }
 }
 

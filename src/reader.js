@@ -1,9 +1,6 @@
 // ===== Web App Storage (replaces chrome.storage) =====
-import { loadSettings as loadStorageSettings, saveSettings as saveStorageSettings } from './storage.js';
+import { loadSettings as loadStorageSettings, DEFAULT_MODEL } from './storage.js';
 import { createSettingsPanel } from './settings-ui.js';
-
-// ===== Constants =====
-const DEFAULT_MODEL = 'gpt-4o-mini';
 const TTS_MODEL = 'tts-1';
 const TTS_VOICE = 'alloy';
 const SENTENCES_PER_PAGE = 40;
@@ -42,8 +39,10 @@ let state = {
   gestureMode: 'menu',
 };
 
-// Expose state for testing
-window._readerState = state;
+// Expose state for testing (only in dev/test)
+if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.MODE !== 'production') {
+  window._readerState = state;
+}
 
 // ===== DOM Elements =====
 const $ = (sel) => document.querySelector(sel);
@@ -527,7 +526,11 @@ function bindToolbarEvents() {
     else openSearch();
   });
   searchClose.addEventListener('click', closeSearch);
-  searchInput.addEventListener('input', performSearch);
+  let _searchDebounce = null;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(_searchDebounce);
+    _searchDebounce = setTimeout(performSearch, 200);
+  });
   searchPrev.addEventListener('click', () => navigateSearch(-1));
   searchNext.addEventListener('click', () => navigateSearch(1));
 
@@ -661,12 +664,31 @@ function handleReaderTouch(e) {
   }
 }
 
+function handleReaderKeydown(e) {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const wordEl = e.target.closest('.word');
+  if (wordEl) {
+    e.preventDefault();
+    const sentenceEl = wordEl.closest('.sentence');
+    const sentenceText = sentenceEl ? sentenceEl.dataset.sentence : '';
+    const cleanWord = wordEl.textContent.replace(/[^a-zA-Z'\u2019-]/g, '');
+    if (cleanWord.length > 0) showWordPopup(cleanWord, sentenceText, e);
+    return;
+  }
+  const sentenceEl = e.target.closest('.sentence');
+  if (sentenceEl) {
+    e.preventDefault();
+    openSentencePanel(sentenceEl);
+  }
+}
+
 function bindReaderContentEvents() {
   readerContent.addEventListener('mouseover', handleReaderHover);
   readerContent.addEventListener('mouseout', handleReaderMouseOut);
   readerContent.addEventListener('click', handleReaderClick);
   readerContent.addEventListener('contextmenu', handleReaderContextMenu);
   readerContent.addEventListener('touchstart', handleReaderTouch);
+  readerContent.addEventListener('keydown', handleReaderKeydown);
 }
 
 function bindEvents() {
@@ -1269,20 +1291,17 @@ async function parseImage(file) {
     return await window._stubOCR(file);
   }
 
-  // Convert image file to base64 data URL
-  const arrayBuffer = await file.arrayBuffer();
-  const bytes = new Uint8Array(arrayBuffer);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  const base64 = btoa(binary);
-  const mimeType = file.type || 'image/png';
-  const dataUrl = `data:${mimeType};base64,${base64}`;
+  // Convert image file to base64 data URL using FileReader
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Failed to read image file'));
+    reader.readAsDataURL(file);
+  });
 
   await ensureSettings();
   if (!state.apiKey) {
-    throw new Error('Please set your OpenAI API key in the extension popup first.');
+    throw new Error('Please set your OpenAI API key in Settings first.');
   }
 
   const resp = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -1613,6 +1632,8 @@ function renderPage() {
     for (let i = 0; i < para.sentences.length; i++) {
       const sEl = document.createElement('span');
       sEl.className = 'sentence';
+      sEl.setAttribute('tabindex', '0');
+      sEl.setAttribute('role', 'button');
       sEl.dataset.sentence = para.sentences[i];
 
       // Wrap each word
@@ -1623,6 +1644,8 @@ function renderPage() {
         } else {
           const wordEl = document.createElement('span');
           wordEl.className = 'word';
+          wordEl.setAttribute('tabindex', '0');
+          wordEl.setAttribute('role', 'button');
           wordEl.textContent = w;
           sEl.appendChild(wordEl);
         }
@@ -2118,7 +2141,7 @@ window.microsoftLookupWord = microsoftLookupWord;
 async function callOpenAI(messages, onError) {
   await ensureSettings();
   if (!state.apiKey) {
-    alert('Please set your OpenAI API key in the extension popup first.');
+    alert('Please set your OpenAI API key in Settings first.');
     return null;
   }
 
@@ -3201,11 +3224,11 @@ const FEATURE_REGISTRY = [
   {
     name: 'Auto-Hide Bars',
     icon: '\ud83d\udc41',
-    description: 'Top and bottom bars hide automatically during reading to maximize screen space.',
-    usage: 'Bars hide after 3 seconds of inactivity. Move mouse to the top or bottom edge of the screen to reveal them.',
+    description: 'All UI hides automatically during reading for a fullscreen experience.',
+    usage: 'UI hides after 5 seconds of inactivity. Move mouse to the top, bottom, or right edge of the screen to reveal controls.',
     name_cn: '\u81ea\u52a8\u9690\u85cf\u680f',
-    description_cn: '\u9605\u8bfb\u65f6\u9876\u90e8\u548c\u5e95\u90e8\u680f\u81ea\u52a8\u9690\u85cf\uff0c\u6700\u5927\u5316\u5c4f\u5e55\u7a7a\u95f4\u3002',
-    usage_cn: '\u505c\u6b62\u64cd\u4f5c3\u79d2\u540e\u81ea\u52a8\u9690\u85cf\u3002\u5c06\u9f20\u6807\u79fb\u5230\u5c4f\u5e55\u9876\u90e8\u6216\u5e95\u90e8\u8fb9\u7f18\u5373\u53ef\u663e\u793a\u3002'
+    description_cn: '\u9605\u8bfb\u65f6\u6240\u6709\u754c\u9762\u5143\u7d20\u81ea\u52a8\u9690\u85cf\uff0c\u63d0\u4f9b\u5168\u5c4f\u9605\u8bfb\u4f53\u9a8c\u3002',
+    usage_cn: '\u505c\u6b62\u64cd\u4f5c5\u79d2\u540e\u81ea\u52a8\u9690\u85cf\u3002\u5c06\u9f20\u6807\u79fb\u5230\u5c4f\u5e55\u9876\u90e8\u3001\u5e95\u90e8\u6216\u53f3\u4fa7\u8fb9\u7f18\u5373\u53ef\u663e\u793a\u3002'
   },
   {
     name: 'Export to Word',
