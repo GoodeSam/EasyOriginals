@@ -1,9 +1,3 @@
-
-
-
-
-
-
 \>> 结合[https\://github.com/ZuodaoTech/everyone-can-use-english](https://github.com/ZuodaoTech/everyone-can-use-english) 这里面的内容，分析 [https\://enjoy.bot](https://enjoy.bot) 可以直接在网页版上使用，而不用下载安装APP，这个软件是如何制作的
 
 ```rust
@@ -83,17 +77,9 @@ services (Azure), the client stays thin enough to run entirely in the
 browser. The Metal shaders (\~20% of the repo) likely relate to the
 planned desktop wrapper for Apple platforms, not the web experience.
 
-
-
-
-
-
-
 \>> 使用TDD实现：借鉴 [https\://github.com/ZuodaoTech/everyone-can-use-english](https://github.com/ZuodaoTech/everyone-can-use-english) 中的 [https\://enjoy.bot 把我/Users/victor/projects/reading-plugin这个文件下的插件的内容也做成直接打开网页而不用下载的网页版APP](https://enjoy.bot/)
 
 Implement using TDD: Convert the plugin in /Users/victor/projects/reading-plugin into a web-based app that opens directly in the browser without downloads, following the pattern of [https\://github.com/ZuodaoTech/everyone-can-use-english](https://github.com/ZuodaoTech/everyone-can-use-english) and [https\://enjoy.bot](https://enjoy.bot).
-
-
 
 48 tests, all passing. Here's a summary of what was built:
 
@@ -165,17 +151,9 @@ npm run dev      # Start dev server (opens in browser)
 npm run build    # Build for production → dist/
 npm run test     # Run all 48 tests
 
-
-
-
-
 \>> 我创建了[https\://github.com/GoodeSam/EasyOriginals](https://github.com/GoodeSam/EasyOriginals) ，把代码推到 GitHub，开启 GitHub Pages 自动部署。
 
-
-
 Create a GitHub repository at [https\://github.com/GoodeSam/EasyOriginals](https://github.com/GoodeSam/EasyOriginals), push the code to GitHub, and enable automatic GitHub Pages deployment.
-
-
 
 \>>  使用TDD实现：阅读时右侧设置等栏自动隐藏，最大化屏幕空间。
 
@@ -203,8 +181,6 @@ Changes:
 All 60 tests pass (48 existing + 12 new). GitHub Pages will  
 auto-deploy.
 
-
-
 \>> 使用TDD实现：用户打开了reading history等的界面后，用户再点击主要的阅读页面，reading history等的界面要隐藏
 
 Done. Here's what was implemented:
@@ -228,12 +204,6 @@ Tests (tests/sidebar-close-on-click.test.js): 8 tests covering:
 - Existing close button handlers are preserved
 
 All 68 tests pass. GitHub Pages will auto-deploy.
-
-
-
-
-
-
 
 \>> 使用TDD实现：创建账号登录界面，用户可以选择游客模式，也可以选择账号模式。一旦用户选择账号登录模式，即使用户切换了设备，用户的相应数据也能在不同设备之间保持最新状态。
 
@@ -294,11 +264,9 @@ window\.firebaseAuth, window\.firebaseFirestore globals. The
 sync-storage provider interface is generic — any backend that
 implements push(key, value), pull(), and pushAll(data) will work.
 
-
-
 \>> 修复不能注册账户的问题
 
-  Fix the account registration issue.
+Fix the account registration issue.
 
 The Firebase CLI was already installed earlier. As I explained, the
 remaining issue is that src/firebase-init.js has placeholder
@@ -328,10 +296,6 @@ set up Firebase now?
 
 Remove the username and password input requirement.
 
-
-
-
-
 \>> 使用TDD实现：增加将一个网页地址作为一种输入，然后就可以用对该网页中的内容进行阅读
 
 Implement using TDD: Add the ability to input a web address and display its content in the editor.
@@ -347,6 +311,7 @@ How URL loading works:
 
 - handleURL(url) validates the URL, fetches HTML via CORS proxy
   (allorigins.win)
+
 - extractTextFromHTML(html) uses DOMParser to parse the page, removes
 
    <script>, <style>, <nav>, <header>, <footer>, <aside> elements, then
@@ -360,6 +325,9 @@ How URL loading works:
   top bar
 
   15 new tests, 148 total, all passing.
+
+
+
 
 
 
@@ -406,13 +374,9 @@ transforms).
 
 14 new tests, 162 total, all passing.
 
-
-
 \>>  为什么我停留不动5秒以后，网址栏和标签栏依然没有隐藏
 
 Fix fullscreen reading mode to hide the address bar and tab bar after 5 seconds of inactivity.
-
-
 
 Done. After 5 seconds of inactivity, the app now:
 
@@ -439,8 +403,6 @@ work correctly.
 
 Implement using TDD: Keep fullscreen mode active during reading operations (scrolling, word/sentence/paragraph search). Exit fullscreen only when the mouse cursor reaches the screen edge.
 
-
-
 \>> 使用TDD实现：在浏览器全屏状态下，浏览器的网址栏和标签栏依然也要隐藏，在鼠标移动到屏幕边缘时，再显示浏览器的网址栏和标签栏
 
 Implement using TDD: Hide the browser's address bar and tab bar in fullscreen mode, and show them when the mouse moves to the screen edge.
@@ -455,23 +417,319 @@ New flow:
    exitFullscreen() restores browser chrome + app UI
 5.
 
+\>> 使用TDD实现：
 
+⏺ All files pushed to [https\://github.com/GoodeSam/EasyOriginals](https://github.com/GoodeSam/EasyOriginals). The
+
+repo is up to date.
+
+\>> 使用TDD实现：在全屏阅读模式下，鼠标光标要停止移动5秒以后，才消失
+
+Implement using TDD: make the mouse cursor disappear 5 seconds after it stops moving in fullscreen reading mode.
+
+```javascript
+Done. Here's what changed:
+
+  Before: .fullscreen-reading { cursor: none } — cursor disappeared
+  immediately when fullscreen mode activated, never came back.
+
+  After: Separate .cursor-hidden class controlled by a dedicated timer:
+
+  ┌────────────────────┬───────────────────────────────────────────┐
+  │       Event        │                  Action                   │
+  ├────────────────────┼───────────────────────────────────────────┤
+  │ Mouse moves        │ Cursor appears instantly, 5s timer starts │
+  ├────────────────────┼───────────────────────────────────────────┤
+  │ Mouse stops for 5s │ Cursor disappears (only if in             │
+  │                    │ fullscreen-reading)                       │
+  ├────────────────────┼───────────────────────────────────────────┤
+  │ Mouse moves again  │ Cursor reappears instantly, timer resets  │
+  ├────────────────────┼───────────────────────────────────────────┤
+  │ Exit fullscreen    │ showCursor() called, cursor visible       │
+  │ (edge)             │                                           │
+  └────────────────────┴───────────────────────────────────────────┘
+
+  13 new tests, 185 total, all passing.
+```
+
+\>> 使用TDD实现：查询单词界面，对单词解释的字体的大小应该和阅读界面字体的大小保持一致
+
+Implement with TDD a word lookup interface where explanation text matches the editor's font size.
+
+```javascript
+Done. The word lookup popup text now matches the editor's font size.
+
+  How it works:
+
+  applyFontSize() sets --reader-font-size CSS custom property on
+  document.documentElement whenever the user changes font size (A-/A+).
+   All word popup elements reference it:
+
+  ┌─────────────────────┬──────────┬───────────────────────────────┐
+  │       Element       │  Before  │             After             │
+  ├─────────────────────┼──────────┼───────────────────────────────┤
+  │ .word-popup-word    │ 20px     │ calc(var(--reader-font-size)  │
+  │ (heading)           │ fixed    │ + 2px)                        │
+  ├─────────────────────┼──────────┼───────────────────────────────┤
+  │ .def-text           │ 14px     │ var(--reader-font-size)       │
+  │ (definitions)       │ fixed    │                               │
+  ├─────────────────────┼──────────┼───────────────────────────────┤
+  │ .def-loading        │ 14px     │ var(--reader-font-size)       │
+  │                     │ fixed    │                               │
+  ├─────────────────────┼──────────┼───────────────────────────────┤
+  │ .def-pronunciation  │ 14px     │ var(--reader-font-size)       │
+  │                     │ fixed    │                               │
+  ├─────────────────────┼──────────┼───────────────────────────────┤
+  │ .pos-tag            │ 14px     │ var(--reader-font-size)       │
+  │                     │ fixed    │                               │
+  ├─────────────────────┼──────────┼───────────────────────────────┤
+  │ .def-cn-text        │ inherits │ inherits from .def-text (no   │
+  │                     │          │ change)                       │
+  └─────────────────────┴──────────┴───────────────────────────────┘
+
+  8 new tests, 193 total, all passing.
+```
+
+\>> 使用TDD实现：将段落之间的距离缩小到现在距离的一半
+
+Using TDD, halve the spacing between paragraphs in the editor.
+
+Paragraph margin-bottom changed from 20px to 10px.
+
+change Paragraph margin-bottom from 10px to 5px.
+
+Done. Paragraph margin-bottom changed from 10px to 5px.
+
+\> 使用TDD实现：查询单词界面的宽度为现在的两倍
+
+⏺ Done。查词弹窗宽度从 340px 改为 680px，X 定位边界也同步更新。195
+
+个测试全部通过。
 
 ### `/codex-toolkit:audit-fix`
 
 Push all current project files to [github](https://github.com/GoodeSam/reading-plugin)
 
-\>> 使用TDD实现：
+⏺ All files pushed to [https\://github.com/GoodeSam/EasyOriginals](https://github.com/GoodeSam/EasyOriginals). The
 
-\>> 使用TDD实现：
+repo is up to date.
 
+\>> 使用TDD实现：可以支持用户设置多个模型：查单词 / 句子翻译：用便宜的文本模型， GPT-5 mini 模型。发音播放 / 朗读 / 发音评分：用 Azure Speech。API可以选择调用本地环境变量的值
 
+Implement using TDD: Add support for configurable multiple models — use cheap text models or GPT-5 mini for word lookup and sentence translation, Azure Speech for pronunciation playback/reading/scoring. Make the API read model configuration from local environment variables.
 
-\>> 使用TDD实现：
+\>> 使用TDD实现：在设置界面用户可以选择每种模式下用什么模型，以及API是自己复制上去还是使用本地环境变量
+
+Using TDD, implement settings UI for model selection per mode and API key configuration (manual paste or environment variables).
+
+\>> 使用TDD实现：修复现在句子和单词不能发音的问题
+
+Implement using TDD:  Fix pronunciation for sentences and words.
+
+### `/codex-toolkit:audit-fix`
+
+Push all current project files to [github](https://github.com/GoodeSam/reading-plugin)
+
+\>> 对于API key增加调用环境变量这一个选项
+
+实现这些功能的API key是GPT的更便宜，还是Azure？
+
+还有哪些安全问题
+
+\>> 回到github 的723a4fe2f11ecb06920eb76c51c5f555a5c7ee6d版本
+
+Reset the repository to commit 723a4fe2f11ecb06920eb76c51c5f555a5c7ee6d.
+
+Reset the repository to commit 924d59b295b3da9eb6420349f2cb4ead1f014f99
+
+Reset the repository to commit d19902a6c63fe3eb8db7f5836810d74380dd16a9
+
+> > 使用TDD实现：在进入[https\://goodesam.github.io/EasyOriginals/](https://goodesam.github.io/EasyOriginals/)的最开始界面上展示下面的中英文slogan：最好的工具，也不能代替注意力和时间的投入。Even the best tools cannot
+
+replace the investment of attention and time.
+
+Summary of changes (TDD):
+
+1. Tests first (tests/auth-ui.test.js): Added 3 tests verifying the  
+   Chinese and English slogan text exists on the auth screen, inside the
+   auth card.
+2. Implementation (index.html): Added the slogan as a <p
+   class="auth-slogan"> between the subtitle and the auth form, with a <br> separating the Chinese and English lines.
+3. Styling (src/reader.css): Added .auth-slogan style — subtle gray,
+   italic, slightly smaller than the subtitle.
+
+\>> 使用TDD实现：我设置好了OPENAI KEY，选中了句子也可以进行语法分析，但是按下listen按钮以后，没有声音发出
+
+Fix the listen button to output audio when pressed after text selection. OpenAI API key is configured and grammar analysis works, but no sound plays. Implement using TDD.
+
+```python
+All 201 tests pass across 18 test files.                             
+                                                                       
+  Root cause: The Content-Security-Policy in index.html had no         
+  media-src directive. Without it, CSP falls back to default-src       
+  'self', which blocks blob: URLs. The playTTS() function fetches audio
+   from OpenAI, creates a blob: URL via URL.createObjectURL(), and
+  passes it to new Audio(url). The browser silently blocked the blob
+  URL load, so no sound played — even though the API call itself
+  succeeded (since connect-src did allow api.openai.com).
+
+  Fix: Added media-src 'self' blob: to the CSP meta tag in index.html.
+```
 
 /codex-toolkit:audit
 
-###
+### >> 使用TDD实现：
+
+
+
+\>> 使用TDD实现：对于句子翻译界面的字体和主要阅读区域的字体大小保持一致。界面可以增加一种快捷方式，只要一点击单词或者句子，就自动发音，不需要按下listen按钮，就可以发音
+
+Using TDD, synchronize font sizes between the sentence translation interface and main reading area. Implement click-to-speak for words and sentences, removing the need for a separate listen button.
+
+
+
+\>> 使用TDD实现：当主页面的字体大小变化后，单词查询，句子查询界面的字体会跟着变化，且三者字体大小保持一致
+
+Implement using TDD: when the editor font size changes, update the word query and sentence query popup interfaces to match, maintaining consistent font sizes across all three.
+
+Problem
+
+The word popup content elements (.def-loading, .def-text,  
+.def-pronunciation, .pos-tag) used var(--reader-font-size, 14px) with
+a stale 14px fallback, while the sentence panel and paragraph popup
+used 18px. This meant the three interfaces would diverge when the CSS
+variable wasn't set.
+
+TDD Tests Added (5 new tests)
+
+- 4 tests verifying each word popup content class uses
+  \--reader-font-size with 18px fallback
+- 1 consistency guard test that scans all var(--reader-font-size,
+  Xpx) declarations and asserts every fallback is 18px — prevents
+  future drift
+
+Fix
+
+Replaced all 4 instances of var(--reader-font-size, 14px) →
+var(--reader-font-size, 18px) in reader.css. All three interfaces
+(reading area, word popup, sentence panel) now share the same font
+size via the --reader-font-size CSS custom property with a consistent
+18px default.
+
+
+
+
+
+\>> 使用TDD实现：在界面增加一个设置按钮，这个按钮设置以后，对于选中的每个单词和句子，可以直接发音，而不需要按下listen后才发音
+
+Implement using TDD: Add a settings button that enables auto-play audio for selected words and sentences without requiring a separate listen action.
+
+New Feature: Auto-Play Audio Toggle
+
+State & Persistence (src/reader.js)
+
+- Added autoPlayAudio: false to the state object
+- loadAutoPlayAudio() reads reader-auto-play-audio from localStorage
+  on init
+- applyAutoPlayAudio() updates the button icon (speaker on/off) and
+  title
+- Toggle persists via syncSetItem so it survives page reloads and
+  syncs across devices
+
+Toolbar Button (index.html)
+
+- New #autoPlayBtn button next to the gesture mode toggle
+- Shows muted speaker icon by default, switches to speaker icon when
+  active
+- Has aria-label for accessibility
+
+TTS Gating (src/reader.js)
+
+- handleReaderClick — word click TTS gated by state.autoPlayAudio
+- speakSentence() — early-returns when autoPlayAudio is off
+- paraPopupText click handler — early-returns when autoPlayAudio is
+  off
+- openSentencePanel() — auto-calls speakSentence() when autoPlayAudio
+  is on, so the sentence is read aloud immediately on open
+
+Tests (tests/auto-play-audio.test.js) — 11 new tests covering:
+
+- State initialization and localStorage persistence
+- Toolbar button existence, aria-label, click handler, toggle
+  behavior
+- TTS gating in all three contexts (word, sentence, paragraph)
+- Auto-speak on sentence panel open
+
+
+
+\>> I cannot find the New Feature: Auto-Play Audio Toggle
+
+Add an Auto-Play Audio Toggle feature in the upside bar
+
+⏺ All 238 tests pass. Here's what was added:
+
+Changes
+
+CSS (src/reader.css:105) — Active-state styling for the toggle:
+
+- .icon-btn.auto-play-active — green accent color (#059669) with
+  subtle green tint background, matching the gesture-mode button
+  pattern
+
+HTML (index.html:79) — Added aria-pressed="false" to the button for
+screen reader support
+
+JS (src/reader.js:262) — applyAutoPlayAudio() now sets aria-pressed
+to reflect the toggle state, so assistive technology announces it
+correctly
+
+Tests (tests/auto-play-audio.test.js) — 6 new tests (17 total):
+
+- Button lives inside .top-bar-actions
+- CSS defines .auto-play-active with color and background
+- aria-pressed is set in both the HTML default and dynamically by
+  applyAutoPlayAudio()
+
+
+
+\>> 将这个按钮放到右侧侧边栏里
+
+Move the button to the right sidebar.
+
+HTML
+
+- Removed #autoPlayBtn from .top-bar-actions
+- Added it as a <button class="side-toggle autoplay-toggle"> in the
+  right sidebar, between the Word List and Settings toggles
+
+CSS
+
+- Removed .icon-btn.auto-play-active (old top-bar styling)
+- Added .autoplay-toggle — circular sidebar button at bottom:
+  clamp(200px, 34vh, 250px), gray background (#6b7280) with shadow
+- Added .autoplay-toggle.auto-play-active — turns green (#059669)
+  when enabled
+- Bumped .settings-toggle from bottom: clamp(200px, ...) to
+  clamp(250px, 42vh, 310px) to make room
+
+JS
+
+- Added autoPlayBtn.classList.add('visible') in all 3 places where
+  other side-toggles become visible (init, file upload, history
+  restore)
+- Auto-hide behavior works automatically since startAutoHideTimer
+  targets all .side-toggle elements via querySelectorAll
+-
+
+
+
+
+
+\>> 
+
+
+
+\>> 使用TDD实现：
 
 ### `/codex-toolkit:audit-fix`
 

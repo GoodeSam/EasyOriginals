@@ -58,9 +58,9 @@ export function bindAuthUI() {
   async function setupRemoteSync(uid) {
     const provider = createFirestoreProvider(uid);
     setRemoteProvider(provider);
-    // Push local data first to preserve newer local changes, then pull remote
-    await pushAll();
+    // Pull remote first to get authoritative state, then push local additions
     await pullAll();
+    await pushAll();
   }
 
   // Guest mode
@@ -141,7 +141,9 @@ export function bindAuthUI() {
     logoutBtn.addEventListener('click', async () => {
       try {
         await signOut(auth);
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        console.warn('Sign-out error:', e.message);
+      }
       clearRemoteProvider();
       logout();
       // Clear user-scoped data from localStorage on sign-out

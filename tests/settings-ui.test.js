@@ -91,10 +91,21 @@ describe('settings panel save', () => {
   });
 
   test('shows status message after save', () => {
+    // Use a provider that doesn't require API key
+    panel.querySelector('#provider').value = 'google';
     panel.querySelector('#settingsSaveBtn').click();
     const status = panel.querySelector('#settingsStatus');
     expect(status.textContent).toBe('Settings saved!');
     expect(status.style.display).not.toBe('none');
+  });
+
+  test('shows error when chatgpt provider has no API key', () => {
+    panel.querySelector('#provider').value = 'chatgpt';
+    panel.querySelector('#settingsApiKey').value = '';
+    panel.querySelector('#settingsSaveBtn').click();
+    const status = panel.querySelector('#settingsStatus');
+    expect(status.textContent).toBe('API key is required for ChatGPT provider');
+    expect(status.style.color).toBe('#e11d48');
   });
 });
 

@@ -1,7 +1,7 @@
 // ===== Web App Storage (replaces chrome.storage) =====
 import { loadSettings as loadStorageSettings, DEFAULT_MODEL } from './storage.js';
 import { createSettingsPanel } from './settings-ui.js';
-import { setItem as syncSetItem, getItem as syncGetItem, removeItem as syncRemoveItem } from './sync-storage.js';
+import { setItem as syncSetItem, removeItem as syncRemoveItem } from './sync-storage.js';
 const TTS_MODEL = 'tts-1';
 const TTS_VOICE = 'alloy';
 const SENTENCES_PER_PAGE = 40;
@@ -38,6 +38,8 @@ let state = {
   theme: 'brown',
   // Gesture mode: 'menu' (show action buttons) or 'direct' (auto-translate)
   gestureMode: 'menu',
+  // Auto-play audio: when true, clicking words/sentences triggers TTS automatically
+  autoPlayAudio: false,
 };
 
 // Expose state for testing (only in dev/test)
@@ -67,7 +69,6 @@ const panelClose = $('#panelClose');
 const panelSentence = $('#panelSentence');
 const btnTranslate = $('#btnTranslate');
 const btnGrammar = $('#btnGrammar');
-const btnTTS = $('#btnTTS');
 const btnCopy = $('#btnCopy');
 const panelTranslation = $('#panelTranslation');
 const translationText = $('#translationText');
@@ -85,7 +86,6 @@ const defChineseSection = $('#defChineseSection');
 const toggleChinese = $('#toggleChinese');
 const defCnText = $('#defCnText');
 const defPronunciation = $('#defPronunciation');
-const btnPronounce = $('#btnPronounce');
 
 // Paragraph popup
 const paraPopup = $('#paraPopup');
@@ -93,12 +93,14 @@ const paraPopupOverlay = $('#paraPopupOverlay');
 const paraPopupClose = $('#paraPopupClose');
 const paraPopupText = $('#paraPopupText');
 const paraTranslateBtn = $('#paraTranslateBtn');
-const paraTTSBtn = $('#paraTTSBtn');
 const paraCopyBtn = $('#paraCopyBtn');
 const paraPopupTranslation = $('#paraPopupTranslation');
 
 // Gesture mode button
 const gestureModeBtn = $('#gestureModeBtn');
+
+// Auto-play audio button
+const autoPlayBtn = $('#autoPlayBtn');
 
 // Selection toolbar
 const selectionToolbar = $('#selectionToolbar');
@@ -146,6 +148,7 @@ function init() {
   loadFontSize();
   loadContentWidth();
   loadTheme();
+  loadAutoPlayAudio();
   bindEvents();
   // Settings toggle is always visible (no extension popup)
   const settingsToggle = document.getElementById('settingsToggle');
@@ -156,6 +159,7 @@ function init() {
     historyToggle.classList.add('visible');
     notesToggle.classList.add('visible');
     wordListToggle.classList.add('visible');
+    autoPlayBtn.classList.add('visible');
   }
 }
 
@@ -247,6 +251,19 @@ function setTheme(theme) {
 }
 window.setTheme = setTheme;
 
+function loadAutoPlayAudio() {
+  const saved = localStorage.getItem('reader-auto-play-audio');
+  if (saved === 'true') state.autoPlayAudio = true;
+  applyAutoPlayAudio();
+}
+
+function applyAutoPlayAudio() {
+  autoPlayBtn.textContent = state.autoPlayAudio ? '\uD83D\uDD0A' : '\uD83D\uDD07';
+  autoPlayBtn.setAttribute('title', state.autoPlayAudio ? 'Auto-play audio: ON' : 'Auto-play audio: OFF');
+  autoPlayBtn.setAttribute('aria-pressed', String(state.autoPlayAudio));
+  autoPlayBtn.classList.toggle('auto-play-active', state.autoPlayAudio);
+}
+
 function loadSettings() {
   const s = loadStorageSettings();
   state.apiKey = s.openaiApiKey;
@@ -327,7 +344,10 @@ function restoreBookmark() {
 // ===== Event Binding =====
 function bindFileUploadEvents() {
   browseBtn.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+  fileInput.addEventListener('change', (e) => {
+    handleFile(e.target.files[0]);
+    fileInput.value = '';
+  });
   dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
   dropZone.addEventListener('drop', (e) => {
@@ -380,6 +400,9 @@ function bindNavigationEvents() {
       else navigateSearch(1);
       return;
     }
+    // Skip navigation shortcuts when focus is on an input/editable element
+    const tag = e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return;
     if (e.key === 'ArrowLeft') goToPage(state.currentPage - 1);
     if (e.key === 'ArrowRight') goToPage(state.currentPage + 1);
     if (e.key === 'ArrowDown') {
@@ -460,23 +483,12 @@ function bindPanelEvents() {
   panelOverlay.addEventListener('click', closeSentencePanel);
   btnTranslate.addEventListener('click', translateSentence);
   btnGrammar.addEventListener('click', analyzeGrammar);
-  btnTTS.addEventListener('click', speakSentence);
+  panelSentence.addEventListener('click', speakSentence);
   btnCopy.addEventListener('click', () => {
     copyWithFeedback(btnCopy, panelSentence.textContent, '\ud83d\udccb Copy');
   });
 
   wordPopupClose.addEventListener('click', closeWordPopup);
-  btnPronounce.addEventListener('click', () => {
-    const word = popupWord.textContent;
-    if (!word) return;
-    if (!state.apiKey) {
-      alert('Please set your OpenAI API key first.');
-      return;
-    }
-    window.playTTS(word).catch(err => {
-      console.error('Pronounce error:', err);
-    });
-  });
   toggleChinese.addEventListener('click', () => {
     const cnText = defCnText;
     const isVisible = cnText.style.display !== 'none';
@@ -567,6 +579,12 @@ function bindToolbarEvents() {
     gestureModeBtn.textContent = state.gestureMode === 'direct' ? '\u26A1' : '\u2630';
     gestureModeBtn.classList.toggle('gesture-mode-direct', state.gestureMode === 'direct');
   });
+
+  autoPlayBtn.addEventListener('click', () => {
+    state.autoPlayAudio = !state.autoPlayAudio;
+    syncSetItem('reader-auto-play-audio', state.autoPlayAudio);
+    applyAutoPlayAudio();
+  });
 }
 
 function handleReaderHover(e) {
@@ -632,6 +650,7 @@ function handleReaderClick(e) {
     const cleanWord = raw.replace(/[^a-zA-Z'\u2019-]/g, '');
     if (cleanWord.length > 0) {
       showWordPopup(cleanWord, sentenceText, e);
+      if (state.autoPlayAudio && state.apiKey) playTTS(cleanWord).catch(err => console.error('Word TTS error:', err));
     }
     return;
   }
@@ -769,6 +788,7 @@ async function handleFile(file) {
     notesToggle.classList.add('visible');
     historyToggle.classList.add('visible');
     wordListToggle.classList.add('visible');
+    autoPlayBtn.classList.add('visible');
 
     updateBookmarkIcon();
 
@@ -839,7 +859,14 @@ async function handleURL(url) {
   if (urlLoadBtn) urlLoadBtn.disabled = true;
 
   try {
-    const response = await fetch(CORS_PROXY + encodeURIComponent(url));
+    const abortCtrl = new AbortController();
+    const fetchTimeout = setTimeout(() => abortCtrl.abort(), 30000);
+    let response;
+    try {
+      response = await fetch(CORS_PROXY + encodeURIComponent(url), { signal: abortCtrl.signal });
+    } finally {
+      clearTimeout(fetchTimeout);
+    }
     if (!response.ok) throw new Error('Failed to fetch page (HTTP ' + response.status + ')');
 
     const html = await response.text();
@@ -870,6 +897,7 @@ async function handleURL(url) {
     notesToggle.classList.add('visible');
     historyToggle.classList.add('visible');
     wordListToggle.classList.add('visible');
+    autoPlayBtn.classList.add('visible');
 
     updateBookmarkIcon();
 
@@ -1340,7 +1368,9 @@ async function parseImage(file) {
   }
 
   const data = await resp.json();
-  return data.choices[0].message.content.trim();
+  const content = data?.choices?.[0]?.message?.content;
+  if (!content) throw new Error('Unexpected API response: no content returned');
+  return content.trim();
 }
 
 window.parseImage = parseImage;
@@ -1749,6 +1779,8 @@ function openSentencePanel(sentenceEl) {
 
   panelOverlay.classList.add('active');
   sentencePanel.classList.add('active');
+
+  if (state.autoPlayAudio) speakSentence();
 }
 
 function closeSentencePanel() {
@@ -1814,16 +1846,13 @@ function closeParaPopup() {
 paraPopupClose.addEventListener('click', closeParaPopup);
 paraPopupOverlay.addEventListener('click', closeParaPopup);
 paraTranslateBtn.addEventListener('click', translateParaPopup);
-paraTTSBtn.addEventListener('click', async () => {
+paraPopupText.addEventListener('click', async () => {
+  if (!state.autoPlayAudio) return;
   const text = paraPopupText.textContent;
-  paraTTSBtn.textContent = '\u23F3 Loading...';
-  paraTTSBtn.disabled = true;
-  try {
-    await ensureSettings();
-    if (state.apiKey) await playTTS(text);
-  } catch (err) { console.error('TTS error:', err); }
-  paraTTSBtn.textContent = '\uD83D\uDD0A Listen';
-  paraTTSBtn.disabled = false;
+  await ensureSettings();
+  if (state.apiKey) {
+    playTTS(text).catch(err => console.error('Para TTS error:', err));
+  }
 });
 paraCopyBtn.addEventListener('click', () => {
   copyWithFeedback(paraCopyBtn, paraPopupText.textContent, '\uD83D\uDCCB Copy');
@@ -2038,7 +2067,9 @@ function getOfflineDictMap(dict) {
   if (!_offlineDictMap) {
     _offlineDictMap = new Map();
     for (const e of dict) {
-      _offlineDictMap.set(e.word.toLowerCase(), e);
+      if (e && typeof e.word === 'string') {
+        _offlineDictMap.set(e.word.toLowerCase(), e);
+      }
     }
   }
   return _offlineDictMap;
@@ -2170,7 +2201,9 @@ async function callOpenAI(messages, onError) {
     }
 
     const data = await resp.json();
-    return data.choices[0].message.content.trim();
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content) throw new Error('Unexpected API response format');
+    return content.trim();
   } catch (err) {
     console.error('OpenAI API error:', err);
     if (onError) onError(err.message);
@@ -2279,27 +2312,11 @@ async function playTTS(text) {
 }
 
 async function speakSentence() {
+  if (!state.autoPlayAudio) return;
   const text = panelSentence.textContent;
-  btnTTS.textContent = '\u23f3 Loading...';
-  btnTTS.disabled = true;
-
   await ensureSettings();
-  if (!state.apiKey) {
-    alert('Please set your OpenAI API key for TTS.');
-    btnTTS.textContent = '\ud83d\udd0a Listen';
-    btnTTS.disabled = false;
-    return;
-  }
-
-  try {
-    await playTTS(text);
-  } catch (err) {
-    console.error('TTS error:', err);
-    alert('TTS error: ' + err.message);
-  }
-
-  btnTTS.textContent = '\ud83d\udd0a Listen';
-  btnTTS.disabled = false;
+  if (!state.apiKey) return;
+  playTTS(text).catch(err => console.error('Sentence TTS error:', err));
 }
 
 window.playTTS = playTTS;
@@ -3318,9 +3335,9 @@ function closeFeatureGuide() {
   featureGuide.classList.remove('active');
 }
 
-helpBtn.addEventListener('click', openFeatureGuide);
+if (helpBtn) helpBtn.addEventListener('click', openFeatureGuide);
 if (exportDocxBtn) exportDocxBtn.addEventListener('click', exportToDocx);
-featureGuideClose.addEventListener('click', closeFeatureGuide);
+if (featureGuideClose) featureGuideClose.addEventListener('click', closeFeatureGuide);
 
 // Click outside guide-inner to close
 featureGuide.addEventListener('click', (e) => {
@@ -3402,34 +3419,42 @@ function showCursor() {
   clearCursorHideTimer();
 }
 
+let _mouseMoveRaf = null;
 document.addEventListener('mousemove', (e) => {
   if (!readerScreen.classList.contains('active')) return;
+  if (_mouseMoveRaf) return;
+  const clientX = e.clientX;
+  const clientY = e.clientY;
+  _mouseMoveRaf = requestAnimationFrame(() => {
+    _mouseMoveRaf = null;
+    showCursor();
+    startCursorHideTimer();
 
-  showCursor();
-  startCursorHideTimer();
+    const atTop = clientY < EDGE_TRIGGER_PX;
+    const atBottom = clientY > (window.innerHeight - EDGE_TRIGGER_PX);
+    const atRight = clientX > (window.innerWidth - EDGE_TRIGGER_PX);
 
-  const atTop = e.clientY < EDGE_TRIGGER_PX;
-  const atBottom = e.clientY > (window.innerHeight - EDGE_TRIGGER_PX);
-  const atRight = e.clientX > (window.innerWidth - EDGE_TRIGGER_PX);
-
-  if (atTop || atBottom || atRight) {
-    showBars();
-    clearAutoHideTimer();
-  } else {
-    // Mouse in center: reset timer but do NOT exit fullscreen
-    startAutoHideTimer();
-  }
+    if (atTop || atBottom || atRight) {
+      showBars();
+      clearAutoHideTimer();
+    } else {
+      startAutoHideTimer();
+    }
+  });
 });
 
 // Clicking or touching the top bar resets auto-hide so buttons remain interactive
-document.querySelector('.top-bar').addEventListener('click', () => {
-  showBars();
-  startAutoHideTimer();
-});
-document.querySelector('.top-bar').addEventListener('touchstart', () => {
-  showBars();
-  startAutoHideTimer();
-});
+const _topBarEl = document.querySelector('.top-bar');
+if (_topBarEl) {
+  _topBarEl.addEventListener('click', () => {
+    showBars();
+    startAutoHideTimer();
+  });
+  _topBarEl.addEventListener('touchstart', () => {
+    showBars();
+    startAutoHideTimer();
+  });
+}
 
 // Scrolling resets the auto-hide timer but does NOT exit fullscreen
 readerContent.addEventListener('scroll', () => {

@@ -1,5 +1,6 @@
 /* ===== Reset & Base ===== */
 .hidden { display: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
 body {
@@ -50,6 +51,7 @@ body {
   outline: none;
 }
 .url-input:focus { border-color: #4f46e5; }
+.url-input:focus-visible { outline: 2px solid #4f46e5; outline-offset: 1px; }
 .url-error {
   color: #e11d48;
   font-size: 13px;
@@ -383,10 +385,11 @@ body {
 .panel-close { font-size: 24px; }
 .panel-body { padding: 16px 24px 24px; }
 .panel-sentence {
-  font-size: 18px;
+  font-size: var(--reader-font-size, 18px);
   line-height: 1.7;
   margin-bottom: 16px;
   color: #333;
+  cursor: pointer;
 }
 .panel-actions { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
 .panel-result {
@@ -403,8 +406,8 @@ body {
   margin-bottom: 6px;
   font-family: sans-serif;
 }
-.result-text { font-size: 16px; line-height: 1.6; }
-.grammar-text { font-size: 14px; white-space: pre-wrap; }
+.result-text { font-size: var(--reader-font-size, 18px); line-height: 1.6; }
+.grammar-text { font-size: var(--reader-font-size, 18px); white-space: pre-wrap; }
 
 /* ===== Word Popup ===== */
 .word-popup {
@@ -429,7 +432,7 @@ body {
 .word-popup-word { font-size: calc(var(--reader-font-size, 18px) + 2px); font-weight: 700; color: #4f46e5; }
 .word-popup-close { font-size: 20px; }
 .word-popup-body { padding: 14px 18px 18px; }
-.def-loading { color: #666; font-size: var(--reader-font-size, 14px); font-family: sans-serif; }
+.def-loading { color: #666; font-size: var(--reader-font-size, 18px); font-family: sans-serif; }
 .def-section { margin-bottom: 12px; }
 .def-label {
   font-size: 12px;
@@ -439,7 +442,7 @@ body {
   margin-bottom: 4px;
   font-family: sans-serif;
 }
-.def-text { font-size: var(--reader-font-size, 14px); line-height: 1.6; white-space: pre-wrap; }
+.def-text { font-size: var(--reader-font-size, 18px); line-height: 1.6; white-space: pre-wrap; }
 .def-cn-text { color: #555; }
 .btn-toggle-cn {
   padding: 5px 12px;
@@ -454,7 +457,7 @@ body {
 .btn-toggle-cn:hover { background: #ddd; }
 .def-pronunciation {
   padding: 0 18px 8px;
-  font-size: var(--reader-font-size, 14px);
+  font-size: var(--reader-font-size, 18px);
   color: #666;
   font-family: sans-serif;
 }
@@ -467,7 +470,7 @@ body {
 .pos-tag {
   display: inline;
   font-weight: 700;
-  font-size: var(--reader-font-size, 14px);
+  font-size: var(--reader-font-size, 18px);
   font-family: sans-serif;
 }
 .pos-spacer {
@@ -691,16 +694,17 @@ body {
   max-height: calc(80vh - 50px);
 }
 .para-popup-text {
-  font-size: 16px;
+  font-size: var(--reader-font-size, 18px);
   line-height: 1.7;
   color: #1f2937;
   margin-bottom: 16px;
   padding-bottom: 16px;
   border-bottom: 1px solid #e5e7eb;
+  cursor: pointer;
 }
 .para-popup-actions { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
 .para-popup-translation {
-  font-size: 15px;
+  font-size: var(--reader-font-size, 18px);
   line-height: 1.7;
   color: #4b5563;
 }
@@ -813,8 +817,18 @@ body {
 .reader-content::-webkit-scrollbar-thumb:hover { background: #aaa; }
 
 /* ===== Settings Panel ===== */
-.settings-toggle {
+.autoplay-toggle {
   bottom: clamp(200px, 34vh, 250px);
+  background: #6b7280;
+  font-size: 22px;
+  box-shadow: 0 4px 14px rgba(107,114,128,0.4);
+}
+.autoplay-toggle.auto-play-active {
+  background: #059669;
+  box-shadow: 0 4px 14px rgba(5,150,105,0.4);
+}
+.settings-toggle {
+  bottom: clamp(250px, 42vh, 310px);
   background: #6366f1;
   font-size: 22px;
   box-shadow: 0 4px 14px rgba(99,102,241,0.4);
@@ -918,8 +932,10 @@ body {
 /* ===== Fullscreen Reading Mode ===== */
 .fullscreen-reading {
 }
-.cursor-hidden, .cursor-hidden * {
-  cursor: none !important;
+@media (pointer: fine) {
+  .cursor-hidden, .cursor-hidden * {
+    cursor: none !important;
+  }
 }
 .fullscreen-reading .top-bar {
   transform: translateY(-100%);
@@ -947,4 +963,17 @@ body {
 }
 .fullscreen-reading ~ .side-panel {
   display: none;
+}
+
+/* ===== Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reader-content { scroll-behavior: auto; }
+  .sentence-panel { transition: none; }
+  .top-bar, .bottom-bar, .search-bar { transition: none; }
 }

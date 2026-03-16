@@ -16,6 +16,10 @@ const firebaseConfig = {
   appId: "1:000000000000:web:placeholder"
 };
 
+if (firebaseConfig.apiKey.includes('placeholder') || firebaseConfig.appId.includes('placeholder') || firebaseConfig.messagingSenderId === '000000000000') {
+  console.warn('Firebase config contains placeholder values. Auth and sync features will not work until real Firebase credentials are configured.');
+}
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);

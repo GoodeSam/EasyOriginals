@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://apis.google.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://api.openai.com https://edge.microsoft.com https://api.cognitive.microsofttranslator.com https://translate.googleapis.com https://api.allorigins.win; media-src 'self' blob:; img-src 'self' data: blob:; font-src 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://apis.google.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://api.openai.com https://edge.microsoft.com https://api.cognitive.microsofttranslator.com https://translate.googleapis.com https://api.allorigins.win; media-src 'self' blob:; img-src 'self' data: blob:; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none';">
   <title>English Reader</title>
   <link rel="icon" href="/icons/icon48.png">
   <link rel="stylesheet" href="/src/reader.css">
@@ -39,6 +39,7 @@
       <h2>English Reader</h2>
       <p>Enter a web address, or drop a file to start reading</p>
       <div class="url-input-group">
+        <label for="urlInput" class="sr-only">Web address to load</label>
         <input type="url" id="urlInput" placeholder="https://example.com/article" autocomplete="url" class="url-input">
         <button class="btn btn-primary" id="urlLoadBtn">Load</button>
       </div>
@@ -59,14 +60,14 @@
         <button class="icon-btn" id="searchToggle" title="Search (Ctrl+F)" aria-label="Search">&#128269;</button>
         <button class="icon-btn bookmark-btn" id="bookmarkBtn" title="Bookmark this position" aria-label="Bookmark">&#9734;</button>
         <div class="font-size-control">
-          <button class="icon-btn" id="fontDecrease" title="Decrease font size">A-</button>
+          <button class="icon-btn" id="fontDecrease" title="Decrease font size" aria-label="Decrease font size">A-</button>
           <span class="font-size-label" id="fontSizeLabel">18</span>
-          <button class="icon-btn" id="fontIncrease" title="Increase font size">A+</button>
+          <button class="icon-btn" id="fontIncrease" title="Increase font size" aria-label="Increase font size">A+</button>
         </div>
         <div class="width-control">
-          <button class="icon-btn" id="widthDecrease" title="Narrower">&#8612;</button>
+          <button class="icon-btn" id="widthDecrease" title="Narrower" aria-label="Decrease content width">&#8612;</button>
           <span class="width-label" id="widthLabel">800</span>
-          <button class="icon-btn" id="widthIncrease" title="Wider">&#8614;</button>
+          <button class="icon-btn" id="widthIncrease" title="Wider" aria-label="Increase content width">&#8614;</button>
         </div>
         <div class="theme-picker" id="themePicker">
           <button class="theme-swatch" data-theme="white" title="White" aria-label="White theme" style="background:#ffffff"></button>
@@ -112,7 +113,7 @@
 
   <!-- Sentence Panel (slide-up) -->
   <div class="panel-overlay" id="panelOverlay"></div>
-  <div class="sentence-panel" id="sentencePanel" role="dialog" aria-label="Sentence details">
+  <div class="sentence-panel" id="sentencePanel" role="dialog" aria-label="Sentence details" aria-modal="true">
     <div class="panel-header">
       <span class="panel-title">Sentence</span>
       <button class="icon-btn panel-close" id="panelClose" aria-label="Close sentence panel">&times;</button>
@@ -122,7 +123,6 @@
       <div class="panel-actions">
         <button class="btn btn-sm" id="btnTranslate">&#127760; Translate</button>
         <button class="btn btn-sm" id="btnGrammar">&#128300; Grammar</button>
-        <button class="btn btn-sm" id="btnTTS">&#128264; Listen</button>
         <button class="btn btn-sm" id="btnCopy">&#128203; Copy</button>
       </div>
       <div class="panel-result hidden" id="panelTranslation">
@@ -137,10 +137,9 @@
   </div>
 
   <!-- Word Definition Popup -->
-  <div class="word-popup" id="wordPopup" role="dialog" aria-label="Word definition">
+  <div class="word-popup" id="wordPopup" role="dialog" aria-label="Word definition" aria-modal="true">
     <div class="word-popup-header">
       <span class="word-popup-word" id="popupWord"></span>
-      <button class="icon-btn btn-pronounce" id="btnPronounce" title="Pronounce" aria-label="Pronounce word">&#128264;</button>
       <button class="icon-btn word-popup-close" id="wordPopupClose" aria-label="Close word popup">&times;</button>
     </div>
     <div class="def-pronunciation hidden" id="defPronunciation"></div>
@@ -196,12 +195,15 @@
   </div>
   <button class="side-toggle wordlist-toggle" id="wordListToggle" title="Word List" aria-label="Word List">Aa</button>
 
+  <!-- Auto-Play Audio Toggle -->
+  <button class="side-toggle autoplay-toggle" id="autoPlayBtn" title="Auto-play audio: OFF" aria-label="Toggle auto-play audio" aria-pressed="false">&#128263;</button>
+
   <!-- Settings Panel (replaces popup) -->
   <button class="side-toggle settings-toggle" id="settingsToggle" title="Settings" aria-label="Settings">&#9881;</button>
 
   <!-- Paragraph Translation Popup -->
   <div class="para-popup-overlay" id="paraPopupOverlay"></div>
-  <div class="para-popup" id="paraPopup" role="dialog" aria-label="Paragraph translation">
+  <div class="para-popup" id="paraPopup" role="dialog" aria-label="Paragraph translation" aria-modal="true">
     <div class="para-popup-header">
       <span class="panel-title">Paragraph Translation</span>
       <button class="icon-btn panel-close" id="paraPopupClose" aria-label="Close paragraph translation">&times;</button>
@@ -210,7 +212,6 @@
       <div class="para-popup-text" id="paraPopupText"></div>
       <div class="para-popup-actions" id="paraPopupActions">
         <button class="btn btn-sm" id="paraTranslateBtn">&#127760; Translate</button>
-        <button class="btn btn-sm" id="paraTTSBtn">&#128264; Listen</button>
         <button class="btn btn-sm" id="paraCopyBtn">&#128203; Copy</button>
       </div>
       <div class="para-popup-translation" id="paraPopupTranslation"></div>
@@ -218,7 +219,7 @@
   </div>
 
   <!-- Feature Guide Overlay -->
-  <div class="feature-guide" id="featureGuide" role="dialog" aria-label="Feature guide">
+  <div class="feature-guide" id="featureGuide" role="dialog" aria-label="Feature guide" aria-modal="true">
     <div class="guide-inner">
       <div class="guide-header">
         <span class="guide-title">Feature Guide / 功能指南</span>

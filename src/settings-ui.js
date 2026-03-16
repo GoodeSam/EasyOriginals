@@ -61,15 +61,29 @@ export function createSettingsPanel() {
   providerSelect.addEventListener('change', updateChatgptVisibility);
 
   saveBtn.addEventListener('click', () => {
-    saveSettings({
-      translationProvider: providerSelect.value,
-      openaiApiKey: apiKeyInput.value.trim(),
-      openaiModel: modelSelect.value,
-    });
-    status.textContent = 'Settings saved!';
-    status.style.display = 'block';
-    status.style.color = '#10b981';
-    setTimeout(() => { status.style.display = 'none'; }, 2000);
+    if (providerSelect.value === 'chatgpt' && !apiKeyInput.value.trim()) {
+      status.textContent = 'API key is required for ChatGPT provider';
+      status.style.display = 'block';
+      status.style.color = '#e11d48';
+      setTimeout(() => { status.style.display = 'none'; }, 3000);
+      return;
+    }
+    try {
+      saveSettings({
+        translationProvider: providerSelect.value,
+        openaiApiKey: apiKeyInput.value.trim(),
+        openaiModel: modelSelect.value,
+      });
+      status.textContent = 'Settings saved!';
+      status.style.display = 'block';
+      status.style.color = '#10b981';
+      setTimeout(() => { status.style.display = 'none'; }, 2000);
+    } catch (e) {
+      status.textContent = 'Failed to save: ' + e.message;
+      status.style.display = 'block';
+      status.style.color = '#e11d48';
+      setTimeout(() => { status.style.display = 'none'; }, 3000);
+    }
   });
 
   const closeBtn = panel.querySelector('#settingsClose');

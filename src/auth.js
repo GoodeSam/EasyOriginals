@@ -48,9 +48,13 @@ export function enterGuestMode() {
 }
 
 export function loginSuccess(user) {
+  if (!user || !user.uid) {
+    console.warn('loginSuccess called with invalid user — ignoring');
+    return;
+  }
   _state = {
     mode: 'account',
-    user: { uid: user.uid, email: user.email, displayName: user.displayName || '' },
+    user: { uid: user.uid, email: user.email || '', displayName: user.displayName || '' },
   };
   localStorage.setItem('auth-mode', 'account');
   localStorage.setItem('auth-user', JSON.stringify(_state.user));
@@ -66,6 +70,7 @@ export function logout() {
 
 export function onAuthChange(cb) {
   _listeners.push(cb);
+  return () => offAuthChange(cb);
 }
 
 export function offAuthChange(cb) {

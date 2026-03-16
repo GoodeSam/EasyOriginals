@@ -4,7 +4,7 @@
  * Account mode: localStorage + remote sync via pluggable provider.
  *
  * Remote provider interface:
- *   push(key, value)    — save one key to remote (value=null means delete)
+ *   push(key, value)    — save one key to remote (value=DELETED_SENTINEL means delete)
  *   pull()              — returns object with all remote key/value pairs
  *   pushAll(data)       — save all keys to remote at once
  */
@@ -47,10 +47,13 @@ export function setItem(key, value) {
   }
 }
 
+/** Sentinel value used to mark keys as deleted in remote storage */
+export const DELETED_SENTINEL = '__sync_deleted__';
+
 export function removeItem(key) {
   localStorage.removeItem(key);
   if (_remoteProvider) {
-    _remoteProvider.push(key, '__deleted__').catch(err => {
+    _remoteProvider.push(key, DELETED_SENTINEL).catch(err => {
       console.warn('Sync remove failed for', key, err);
     });
   }
@@ -70,10 +73,12 @@ export async function pullAll() {
   if (remoteData) {
     for (const [key, value] of Object.entries(remoteData)) {
       if (!isAllowedKey(key)) continue;
-      if (value === null || value === '__deleted__') {
+      if (value === null || value === DELETED_SENTINEL) {
         localStorage.removeItem(key);
       } else if (value !== undefined) {
-        localStorage.setItem(key, value);
+        // Ensure only strings are stored in localStorage
+        const strValue = typeof value === 'string' ? value : JSON.stringify(value);
+        localStorage.setItem(key, strValue);
       }
     }
   }

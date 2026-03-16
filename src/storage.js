@@ -34,7 +34,12 @@ export function loadSettings() {
   return settings;
 }
 
+const VALID_PROVIDERS = ['chatgpt', 'google', 'microsoft', 'offline'];
+
 export function saveSettings(obj) {
+  if (obj.translationProvider && !VALID_PROVIDERS.includes(obj.translationProvider)) {
+    throw new Error('Invalid translation provider: ' + obj.translationProvider);
+  }
   const storage = getStorage();
   for (const [key, storageKey] of Object.entries(KEYS)) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
