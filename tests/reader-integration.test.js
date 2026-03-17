@@ -222,13 +222,19 @@ describe('reader width unchanged when toolbar hidden/shown', () => {
   });
 
   test('fullscreen-reading does not override reader-content max-width', () => {
-    // .fullscreen-reading .reader-content must NOT set max-width
-    // because that causes width to change when toolbar auto-hides
     const rule = cssSrc.match(/\.fullscreen-reading\s+\.reader-content\s*\{([^}]*)\}/);
     if (rule) {
-      // Filter out CSS comments before checking for the property
       const props = rule[1].replace(/\/\*[\s\S]*?\*\//g, '');
       expect(props).not.toMatch(/max-width/);
+    }
+  });
+
+  test('fullscreen-reading does not override reader-content padding', () => {
+    // Padding must stay the same so text area width is identical
+    const rule = cssSrc.match(/\.fullscreen-reading\s+\.reader-content\s*\{([^}]*)\}/);
+    if (rule) {
+      const props = rule[1].replace(/\/\*[\s\S]*?\*\//g, '');
+      expect(props).not.toMatch(/padding/);
     }
   });
 

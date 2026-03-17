@@ -924,9 +924,6 @@ body {
   opacity: 0;
   pointer-events: none;
 }
-.fullscreen-reading .reader-content {
-  padding: 40px 80px;
-}
 .fullscreen-reading ~ .side-toggle {
   transform: translateY(-100px);
   opacity: 0;
