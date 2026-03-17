@@ -59,12 +59,15 @@
       <button class="icon-btn" id="backBtn" title="Back to upload" aria-label="Back to upload">&#8592;</button>
       <span class="book-title" id="bookTitle">Untitled</span>
       <div class="top-bar-actions">
+        <!-- Reading actions -->
         <button class="icon-btn" id="searchToggle" title="Search (Ctrl+F)" aria-label="Search">&#128269;</button>
-        <button class="icon-btn" id="wordListToggle" title="Word List" aria-label="Word List">Aa</button>
-        <button class="icon-btn" id="historyToggle" title="Reading History" aria-label="Reading History">&#128337;</button>
-        <button class="icon-btn" id="settingsToggle" title="Settings" aria-label="Settings">&#9881;</button>
-        <button class="icon-btn" id="autoPlayBtn" title="Auto-play audio: OFF" aria-label="Toggle auto-play audio" aria-pressed="false">&#128263;</button>
         <button class="icon-btn bookmark-btn" id="bookmarkBtn" title="Bookmark this position" aria-label="Bookmark">&#9734;</button>
+        <button class="icon-btn" id="autoPlayBtn" title="Auto-play audio: OFF" aria-label="Toggle auto-play audio" aria-pressed="false">&#128263;</button>
+        <!-- Content panels -->
+        <button class="icon-btn" id="wordListToggle" title="Word List" aria-label="Word List">Aa</button>
+        <button class="icon-btn" id="notesToggle" title="My Notes" aria-label="My Notes">&#128221;</button>
+        <button class="icon-btn" id="historyToggle" title="Reading History" aria-label="Reading History">&#128337;</button>
+        <!-- Display -->
         <div class="font-size-control">
           <button class="icon-btn" id="fontDecrease" title="Decrease font size" aria-label="Decrease font size">A-</button>
           <span class="font-size-label" id="fontSizeLabel">18</span>
@@ -82,7 +85,9 @@
           <button class="theme-swatch" data-theme="green" title="Green" aria-label="Green theme" style="background:#e8f5e9"></button>
         </div>
         <button class="icon-btn" id="gestureModeBtn" title="Gesture: menu mode" aria-label="Toggle gesture mode">&#9776;</button>
+        <!-- Utility -->
         <button class="icon-btn" id="exportDocxBtn" title="Export to Word" aria-label="Export to Word">&#128230;</button>
+        <button class="icon-btn" id="settingsToggle" title="Settings" aria-label="Settings">&#9881;</button>
         <button class="icon-btn" id="helpBtn" title="Feature Guide" aria-label="Feature Guide">?</button>
         <div class="user-menu-wrapper">
           <button class="icon-btn" id="userMenuBtn" title="Account" aria-label="Account">&#128100;</button>
@@ -177,7 +182,6 @@
     <div class="side-panel-list notes-list" id="notesList"></div>
     <button class="btn btn-sm side-panel-export notes-export" id="notesExport">Export Notes</button>
   </div>
-  <button class="side-toggle notes-toggle" id="notesToggle" title="My Notes" aria-label="My Notes">&#128221;</button>
 
   <!-- History Panel -->
   <div class="side-panel history-panel" id="historyPanel">

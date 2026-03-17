@@ -154,7 +154,6 @@ function init() {
 
   if (readerScreen.classList.contains('active')) {
     startAutoHideTimer();
-    notesToggle.classList.add('visible');
   }
 }
 
@@ -365,7 +364,6 @@ function bindNavigationEvents() {
   backBtn.addEventListener('click', () => {
     readerScreen.classList.remove('active');
     uploadScreen.classList.add('active');
-    notesToggle.classList.remove('visible');
   });
   prevPageBtn.addEventListener('click', () => goToPage(state.currentPage - 1));
   nextPageBtn.addEventListener('click', () => goToPage(state.currentPage + 1));
@@ -790,7 +788,6 @@ async function handleFile(file) {
     bookTitle.textContent = file.name.replace(/\.[^.]+$/, '');
     uploadScreen.classList.remove('active');
     readerScreen.classList.add('active');
-    notesToggle.classList.add('visible');
 
     updateBookmarkIcon();
 
@@ -904,7 +901,6 @@ async function handleURL(url) {
     bookTitle.textContent = pageTitle;
     uploadScreen.classList.remove('active');
     readerScreen.classList.add('active');
-    notesToggle.classList.add('visible');
 
     updateBookmarkIcon();
 

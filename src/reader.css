@@ -559,12 +559,6 @@ body {
 }
 
 /* ===== Notes Panel ===== */
-.notes-toggle {
-  right: 24px;
-  background: #4f46e5;
-  font-size: 22px;
-  box-shadow: 0 4px 14px rgba(79,70,229,0.4);
-}
 .note-item {
   background: #fefce8;
   border-radius: 8px;
@@ -931,7 +925,6 @@ body {
   pointer-events: none;
 }
 .fullscreen-reading .reader-content {
-  max-width: none;
   padding: 40px 80px;
 }
 .fullscreen-reading ~ .side-toggle {

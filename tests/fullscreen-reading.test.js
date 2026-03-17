@@ -53,10 +53,13 @@ describe('CSS: fullscreen reading mode', () => {
     expect(css).toMatch(/\.fullscreen-reading\s+\.bottom-bar|\.fullscreen-reading\s*>\s*\.bottom-bar/);
   });
 
-  test('.fullscreen-reading .reader-content expands', () => {
-    const fullscreenMatch = css.match(/\.fullscreen-reading[\s\S]*?\.reader-content[\s\S]*?\}/);
-    expect(fullscreenMatch).not.toBeNull();
-    expect(fullscreenMatch[0]).toMatch(/max-width:\s*none|max-width:\s*100%/);
+  test('.fullscreen-reading .reader-content keeps width stable', () => {
+    // Fullscreen reading must NOT change max-width — width stays the same
+    const fullscreenMatch = css.match(/\.fullscreen-reading\s+\.reader-content\s*\{([^}]*)\}/);
+    if (fullscreenMatch) {
+      const props = fullscreenMatch[1].split('\n').filter(l => !l.trim().startsWith('/*'));
+      expect(props.join('\n')).not.toMatch(/max-width/);
+    }
   });
 
   test('.fullscreen-reading hides side-toggle buttons', () => {

@@ -123,119 +123,127 @@ describe('reader.js preserves core features', () => {
   });
 });
 
-describe('word list and history toggles in toolbar', () => {
-  let indexHtml;
+describe('toolbar order: grouped by function', () => {
+  // Extract from top-bar-actions open to search-bar (the next sibling)
+  let actions;
 
   beforeEach(() => {
-    indexHtml = fs.readFileSync(
+    const indexHtml = fs.readFileSync(
       path.resolve(__dirname, '../index.html'),
       'utf-8'
     );
+    const start = indexHtml.indexOf('class="top-bar-actions">');
+    const end = indexHtml.indexOf('<!-- Search Bar -->', start);
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    actions = indexHtml.slice(start, end);
   });
 
-  test('wordListToggle is inside .top-bar-actions', () => {
-    // Extract the top-bar-actions block
-    const actionsMatch = indexHtml.match(/class="top-bar-actions">([\s\S]*?)<\/div>\s*<\/div>/);
-    expect(actionsMatch).not.toBeNull();
-    expect(actionsMatch[1]).toMatch(/id="wordListToggle"/);
+  // Helper: position of an id attribute in the actions block
+  function pos(id) {
+    const i = actions.indexOf(`id="${id}"`);
+    expect(i, `${id} must be inside .top-bar-actions`).toBeGreaterThan(-1);
+    return i;
+  }
+
+  test('all toolbar buttons are present', () => {
+    const ids = [
+      'searchToggle', 'bookmarkBtn', 'autoPlayBtn',
+      'wordListToggle', 'historyToggle', 'notesToggle',
+      'fontDecrease', 'fontIncrease', 'widthDecrease', 'widthIncrease',
+      'gestureModeBtn', 'exportDocxBtn', 'settingsToggle', 'helpBtn',
+      'userMenuBtn', 'pageInfo',
+    ];
+    for (const id of ids) {
+      expect(actions).toMatch(new RegExp(`id="${id}"`));
+    }
   });
 
-  test('historyToggle is inside .top-bar-actions', () => {
-    const actionsMatch = indexHtml.match(/class="top-bar-actions">([\s\S]*?)<\/div>\s*<\/div>/);
-    expect(actionsMatch).not.toBeNull();
-    expect(actionsMatch[1]).toMatch(/id="historyToggle"/);
+  // Group 1 — Reading actions: search, bookmark, autoPlay
+  test('reading actions group: search → bookmark → autoPlay', () => {
+    expect(pos('searchToggle')).toBeLessThan(pos('bookmarkBtn'));
+    expect(pos('bookmarkBtn')).toBeLessThan(pos('autoPlayBtn'));
   });
 
-  test('searchToggle is inside .top-bar-actions', () => {
-    const actionsMatch = indexHtml.match(/class="top-bar-actions">([\s\S]*?)<\/div>\s*<\/div>/);
-    expect(actionsMatch).not.toBeNull();
-    expect(actionsMatch[1]).toMatch(/id="searchToggle"/);
+  // Group 2 — Content panels: wordList, notes, history
+  test('content panels group: wordList → notes → history, after reading actions', () => {
+    expect(pos('autoPlayBtn')).toBeLessThan(pos('wordListToggle'));
+    expect(pos('wordListToggle')).toBeLessThan(pos('notesToggle'));
+    expect(pos('notesToggle')).toBeLessThan(pos('historyToggle'));
   });
 
-  test('wordListToggle is NOT a standalone side-toggle button', () => {
-    // Should not exist as a separate side-toggle element outside the toolbar
-    expect(indexHtml).not.toMatch(/<button[^>]*class="side-toggle[^"]*wordlist-toggle[^"]*"[^>]*id="wordListToggle"/);
+  test('notesToggle uses icon-btn class in toolbar', () => {
+    const m = actions.match(/<button[^>]*id="notesToggle"[^>]*/);
+    expect(m).not.toBeNull();
+    expect(m[0]).toMatch(/class="[^"]*icon-btn/);
   });
 
-  test('historyToggle is NOT a standalone side-toggle button', () => {
-    expect(indexHtml).not.toMatch(/<button[^>]*class="side-toggle[^"]*history-toggle[^"]*"[^>]*id="historyToggle"/);
+  test('notesToggle is NOT a standalone side-toggle button', () => {
+    const indexHtml = fs.readFileSync(
+      path.resolve(__dirname, '../index.html'),
+      'utf-8'
+    );
+    expect(indexHtml).not.toMatch(/<button[^>]*class="side-toggle[^"]*notes-toggle[^"]*"[^>]*id="notesToggle"/);
   });
 
-  test('wordListToggle and historyToggle use icon-btn class in toolbar', () => {
-    const actionsMatch = indexHtml.match(/class="top-bar-actions">([\s\S]*?)<\/div>\s*<\/div>/);
-    const actions = actionsMatch[1];
-    const wlMatch = actions.match(/<button[^>]*id="wordListToggle"[^>]*/);
-    const hMatch = actions.match(/<button[^>]*id="historyToggle"[^>]*/);
-    expect(wlMatch[0]).toMatch(/class="[^"]*icon-btn/);
-    expect(hMatch[0]).toMatch(/class="[^"]*icon-btn/);
-  });
-
-  test('JS does not toggle .visible class on wordListToggle or historyToggle', () => {
+  test('JS does not toggle .visible class on notesToggle', () => {
     const readerSrc = fs.readFileSync(
       path.resolve(__dirname, '../src/reader.js'),
       'utf-8'
     );
-    // Toolbar buttons are always visible, no need for .visible class toggling
-    expect(readerSrc).not.toMatch(/wordListToggle\.classList\.(add|remove)\(['"]visible['"]\)/);
-    expect(readerSrc).not.toMatch(/historyToggle\.classList\.(add|remove)\(['"]visible['"]\)/);
+    expect(readerSrc).not.toMatch(/notesToggle\.classList\.(add|remove)\(['"]visible['"]\)/);
+  });
+
+  // Group 3 — Display: font, width, theme (then gestureMode)
+  test('display group: font → width → theme → gesture, after panels', () => {
+    expect(pos('historyToggle')).toBeLessThan(pos('fontDecrease'));
+    expect(pos('fontIncrease')).toBeLessThan(pos('widthDecrease'));
+    expect(pos('widthIncrease')).toBeLessThan(pos('gestureModeBtn'));
+  });
+
+  // Group 4 — Utility: export, settings, help, account, page info (rightmost)
+  test('utility group: export → settings → help → account → page, at end', () => {
+    expect(pos('gestureModeBtn')).toBeLessThan(pos('exportDocxBtn'));
+    expect(pos('exportDocxBtn')).toBeLessThan(pos('settingsToggle'));
+    expect(pos('settingsToggle')).toBeLessThan(pos('helpBtn'));
+    expect(pos('helpBtn')).toBeLessThan(pos('userMenuBtn'));
+    expect(pos('userMenuBtn')).toBeLessThan(pos('pageInfo'));
   });
 });
 
-describe('settings and auto-play icons in toolbar after history', () => {
-  let indexHtml;
+describe('reader width unchanged when toolbar hidden/shown', () => {
+  let cssSrc;
 
   beforeEach(() => {
-    indexHtml = fs.readFileSync(
-      path.resolve(__dirname, '../index.html'),
+    cssSrc = fs.readFileSync(
+      path.resolve(__dirname, '../src/reader.css'),
       'utf-8'
     );
   });
 
-  test('settingsToggle is inside .top-bar-actions', () => {
-    const actionsMatch = indexHtml.match(/class="top-bar-actions">([\s\S]*?)<\/div>\s*<\/div>/);
-    expect(actionsMatch).not.toBeNull();
-    expect(actionsMatch[1]).toMatch(/id="settingsToggle"/);
+  test('fullscreen-reading does not override reader-content max-width', () => {
+    // .fullscreen-reading .reader-content must NOT set max-width
+    // because that causes width to change when toolbar auto-hides
+    const rule = cssSrc.match(/\.fullscreen-reading\s+\.reader-content\s*\{([^}]*)\}/);
+    if (rule) {
+      // Filter out CSS comments before checking for the property
+      const props = rule[1].replace(/\/\*[\s\S]*?\*\//g, '');
+      expect(props).not.toMatch(/max-width/);
+    }
   });
 
-  test('autoPlayBtn is inside .top-bar-actions', () => {
-    const actionsMatch = indexHtml.match(/class="top-bar-actions">([\s\S]*?)<\/div>\s*<\/div>/);
-    expect(actionsMatch).not.toBeNull();
-    expect(actionsMatch[1]).toMatch(/id="autoPlayBtn"/);
+  test('auto-hide toolbar uses transform only (no layout shift)', () => {
+    // .top-bar.auto-hide should use transform to slide out, not display:none
+    const rule = cssSrc.match(/\.top-bar\.auto-hide\s*\{([^}]*)\}/);
+    expect(rule).not.toBeNull();
+    expect(rule[1]).toMatch(/transform:/);
+    expect(rule[1]).not.toMatch(/display:\s*none/);
   });
 
-  test('settingsToggle and autoPlayBtn use icon-btn class', () => {
-    const actionsMatch = indexHtml.match(/class="top-bar-actions">([\s\S]*?)<\/div>\s*<\/div>/);
-    const actions = actionsMatch[1];
-    const sMatch = actions.match(/<button[^>]*id="settingsToggle"[^>]*/);
-    const aMatch = actions.match(/<button[^>]*id="autoPlayBtn"[^>]*/);
-    expect(sMatch[0]).toMatch(/class="[^"]*icon-btn/);
-    expect(aMatch[0]).toMatch(/class="[^"]*icon-btn/);
-  });
-
-  test('order: historyToggle then settingsToggle then autoPlayBtn', () => {
-    const actionsMatch = indexHtml.match(/class="top-bar-actions">([\s\S]*?)<\/div>\s*<\/div>/);
-    const actions = actionsMatch[1];
-    const historyPos = actions.indexOf('id="historyToggle"');
-    const settingsPos = actions.indexOf('id="settingsToggle"');
-    const autoPlayPos = actions.indexOf('id="autoPlayBtn"');
-    expect(historyPos).toBeLessThan(settingsPos);
-    expect(settingsPos).toBeLessThan(autoPlayPos);
-  });
-
-  test('settingsToggle is NOT a standalone side-toggle button', () => {
-    expect(indexHtml).not.toMatch(/<button[^>]*class="side-toggle[^"]*settings-toggle[^"]*"[^>]*id="settingsToggle"/);
-  });
-
-  test('autoPlayBtn is NOT a standalone side-toggle button', () => {
-    expect(indexHtml).not.toMatch(/<button[^>]*class="side-toggle[^"]*autoplay-toggle[^"]*"[^>]*id="autoPlayBtn"/);
-  });
-
-  test('JS does not toggle .visible class on settingsToggle or autoPlayBtn', () => {
-    const readerSrc = fs.readFileSync(
-      path.resolve(__dirname, '../src/reader.js'),
-      'utf-8'
-    );
-    expect(readerSrc).not.toMatch(/settingsToggle.*classList\.(add|remove)\(['"]visible['"]\)/);
-    expect(readerSrc).not.toMatch(/autoPlayBtn\.classList\.(add|remove)\(['"]visible['"]\)/);
+  test('auto-hide bottom-bar uses transform only (no layout shift)', () => {
+    const rule = cssSrc.match(/\.bottom-bar\.auto-hide\s*\{([^}]*)\}/);
+    expect(rule).not.toBeNull();
+    expect(rule[1]).toMatch(/transform:/);
+    expect(rule[1]).not.toMatch(/display:\s*none/);
   });
 });
