@@ -803,21 +803,10 @@ body {
 .reader-content::-webkit-scrollbar-thumb:hover { background: #aaa; }
 
 /* ===== Settings Panel ===== */
-.autoplay-toggle {
-  right: 192px;
-  background: #6b7280;
-  font-size: 22px;
-  box-shadow: 0 4px 14px rgba(107,114,128,0.4);
-}
-.autoplay-toggle.auto-play-active {
-  background: #059669;
-  box-shadow: 0 4px 14px rgba(5,150,105,0.4);
-}
-.settings-toggle {
-  right: 248px;
-  background: #6366f1;
-  font-size: 22px;
-  box-shadow: 0 4px 14px rgba(99,102,241,0.4);
+/* Auto-play active state in toolbar */
+.auto-play-active {
+  color: #059669;
+  background: rgba(5,150,105,0.1);
 }
 .settings-panel { /* full-width at top, no width override */ }
 .settings-panel .side-panel-header { font-family: -apple-system, sans-serif; }

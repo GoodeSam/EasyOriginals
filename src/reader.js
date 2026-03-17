@@ -151,14 +151,10 @@ function init() {
   loadTheme();
   loadAutoPlayAudio();
   bindEvents();
-  // Settings toggle is always visible (no extension popup)
-  const settingsToggle = document.getElementById('settingsToggle');
-  if (settingsToggle) settingsToggle.classList.add('visible');
 
   if (readerScreen.classList.contains('active')) {
     startAutoHideTimer();
     notesToggle.classList.add('visible');
-    autoPlayBtn.classList.add('visible');
   }
 }
 
@@ -795,7 +791,6 @@ async function handleFile(file) {
     uploadScreen.classList.remove('active');
     readerScreen.classList.add('active');
     notesToggle.classList.add('visible');
-    autoPlayBtn.classList.add('visible');
 
     updateBookmarkIcon();
 
@@ -910,7 +905,6 @@ async function handleURL(url) {
     uploadScreen.classList.remove('active');
     readerScreen.classList.add('active');
     notesToggle.classList.add('visible');
-    autoPlayBtn.classList.add('visible');
 
     updateBookmarkIcon();
 

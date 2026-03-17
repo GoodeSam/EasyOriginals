@@ -180,3 +180,62 @@ describe('word list and history toggles in toolbar', () => {
     expect(readerSrc).not.toMatch(/historyToggle\.classList\.(add|remove)\(['"]visible['"]\)/);
   });
 });
+
+describe('settings and auto-play icons in toolbar after history', () => {
+  let indexHtml;
+
+  beforeEach(() => {
+    indexHtml = fs.readFileSync(
+      path.resolve(__dirname, '../index.html'),
+      'utf-8'
+    );
+  });
+
+  test('settingsToggle is inside .top-bar-actions', () => {
+    const actionsMatch = indexHtml.match(/class="top-bar-actions">([\s\S]*?)<\/div>\s*<\/div>/);
+    expect(actionsMatch).not.toBeNull();
+    expect(actionsMatch[1]).toMatch(/id="settingsToggle"/);
+  });
+
+  test('autoPlayBtn is inside .top-bar-actions', () => {
+    const actionsMatch = indexHtml.match(/class="top-bar-actions">([\s\S]*?)<\/div>\s*<\/div>/);
+    expect(actionsMatch).not.toBeNull();
+    expect(actionsMatch[1]).toMatch(/id="autoPlayBtn"/);
+  });
+
+  test('settingsToggle and autoPlayBtn use icon-btn class', () => {
+    const actionsMatch = indexHtml.match(/class="top-bar-actions">([\s\S]*?)<\/div>\s*<\/div>/);
+    const actions = actionsMatch[1];
+    const sMatch = actions.match(/<button[^>]*id="settingsToggle"[^>]*/);
+    const aMatch = actions.match(/<button[^>]*id="autoPlayBtn"[^>]*/);
+    expect(sMatch[0]).toMatch(/class="[^"]*icon-btn/);
+    expect(aMatch[0]).toMatch(/class="[^"]*icon-btn/);
+  });
+
+  test('order: historyToggle then settingsToggle then autoPlayBtn', () => {
+    const actionsMatch = indexHtml.match(/class="top-bar-actions">([\s\S]*?)<\/div>\s*<\/div>/);
+    const actions = actionsMatch[1];
+    const historyPos = actions.indexOf('id="historyToggle"');
+    const settingsPos = actions.indexOf('id="settingsToggle"');
+    const autoPlayPos = actions.indexOf('id="autoPlayBtn"');
+    expect(historyPos).toBeLessThan(settingsPos);
+    expect(settingsPos).toBeLessThan(autoPlayPos);
+  });
+
+  test('settingsToggle is NOT a standalone side-toggle button', () => {
+    expect(indexHtml).not.toMatch(/<button[^>]*class="side-toggle[^"]*settings-toggle[^"]*"[^>]*id="settingsToggle"/);
+  });
+
+  test('autoPlayBtn is NOT a standalone side-toggle button', () => {
+    expect(indexHtml).not.toMatch(/<button[^>]*class="side-toggle[^"]*autoplay-toggle[^"]*"[^>]*id="autoPlayBtn"/);
+  });
+
+  test('JS does not toggle .visible class on settingsToggle or autoPlayBtn', () => {
+    const readerSrc = fs.readFileSync(
+      path.resolve(__dirname, '../src/reader.js'),
+      'utf-8'
+    );
+    expect(readerSrc).not.toMatch(/settingsToggle.*classList\.(add|remove)\(['"]visible['"]\)/);
+    expect(readerSrc).not.toMatch(/autoPlayBtn\.classList\.(add|remove)\(['"]visible['"]\)/);
+  });
+});

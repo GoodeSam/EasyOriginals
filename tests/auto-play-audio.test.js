@@ -75,62 +75,29 @@ describe('auto-play audio toolbar button', () => {
   });
 });
 
-// ─── Button Placement (right sidebar) ────────────────────────────────
+// ─── Button Placement (toolbar) ──────────────────────────────────────
 
-describe('auto-play button is a right-sidebar side-toggle', () => {
-  test('autoPlayBtn is NOT inside .top-bar-actions', () => {
+describe('auto-play button is in the toolbar', () => {
+  test('autoPlayBtn IS inside .top-bar-actions', () => {
     const actionsBlock = htmlSrc.match(
-      /<div\s[^>]*class=["']top-bar-actions["'][^>]*>([\s\S]*?)<\/div>\s*<\/div>\s*<\/div>/
+      /<div\s[^>]*class=["']top-bar-actions["'][^>]*>([\s\S]*?)<\/div>\s*<\/div>/
     );
     expect(actionsBlock).not.toBeNull();
-    expect(actionsBlock[0]).not.toMatch(/id=["']autoPlayBtn["']/);
+    expect(actionsBlock[0]).toMatch(/id=["']autoPlayBtn["']/);
   });
 
-  test('autoPlayBtn has the side-toggle class in HTML', () => {
+  test('autoPlayBtn uses icon-btn class', () => {
     const btnMatch = htmlSrc.match(/<button[^>]*id=["']autoPlayBtn["'][^>]*>/);
     expect(btnMatch).not.toBeNull();
-    expect(btnMatch[0]).toMatch(/class=["'][^"']*side-toggle/);
-  });
-
-  test('autoPlayBtn has a dedicated .autoplay-toggle CSS class', () => {
-    const btnMatch = htmlSrc.match(/<button[^>]*id=["']autoPlayBtn["'][^>]*>/);
-    expect(btnMatch).not.toBeNull();
-    expect(btnMatch[0]).toMatch(/autoplay-toggle/);
+    expect(btnMatch[0]).toMatch(/class=["'][^"']*icon-btn/);
   });
 });
 
-// ─── CSS Sidebar Toggle Styling ──────────────────────────────────────
+// ─── CSS Active State ────────────────────────────────────────────────
 
-describe('auto-play sidebar toggle CSS', () => {
-  test('CSS defines .autoplay-toggle with a right position', () => {
-    const rule = cssSrc.match(/\.autoplay-toggle\s*\{[^}]*\}/);
-    expect(rule).not.toBeNull();
-    expect(rule[0]).toMatch(/right:/);
-  });
-
-  test('.autoplay-toggle has a background color', () => {
-    const rule = cssSrc.match(/\.autoplay-toggle\s*\{([^}]*)\}/);
-    expect(rule).not.toBeNull();
-    expect(rule[1]).toMatch(/background:\s*#/);
-  });
-
-  test('.autoplay-toggle has a box-shadow', () => {
-    const rule = cssSrc.match(/\.autoplay-toggle\s*\{([^}]*)\}/);
-    expect(rule).not.toBeNull();
-    expect(rule[1]).toMatch(/box-shadow:/);
-  });
-
-  test('CSS defines .autoplay-toggle.auto-play-active with distinct background', () => {
-    expect(cssSrc).toMatch(/\.autoplay-toggle\.auto-play-active\s*\{[^}]*background:[^}]*\}/);
-  });
-});
-
-// ─── Visibility ──────────────────────────────────────────────────────
-
-describe('auto-play button visibility follows other side-toggles', () => {
-  test('reader.js makes autoPlayBtn visible alongside other toggles', () => {
-    // autoPlayBtn should get .visible class added where the other toggles do
-    expect(readerSrc).toMatch(/autoPlayBtn\.classList\.add\s*\(\s*['"]visible['"]\s*\)/);
+describe('auto-play active CSS', () => {
+  test('CSS defines .auto-play-active with a distinct color or background', () => {
+    expect(cssSrc).toMatch(/\.auto-play-active\s*\{[^}]*(color|background):[^}]*\}/);
   });
 });
 
