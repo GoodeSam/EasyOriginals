@@ -11,6 +11,13 @@ import {
 } from './firebase-init.js';
 
 // ===== Firestore remote provider =====
+/** Max Firestore doc size is ~1 MiB; warn at 800 KiB to avoid silent failures */
+const FIRESTORE_DOC_WARN_BYTES = 800 * 1024;
+
+function estimateDocSize(data) {
+  try { return new Blob([JSON.stringify(data)]).size; } catch { return 0; }
+}
+
 function createFirestoreProvider(uid) {
   return {
     async push(key, value) {
@@ -23,6 +30,10 @@ function createFirestoreProvider(uid) {
       return snap.exists() ? snap.data() : {};
     },
     async pushAll(data) {
+      const size = estimateDocSize(data);
+      if (size > FIRESTORE_DOC_WARN_BYTES) {
+        console.warn(`Firestore document approaching size limit (${(size / 1024).toFixed(0)} KiB). Consider pruning old history/notes.`);
+      }
       const ref = doc(db, 'users', uid);
       await setDoc(ref, data, { merge: true });
     },
@@ -58,9 +69,14 @@ export function bindAuthUI() {
   async function setupRemoteSync(uid) {
     const provider = createFirestoreProvider(uid);
     setRemoteProvider(provider);
-    // Pull remote first to get authoritative state, then push local additions
-    await pullAll();
-    await pushAll();
+    // Pull remote first to get authoritative state
+    const remoteData = await pullAll();
+    // Only push local data if there are keys not yet in remote (avoids redundant writes)
+    const localKeys = SYNC_KEYS.filter(k => {
+      const val = localStorage.getItem(k);
+      return val !== null && val !== (remoteData[k] ?? null);
+    });
+    if (localKeys.length > 0) await pushAll();
   }
 
   // Guest mode
@@ -72,6 +88,7 @@ export function bindAuthUI() {
 
   // Google Sign-In
   async function handleGoogleSignIn() {
+    if (!auth) { showError('Google Sign-In unavailable (Firebase not configured)'); return; }
     showError('');
     googleSignInBtn.disabled = true;
     try {
@@ -97,7 +114,13 @@ export function bindAuthUI() {
   googleSignInBtn.addEventListener('click', handleGoogleSignIn);
 
   // Listen for Firebase auth state changes (handles session restore & token refresh)
-  onAuthStateChanged(auth, async (firebaseUser) => {
+  // Guard: skip when Firebase is disabled (auth === null with placeholder config)
+  if (!auth) {
+    // Firebase unavailable — disable Google sign-in, allow guest-only mode
+    googleSignInBtn.disabled = true;
+    googleSignInBtn.title = 'Google Sign-In unavailable (Firebase not configured)';
+  }
+  if (auth) onAuthStateChanged(auth, async (firebaseUser) => {
     if (firebaseUser) {
       const currentState = getAuthState();
       if (currentState.mode === 'account' && currentState.user && currentState.user.uid === firebaseUser.uid) {
@@ -140,7 +163,7 @@ export function bindAuthUI() {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
       try {
-        await signOut(auth);
+        if (auth) await signOut(auth);
       } catch (e) {
         console.warn('Sign-out error:', e.message);
       }
@@ -148,7 +171,8 @@ export function bindAuthUI() {
       logout();
       // Clear user-scoped data from localStorage on sign-out
       SYNC_KEYS.forEach(k => localStorage.removeItem(k));
-      localStorage.removeItem('reader-api-key');
+      sessionStorage.removeItem('reader-api-key');
+      localStorage.removeItem('reader-api-key'); // clean up any legacy localStorage keys
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const key = localStorage.key(i);
         if (key && key.startsWith('reader-bookmark-')) localStorage.removeItem(key);

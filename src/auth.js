@@ -22,7 +22,7 @@ function restoreSession() {
     // Corrupted data — fall back to guest
   }
   _state = { mode: 'guest', user: null };
-  localStorage.setItem('auth-mode', 'guest');
+  try { localStorage.setItem('auth-mode', 'guest'); } catch { /* storage unavailable */ }
 }
 
 restoreSession();

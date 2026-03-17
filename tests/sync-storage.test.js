@@ -68,16 +68,19 @@ describe('account mode storage', () => {
     syncStorage.setItem('reader-theme', 'black');
     // Still writes to localStorage immediately
     expect(localStorage.getItem('reader-theme')).toBe('black');
-    // Also schedules remote push
+    // Remote push is queued — await microtask
+    await new Promise(r => setTimeout(r, 0));
     expect(provider.push).toHaveBeenCalledWith('reader-theme', 'black');
   });
 
-  test('removeItem calls remote push with null when provider is set', () => {
+  test('removeItem calls remote push with null when provider is set', async () => {
     const provider = { push: vi.fn().mockResolvedValue(), pull: vi.fn() };
     syncStorage.setRemoteProvider(provider);
     localStorage.setItem('reader-theme', 'brown');
     syncStorage.removeItem('reader-theme');
     expect(localStorage.getItem('reader-theme')).toBeNull();
+    // Remote push is queued — await microtask
+    await new Promise(r => setTimeout(r, 0));
     expect(provider.push).toHaveBeenCalledWith('reader-theme', '__sync_deleted__');
   });
 
@@ -158,10 +161,44 @@ describe('bookmark sync', () => {
     expect(localStorage.getItem('reader-bookmark-test.pdf')).toBe('{"page":3}');
   });
 
-  test('bookmark keys are pushed to remote when provider exists', () => {
+  test('bookmark keys are pushed to remote when provider exists', async () => {
     const provider = { push: vi.fn().mockResolvedValue(), pull: vi.fn() };
     syncStorage.setRemoteProvider(provider);
     syncStorage.setItem('reader-bookmark-test.pdf', '{"page":5}');
+    // Remote push is queued — await microtask
+    await new Promise(r => setTimeout(r, 0));
     expect(provider.push).toHaveBeenCalledWith('reader-bookmark-test.pdf', '{"page":5}');
+  });
+});
+
+describe('localStorage failure resilience', () => {
+  test('getItem returns null when localStorage throws', () => {
+    const orig = Storage.prototype.getItem;
+    Storage.prototype.getItem = () => { throw new DOMException('QuotaExceededError'); };
+    try {
+      expect(syncStorage.getItem('reader-theme')).toBeNull();
+    } finally {
+      Storage.prototype.getItem = orig;
+    }
+  });
+
+  test('setItem does not throw when localStorage throws', () => {
+    const orig = Storage.prototype.setItem;
+    Storage.prototype.setItem = () => { throw new DOMException('QuotaExceededError'); };
+    try {
+      expect(() => syncStorage.setItem('reader-theme', 'black')).not.toThrow();
+    } finally {
+      Storage.prototype.setItem = orig;
+    }
+  });
+
+  test('removeItem does not throw when localStorage throws', () => {
+    const orig = Storage.prototype.removeItem;
+    Storage.prototype.removeItem = () => { throw new DOMException('SecurityError'); };
+    try {
+      expect(() => syncStorage.removeItem('reader-theme')).not.toThrow();
+    } finally {
+      Storage.prototype.removeItem = orig;
+    }
   });
 });

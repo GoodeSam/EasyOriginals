@@ -34,12 +34,12 @@ describe('CSS: sidebar auto-hide classes', () => {
     expect(css).toMatch(/\.side-toggle\.auto-hide/);
   });
 
-  test('side-toggle.auto-hide moves toggles off-screen to the right', () => {
-    // Should translate to the right to hide
+  test('side-toggle.auto-hide moves toggles off-screen', () => {
+    // Should translate off-screen to hide (upward for top-positioned toggles)
     const autoHideMatch = css.match(/\.side-toggle\.auto-hide\s*\{([^}]+)\}/);
     expect(autoHideMatch).not.toBeNull();
     const rules = autoHideMatch[1];
-    expect(rules).toMatch(/transform:\s*translateX\(/);
+    expect(rules).toMatch(/transform:\s*translate[XY]\(/);
   });
 
   test('side-toggle.auto-hide disables pointer events', () => {

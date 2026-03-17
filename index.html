@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- CSP: style-src 'unsafe-inline' required for dynamic element.style.* in reader.js and theme swatches.
+       TODO: migrate inline styles to CSS classes and use nonces to remove 'unsafe-inline'. -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://apis.google.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://api.openai.com https://edge.microsoft.com https://api.cognitive.microsofttranslator.com https://translate.googleapis.com https://api.allorigins.win; media-src 'self' blob:; img-src 'self' data: blob:; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none';">
   <title>English Reader</title>
   <link rel="icon" href="/icons/icon48.png">
@@ -58,6 +60,8 @@
       <span class="book-title" id="bookTitle">Untitled</span>
       <div class="top-bar-actions">
         <button class="icon-btn" id="searchToggle" title="Search (Ctrl+F)" aria-label="Search">&#128269;</button>
+        <button class="icon-btn" id="wordListToggle" title="Word List" aria-label="Word List">Aa</button>
+        <button class="icon-btn" id="historyToggle" title="Reading History" aria-label="Reading History">&#128337;</button>
         <button class="icon-btn bookmark-btn" id="bookmarkBtn" title="Bookmark this position" aria-label="Bookmark">&#9734;</button>
         <div class="font-size-control">
           <button class="icon-btn" id="fontDecrease" title="Decrease font size" aria-label="Decrease font size">A-</button>
@@ -91,7 +95,7 @@
 
     <!-- Search Bar -->
     <div class="search-bar" id="searchBar">
-      <input type="text" id="searchInput" placeholder="Search in book..." autocomplete="off">
+      <input type="text" id="searchInput" placeholder="Search in book..." autocomplete="off" aria-label="Search in book">
       <span class="search-count" id="searchCount"></span>
       <button class="icon-btn search-nav-btn" id="searchPrev" title="Previous match" aria-label="Previous match">&#8593;</button>
       <button class="icon-btn search-nav-btn" id="searchNext" title="Next match" aria-label="Next match">&#8595;</button>
@@ -182,7 +186,6 @@
     <div class="side-panel-list history-list" id="historyList"></div>
     <button class="btn btn-sm side-panel-export history-clear" id="historyClear">Clear History</button>
   </div>
-  <button class="side-toggle history-toggle" id="historyToggle" title="Reading History" aria-label="Reading History">&#128337;</button>
 
   <!-- Word List Panel -->
   <div class="side-panel wordlist-panel" id="wordListPanel">
@@ -193,7 +196,6 @@
     <div class="side-panel-list wordlist-entries" id="wordListEntries"></div>
     <button class="btn btn-sm side-panel-export wordlist-export" id="wordListExport">Export Word List</button>
   </div>
-  <button class="side-toggle wordlist-toggle" id="wordListToggle" title="Word List" aria-label="Word List">Aa</button>
 
   <!-- Auto-Play Audio Toggle -->
   <button class="side-toggle autoplay-toggle" id="autoPlayBtn" title="Auto-play audio: OFF" aria-label="Toggle auto-play audio" aria-pressed="false">&#128263;</button>

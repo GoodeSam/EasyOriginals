@@ -495,6 +495,7 @@ body {
 /* ===== Shared Side Panel ===== */
 .side-toggle {
   position: fixed;
+  top: 12px;
   right: 24px;
   width: 48px;
   height: 48px;
@@ -508,19 +509,19 @@ body {
 }
 .side-toggle.visible { display: block; }
 .side-toggle.auto-hide {
-  transform: translateX(100px);
+  transform: translateY(-100px);
   opacity: 0;
   pointer-events: none;
 }
 .side-panel {
   display: none;
   position: fixed;
+  left: 0;
   right: 0;
   top: 0;
-  bottom: 0;
-  width: min(100vw, 340px);
+  max-height: 60vh;
   background: #fff;
-  box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
   z-index: 160;
   flex-direction: column;
 }
@@ -559,7 +560,7 @@ body {
 
 /* ===== Notes Panel ===== */
 .notes-toggle {
-  bottom: clamp(50px, 10vh, 70px);
+  right: 24px;
   background: #4f46e5;
   font-size: 22px;
   box-shadow: 0 4px 14px rgba(79,70,229,0.4);
@@ -587,12 +588,6 @@ body {
 .note-item .note-delete:hover { color: #e11d48; }
 
 /* ===== History Panel ===== */
-.history-toggle {
-  bottom: clamp(100px, 18vh, 130px);
-  background: #0ea5e9;
-  font-size: 22px;
-  box-shadow: 0 4px 14px rgba(14,165,233,0.4);
-}
 .history-item {
   background: #eff6ff;
   border-radius: 8px;
@@ -610,15 +605,6 @@ body {
 .history-item .history-date { font-size: 11px; color: #999; margin-top: 4px; }
 
 /* ===== Word List Panel ===== */
-.wordlist-toggle {
-  bottom: clamp(150px, 26vh, 190px);
-  background: #10b981;
-  font-size: 16px;
-  font-weight: 700;
-  font-family: -apple-system, sans-serif;
-  box-shadow: 0 4px 14px rgba(16,185,129,0.4);
-}
-.wordlist-panel { width: min(100vw, 370px); }
 .wordlist-item {
   background: #f0fdf4;
   border-radius: 8px;
@@ -818,7 +804,7 @@ body {
 
 /* ===== Settings Panel ===== */
 .autoplay-toggle {
-  bottom: clamp(200px, 34vh, 250px);
+  right: 192px;
   background: #6b7280;
   font-size: 22px;
   box-shadow: 0 4px 14px rgba(107,114,128,0.4);
@@ -828,12 +814,12 @@ body {
   box-shadow: 0 4px 14px rgba(5,150,105,0.4);
 }
 .settings-toggle {
-  bottom: clamp(250px, 42vh, 310px);
+  right: 248px;
   background: #6366f1;
   font-size: 22px;
   box-shadow: 0 4px 14px rgba(99,102,241,0.4);
 }
-.settings-panel { width: min(100vw, 340px); }
+.settings-panel { /* full-width at top, no width override */ }
 .settings-panel .side-panel-header { font-family: -apple-system, sans-serif; }
 
 /* ===== Auth Screen ===== */
@@ -929,6 +915,9 @@ body {
 }
 .user-menu-logout { width: 100%; }
 
+/* ===== Side-panel layout compensation ===== */
+/* Panels are now at the top — no right-side compensation needed */
+
 /* ===== Fullscreen Reading Mode ===== */
 .fullscreen-reading {
 }
@@ -957,7 +946,7 @@ body {
   padding: 40px 80px;
 }
 .fullscreen-reading ~ .side-toggle {
-  transform: translateX(100px);
+  transform: translateY(-100px);
   opacity: 0;
   pointer-events: none;
 }

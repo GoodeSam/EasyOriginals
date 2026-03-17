@@ -11,6 +11,7 @@ let loadSettings, saveSettings, getSettings;
 
 beforeEach(async () => {
   window.localStorage.clear();
+  window.sessionStorage.clear();
   vi.resetModules();
   const mod = await import('../src/storage.js');
   loadSettings = mod.loadSettings;
@@ -24,9 +25,10 @@ describe('saveSettings', () => {
     expect(window.localStorage.getItem('reader-provider')).toBe('google');
   });
 
-  test('saves openaiApiKey to localStorage', () => {
+  test('saves openaiApiKey to sessionStorage (not localStorage)', () => {
     saveSettings({ openaiApiKey: 'sk-test-key' });
-    expect(window.localStorage.getItem('reader-api-key')).toBe('sk-test-key');
+    expect(window.sessionStorage.getItem('reader-api-key')).toBe('sk-test-key');
+    expect(window.localStorage.getItem('reader-api-key')).toBeNull();
   });
 
   test('saves openaiModel to localStorage', () => {
@@ -41,7 +43,7 @@ describe('saveSettings', () => {
       openaiModel: 'gpt-4-turbo',
     });
     expect(window.localStorage.getItem('reader-provider')).toBe('microsoft');
-    expect(window.localStorage.getItem('reader-api-key')).toBe('sk-abc');
+    expect(window.sessionStorage.getItem('reader-api-key')).toBe('sk-abc');
     expect(window.localStorage.getItem('reader-model')).toBe('gpt-4-turbo');
   });
 
@@ -59,9 +61,9 @@ describe('loadSettings', () => {
     expect(settings.openaiModel).toBe('gpt-4o-mini');
   });
 
-  test('loads saved values from localStorage', () => {
+  test('loads saved values from storage', () => {
     window.localStorage.setItem('reader-provider', 'google');
-    window.localStorage.setItem('reader-api-key', 'sk-saved');
+    window.sessionStorage.setItem('reader-api-key', 'sk-saved');
     window.localStorage.setItem('reader-model', 'gpt-4o');
 
     const settings = loadSettings();

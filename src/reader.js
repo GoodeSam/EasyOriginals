@@ -43,7 +43,8 @@ let state = {
 };
 
 // Expose state for testing (only in dev/test)
-if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.MODE !== 'production') {
+const _isDev = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.MODE !== 'production';
+if (_isDev) {
   window._readerState = state;
 }
 
@@ -156,9 +157,7 @@ function init() {
 
   if (readerScreen.classList.contains('active')) {
     startAutoHideTimer();
-    historyToggle.classList.add('visible');
     notesToggle.classList.add('visible');
-    wordListToggle.classList.add('visible');
     autoPlayBtn.classList.add('visible');
   }
 }
@@ -371,8 +370,6 @@ function bindNavigationEvents() {
     readerScreen.classList.remove('active');
     uploadScreen.classList.add('active');
     notesToggle.classList.remove('visible');
-    historyToggle.classList.remove('visible');
-    wordListToggle.classList.remove('visible');
   });
   prevPageBtn.addEventListener('click', () => goToPage(state.currentPage - 1));
   nextPageBtn.addEventListener('click', () => goToPage(state.currentPage + 1));
@@ -641,6 +638,7 @@ function handleReaderClick(e) {
     }
   }
 
+
   const wordEl = e.target.closest('.word');
   if (wordEl) {
     e.stopPropagation();
@@ -665,7 +663,7 @@ function handleReaderContextMenu(e) {
     e.preventDefault();
     openSentencePanel(sentenceEl);
     if (state.gestureMode === 'direct') {
-      window.translateSentence();
+      translateSentence();
     }
   }
 }
@@ -679,13 +677,24 @@ function handleReaderTouch(e) {
     e.preventDefault();
     openSentencePanel(sentenceEl);
     if (state.gestureMode === 'direct') {
-      window.translateSentence();
+      translateSentence();
     }
   }
 }
 
 function handleReaderKeydown(e) {
   if (e.key !== 'Enter' && e.key !== ' ') return;
+
+  // Shift+Enter on a sentence/word opens paragraph translation popup
+  if (e.shiftKey && (e.key === 'Enter')) {
+    const paraEl = e.target.closest('.paragraph');
+    if (paraEl) {
+      e.preventDefault();
+      openParaPopup(paraEl);
+      return;
+    }
+  }
+
   const wordEl = e.target.closest('.word');
   if (wordEl) {
     e.preventDefault();
@@ -786,8 +795,6 @@ async function handleFile(file) {
     uploadScreen.classList.remove('active');
     readerScreen.classList.add('active');
     notesToggle.classList.add('visible');
-    historyToggle.classList.add('visible');
-    wordListToggle.classList.add('visible');
     autoPlayBtn.classList.add('visible');
 
     updateBookmarkIcon();
@@ -805,6 +812,9 @@ async function handleFile(file) {
 }
 
 // ===== URL Handling =====
+// WARNING: allorigins is a public CORS proxy — requested URLs and page content
+// are transmitted through a third party. For privacy-sensitive use cases,
+// deploy your own proxy with an allowlist and rate limiting.
 const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 
 function extractTextFromHTML(html) {
@@ -855,6 +865,11 @@ async function handleURL(url) {
     return;
   }
 
+  // Privacy notice: URL content is fetched via a public CORS proxy
+  if (!confirm('This URL will be fetched through a public proxy (allorigins.win). The page content will be visible to the proxy. Continue?')) {
+    return;
+  }
+
   showUrlError('');
   if (urlLoadBtn) urlLoadBtn.disabled = true;
 
@@ -895,8 +910,6 @@ async function handleURL(url) {
     uploadScreen.classList.remove('active');
     readerScreen.classList.add('active');
     notesToggle.classList.add('visible');
-    historyToggle.classList.add('visible');
-    wordListToggle.classList.add('visible');
     autoPlayBtn.classList.add('visible');
 
     updateBookmarkIcon();
@@ -1779,15 +1792,39 @@ function openSentencePanel(sentenceEl) {
 
   panelOverlay.classList.add('active');
   sentencePanel.classList.add('active');
+  // Move focus into the dialog and trap it for keyboard/screen-reader users
+  sentencePanel.addEventListener('keydown', _sentencePanelTrap);
+  const panelCloseBtn = sentencePanel.querySelector('.panel-close');
+  if (panelCloseBtn) panelCloseBtn.focus();
 
   if (state.autoPlayAudio) speakSentence();
 }
 
+// Focus trap for modal dialogs
+function trapFocus(e, container) {
+  if (e.key !== 'Tab') return;
+  const focusable = container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  if (focusable.length === 0) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (e.shiftKey) {
+    if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+  } else {
+    if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+}
+
+function _sentencePanelTrap(e) { trapFocus(e, sentencePanel); }
+function _paraPopupTrap(e) { trapFocus(e, paraPopup); }
+
 function closeSentencePanel() {
+  sentencePanel.removeEventListener('keydown', _sentencePanelTrap);
   panelOverlay.classList.remove('active');
   sentencePanel.classList.remove('active');
   if (state.activeSentenceEl) {
     state.activeSentenceEl.classList.remove('active');
+    // Restore focus to the sentence that opened the panel
+    state.activeSentenceEl.focus();
     state.activeSentenceEl = null;
   }
 }
@@ -1828,6 +1865,9 @@ function openParaPopup(paraEl) {
   paraPopupText.textContent = text;
   paraPopupOverlay.classList.add('active');
   paraPopup.classList.add('active');
+  // Focus into popup and trap for keyboard/screen-reader users
+  paraPopup.addEventListener('keydown', _paraPopupTrap);
+  if (paraPopupClose) paraPopupClose.focus();
 
   if (state.gestureMode === 'direct') {
     paraPopupTranslation.style.display = '';
@@ -1839,6 +1879,7 @@ function openParaPopup(paraEl) {
 }
 
 function closeParaPopup() {
+  paraPopup.removeEventListener('keydown', _paraPopupTrap);
   paraPopupOverlay.classList.remove('active');
   paraPopup.classList.remove('active');
 }
@@ -2466,7 +2507,14 @@ function closeSearch() {
   clearSearchHighlights();
 }
 
-function performSearch() {
+let _searchAbort = null;
+
+async function performSearch() {
+  // Abort any in-flight search
+  if (_searchAbort) _searchAbort.abort = true;
+  const token = { abort: false };
+  _searchAbort = token;
+
   const query = searchInput.value.trim();
   state.searchMatches = [];
   state.searchCurrent = -1;
@@ -2481,8 +2529,8 @@ function performSearch() {
   const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const re = new RegExp(escaped, 'gi');
 
-  // Search across all pages → find every sentence that contains the query
-  for (let pi = 0; pi < state.pages.length; pi++) {
+  // Search current page first, then remaining pages, for faster initial results
+  function searchPage(pi) {
     const page = state.pages[pi];
     for (let pai = 0; pai < page.length; pai++) {
       const para = page[pai];
@@ -2497,6 +2545,22 @@ function performSearch() {
       }
     }
   }
+
+  // Pages after current, then remaining — yield to main thread every 20 pages
+  const BATCH_SIZE = 20;
+  for (let i = 0; i < state.pages.length; i++) {
+    const pi = (state.currentPage + i) % state.pages.length;
+    searchPage(pi);
+    if ((i + 1) % BATCH_SIZE === 0) {
+      searchCount.textContent = `${state.searchMatches.length}+ ...`;
+      await new Promise(r => setTimeout(r, 0));
+      if (token.abort) return;
+    }
+  }
+  if (token.abort) return;
+
+  // Re-sort by page order so navigation is sequential
+  state.searchMatches.sort((a, b) => a.pageIndex - b.pageIndex || a.paraIndex - b.paraIndex || a.sentIndex - b.sentIndex || a.offset - b.offset);
 
   if (state.searchMatches.length > 0) {
     // Jump to first match on or after current page

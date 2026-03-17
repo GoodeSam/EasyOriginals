@@ -102,10 +102,10 @@ describe('auto-play button is a right-sidebar side-toggle', () => {
 // ─── CSS Sidebar Toggle Styling ──────────────────────────────────────
 
 describe('auto-play sidebar toggle CSS', () => {
-  test('CSS defines .autoplay-toggle with a bottom position', () => {
+  test('CSS defines .autoplay-toggle with a right position', () => {
     const rule = cssSrc.match(/\.autoplay-toggle\s*\{[^}]*\}/);
     expect(rule).not.toBeNull();
-    expect(rule[0]).toMatch(/bottom:/);
+    expect(rule[0]).toMatch(/right:/);
   });
 
   test('.autoplay-toggle has a background color', () => {

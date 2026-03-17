@@ -16,13 +16,24 @@ const firebaseConfig = {
   appId: "1:000000000000:web:placeholder"
 };
 
-if (firebaseConfig.apiKey.includes('placeholder') || firebaseConfig.appId.includes('placeholder') || firebaseConfig.messagingSenderId === '000000000000') {
-  console.warn('Firebase config contains placeholder values. Auth and sync features will not work until real Firebase credentials are configured.');
-}
+const _hasPlaceholders = firebaseConfig.apiKey.includes('placeholder') || firebaseConfig.appId.includes('placeholder') || firebaseConfig.messagingSenderId === '000000000000';
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+let app, auth, db;
+if (_hasPlaceholders) {
+  console.warn('Firebase config contains placeholder values. Auth and sync features are disabled.');
+  // Create null stubs so imports don't crash — auth-ui checks before using
+  app = null;
+  auth = null;
+  db = null;
+} else {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  } catch (err) {
+    throw new Error('Firebase initialization failed: ' + err.message + '. Check your Firebase config.');
+  }
+}
 
 export { app, auth, db };
 export { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged };

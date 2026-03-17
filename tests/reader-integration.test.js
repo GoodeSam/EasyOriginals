@@ -122,3 +122,61 @@ describe('reader.js preserves core features', () => {
     expect(readerSrc).toMatch(/function performSearch/);
   });
 });
+
+describe('word list and history toggles in toolbar', () => {
+  let indexHtml;
+
+  beforeEach(() => {
+    indexHtml = fs.readFileSync(
+      path.resolve(__dirname, '../index.html'),
+      'utf-8'
+    );
+  });
+
+  test('wordListToggle is inside .top-bar-actions', () => {
+    // Extract the top-bar-actions block
+    const actionsMatch = indexHtml.match(/class="top-bar-actions">([\s\S]*?)<\/div>\s*<\/div>/);
+    expect(actionsMatch).not.toBeNull();
+    expect(actionsMatch[1]).toMatch(/id="wordListToggle"/);
+  });
+
+  test('historyToggle is inside .top-bar-actions', () => {
+    const actionsMatch = indexHtml.match(/class="top-bar-actions">([\s\S]*?)<\/div>\s*<\/div>/);
+    expect(actionsMatch).not.toBeNull();
+    expect(actionsMatch[1]).toMatch(/id="historyToggle"/);
+  });
+
+  test('searchToggle is inside .top-bar-actions', () => {
+    const actionsMatch = indexHtml.match(/class="top-bar-actions">([\s\S]*?)<\/div>\s*<\/div>/);
+    expect(actionsMatch).not.toBeNull();
+    expect(actionsMatch[1]).toMatch(/id="searchToggle"/);
+  });
+
+  test('wordListToggle is NOT a standalone side-toggle button', () => {
+    // Should not exist as a separate side-toggle element outside the toolbar
+    expect(indexHtml).not.toMatch(/<button[^>]*class="side-toggle[^"]*wordlist-toggle[^"]*"[^>]*id="wordListToggle"/);
+  });
+
+  test('historyToggle is NOT a standalone side-toggle button', () => {
+    expect(indexHtml).not.toMatch(/<button[^>]*class="side-toggle[^"]*history-toggle[^"]*"[^>]*id="historyToggle"/);
+  });
+
+  test('wordListToggle and historyToggle use icon-btn class in toolbar', () => {
+    const actionsMatch = indexHtml.match(/class="top-bar-actions">([\s\S]*?)<\/div>\s*<\/div>/);
+    const actions = actionsMatch[1];
+    const wlMatch = actions.match(/<button[^>]*id="wordListToggle"[^>]*/);
+    const hMatch = actions.match(/<button[^>]*id="historyToggle"[^>]*/);
+    expect(wlMatch[0]).toMatch(/class="[^"]*icon-btn/);
+    expect(hMatch[0]).toMatch(/class="[^"]*icon-btn/);
+  });
+
+  test('JS does not toggle .visible class on wordListToggle or historyToggle', () => {
+    const readerSrc = fs.readFileSync(
+      path.resolve(__dirname, '../src/reader.js'),
+      'utf-8'
+    );
+    // Toolbar buttons are always visible, no need for .visible class toggling
+    expect(readerSrc).not.toMatch(/wordListToggle\.classList\.(add|remove)\(['"]visible['"]\)/);
+    expect(readerSrc).not.toMatch(/historyToggle\.classList\.(add|remove)\(['"]visible['"]\)/);
+  });
+});

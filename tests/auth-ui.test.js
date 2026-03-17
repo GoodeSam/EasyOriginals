@@ -106,3 +106,46 @@ describe('CSS: auth screen styles', () => {
     expect(css).toMatch(/\.auth-btn-google/);
   });
 });
+
+describe('auth-ui.js Firebase-unavailable resilience', () => {
+  let authUiSrc;
+  beforeEach(() => {
+    authUiSrc = fs.readFileSync(path.resolve(__dirname, '../src/auth-ui.js'), 'utf-8');
+  });
+
+  test('guards onAuthStateChanged against null auth', () => {
+    // When Firebase is disabled, auth is null — onAuthStateChanged must not be called with null
+    expect(authUiSrc).toMatch(/if\s*\(\s*auth\s*\)\s*onAuthStateChanged/);
+  });
+
+  test('guards signInWithPopup against null auth', () => {
+    // handleGoogleSignIn should bail early when auth is null
+    expect(authUiSrc).toMatch(/if\s*\(\s*!auth\s*\)/);
+  });
+
+  test('guards signOut against null auth', () => {
+    // Logout handler should not call signOut(null)
+    expect(authUiSrc).toMatch(/if\s*\(\s*auth\s*\)\s*await\s+signOut/);
+  });
+
+  test('disables Google sign-in button when Firebase is unavailable', () => {
+    // When auth is null, the button should be disabled with a title explaining why
+    expect(authUiSrc).toMatch(/googleSignInBtn\.disabled\s*=\s*true/);
+    expect(authUiSrc).toMatch(/Firebase not configured/);
+  });
+
+  test('onAuthStateChanged is never called unconditionally', () => {
+    // Every call to onAuthStateChanged should be preceded by an auth guard
+    // Split into lines and find all onAuthStateChanged calls (excluding import)
+    const lines = authUiSrc.split('\n');
+    const callLines = lines.filter(l =>
+      l.includes('onAuthStateChanged(') && !l.includes('import')
+    );
+    for (const line of callLines) {
+      // Should be preceded by `if (auth)` on the same line or the call is inside a guarded block
+      const idx = lines.indexOf(line);
+      const context = lines.slice(Math.max(0, idx - 3), idx + 1).join('\n');
+      expect(context).toMatch(/if\s*\(\s*auth\s*\)/);
+    }
+  });
+});
