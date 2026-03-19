@@ -114,14 +114,14 @@ describe('all --reader-font-size fallbacks use consistent 18px default', () => {
 // ─── Click-to-Speak ─────────────────────────────────────────────────
 
 describe('click-to-speak for words', () => {
-  test('handleReaderClick calls playTTS when clicking a word', () => {
+  test('handleReaderClick calls speakText when clicking a word', () => {
     const clickHandler = readerSrc.match(
       /function handleReaderClick[\s\S]*?closeAllSidePanels\(\)/
     );
     expect(clickHandler).not.toBeNull();
     const fnBody = clickHandler[0];
-    // The word-click branch should invoke playTTS
-    expect(fnBody).toMatch(/playTTS\s*\(/);
+    // The word-click branch should invoke speakText (which handles API key fallback)
+    expect(fnBody).toMatch(/speakText\s*\(/);
   });
 
   test('word popup no longer has a separate pronounce button in HTML', () => {

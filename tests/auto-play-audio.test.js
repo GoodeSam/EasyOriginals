@@ -122,19 +122,19 @@ describe('auto-play button accessibility', () => {
 // ─── Gating TTS behind autoPlayAudio ─────────────────────────────────
 
 describe('word click TTS is gated by autoPlayAudio', () => {
-  test('handleReaderClick checks autoPlayAudio before calling playTTS', () => {
+  test('handleReaderClick checks autoPlayAudio before calling speakText', () => {
     const clickHandler = readerSrc.match(
       /function handleReaderClick[\s\S]*?closeAllSidePanels\(\)/
     );
     expect(clickHandler).not.toBeNull();
     const fnBody = clickHandler[0];
-    // playTTS call must be guarded by autoPlayAudio
-    expect(fnBody).toMatch(/autoPlayAudio[\s\S]*?playTTS/);
+    // speakText call must be guarded by autoPlayAudio
+    expect(fnBody).toMatch(/autoPlayAudio[\s\S]*?speakText/);
   });
 });
 
 describe('sentence panel TTS is gated by autoPlayAudio', () => {
-  test('speakSentence checks autoPlayAudio before calling playTTS', () => {
+  test('speakSentence checks autoPlayAudio before calling speakText', () => {
     const fn = readerSrc.match(
       /(?:async\s+)?function speakSentence[\s\S]*?\n\}/
     );
@@ -144,7 +144,7 @@ describe('sentence panel TTS is gated by autoPlayAudio', () => {
 });
 
 describe('paragraph popup TTS is gated by autoPlayAudio', () => {
-  test('paraPopupText click handler checks autoPlayAudio before calling playTTS', () => {
+  test('paraPopupText click handler checks autoPlayAudio before calling speakText', () => {
     // Find the paraPopupText click handler and verify it checks autoPlayAudio
     const handler = readerSrc.match(
       /paraPopupText\.addEventListener\s*\(\s*['"]click['"]\s*,[\s\S]*?\}\s*\)/
@@ -155,11 +155,11 @@ describe('paragraph popup TTS is gated by autoPlayAudio', () => {
 });
 
 describe('sentence panel auto-speaks on open when autoPlayAudio is on', () => {
-  test('openSentencePanel calls speakSentence or playTTS when autoPlayAudio is true', () => {
+  test('openSentencePanel calls speakSentence or speakText when autoPlayAudio is true', () => {
     const fn = readerSrc.match(
       /function openSentencePanel[\s\S]*?\n\}/
     );
     expect(fn).not.toBeNull();
-    expect(fn[0]).toMatch(/autoPlayAudio[\s\S]*?(?:speakSentence|playTTS)/);
+    expect(fn[0]).toMatch(/autoPlayAudio[\s\S]*?(?:speakSentence|speakText)/);
   });
 });

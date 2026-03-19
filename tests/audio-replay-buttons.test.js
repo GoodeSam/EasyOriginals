@@ -63,9 +63,9 @@ describe('sentence panel listen button', () => {
     expect(readerSrc).toMatch(/btnListen\.addEventListener\s*\(\s*['"]click['"]/);
   });
 
-  test('btnListen click handler calls playTTS with panel sentence text', () => {
-    // The handler should call playTTS with the sentence text content
-    expect(readerSrc).toMatch(/btnListen[\s\S]*?playTTS/);
+  test('btnListen click handler calls speakText with panel sentence text', () => {
+    // The handler should call speakText with the sentence text content
+    expect(readerSrc).toMatch(/btnListen[\s\S]*?speakText/);
   });
 
   test('btnListen handler does NOT check autoPlayAudio (always available)', () => {
@@ -107,8 +107,8 @@ describe('word popup listen button', () => {
     expect(readerSrc).toMatch(/wordListenBtn\.addEventListener\s*\(\s*['"]click['"]/);
   });
 
-  test('wordListenBtn click handler calls playTTS with the popup word text', () => {
-    expect(readerSrc).toMatch(/wordListenBtn[\s\S]*?playTTS/);
+  test('wordListenBtn click handler calls speakText with the popup word text', () => {
+    expect(readerSrc).toMatch(/wordListenBtn[\s\S]*?speakText/);
   });
 
   test('wordListenBtn handler does NOT check autoPlayAudio (always available)', () => {

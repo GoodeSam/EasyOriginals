@@ -474,11 +474,8 @@ function copyWithFeedback(btn, text, originalLabel) {
 function bindPanelEvents() {
   panelClose.addEventListener('click', closeSentencePanel);
   panelOverlay.addEventListener('click', closeSentencePanel);
-  btnListen.addEventListener('click', async () => {
-    await ensureSettings();
-    if (state.apiKey) {
-      playTTS(panelSentence.textContent).catch(err => console.error('Sentence listen TTS error:', err));
-    }
+  btnListen.addEventListener('click', () => {
+    speakText(panelSentence.textContent);
   });
   btnTranslate.addEventListener('click', translateSentence);
   btnGrammar.addEventListener('click', analyzeGrammar);
@@ -487,11 +484,8 @@ function bindPanelEvents() {
     copyWithFeedback(btnCopy, panelSentence.textContent, '\ud83d\udccb Copy');
   });
 
-  wordListenBtn.addEventListener('click', async () => {
-    await ensureSettings();
-    if (state.apiKey) {
-      playTTS(popupWord.textContent).catch(err => console.error('Word listen TTS error:', err));
-    }
+  wordListenBtn.addEventListener('click', () => {
+    speakText(popupWord.textContent);
   });
   wordPopupClose.addEventListener('click', closeWordPopup);
   toggleChinese.addEventListener('click', () => {
@@ -656,7 +650,7 @@ function handleReaderClick(e) {
     const cleanWord = raw.replace(/[^a-zA-Z'\u2019-]/g, '');
     if (cleanWord.length > 0) {
       showWordPopup(cleanWord, sentenceText, e);
-      if (state.autoPlayAudio && state.apiKey) playTTS(cleanWord).catch(err => console.error('Word TTS error:', err));
+      if (state.autoPlayAudio) speakText(cleanWord);
     }
     return;
   }
@@ -1891,13 +1885,9 @@ function closeParaPopup() {
 paraPopupClose.addEventListener('click', closeParaPopup);
 paraPopupOverlay.addEventListener('click', closeParaPopup);
 paraTranslateBtn.addEventListener('click', translateParaPopup);
-paraPopupText.addEventListener('click', async () => {
+paraPopupText.addEventListener('click', () => {
   if (!state.autoPlayAudio) return;
-  const text = paraPopupText.textContent;
-  await ensureSettings();
-  if (state.apiKey) {
-    playTTS(text).catch(err => console.error('Para TTS error:', err));
-  }
+  speakText(paraPopupText.textContent);
 });
 paraCopyBtn.addEventListener('click', () => {
   copyWithFeedback(paraCopyBtn, paraPopupText.textContent, '\uD83D\uDCCB Copy');
@@ -2356,15 +2346,26 @@ async function playTTS(text) {
   audio.play().catch(revokeUrl);
 }
 
-async function speakSentence() {
+function speakText(text) {
+  ensureSettings().then(() => {
+    if (state.apiKey) {
+      playTTS(text).catch(err => console.error('TTS error:', err));
+    } else if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      window.speechSynthesis.speak(utterance);
+    }
+  });
+}
+
+function speakSentence() {
   if (!state.autoPlayAudio) return;
-  const text = panelSentence.textContent;
-  await ensureSettings();
-  if (!state.apiKey) return;
-  playTTS(text).catch(err => console.error('Sentence TTS error:', err));
+  speakText(panelSentence.textContent);
 }
 
 window.playTTS = playTTS;
+window.speakText = speakText;
 window.translateSentence = translateSentence;
 window.speakSentence = speakSentence;
 
