@@ -2376,6 +2376,7 @@ function playEdgeTTS(text) {
     const ws = new WebSocket(
       `${EDGE_TTS_URL}?TrustedClientToken=${EDGE_TTS_TOKEN}&ConnectionId=${connId}`
     );
+    ws.binaryType = 'arraybuffer';
     const audioChunks = [];
 
     ws.onopen = () => {
@@ -2410,14 +2411,13 @@ function playEdgeTTS(text) {
           audio.onerror = revokeUrl;
           audio.play().then(resolve).catch(err => { revokeUrl(); reject(err); });
         }
-      } else if (event.data instanceof Blob) {
-        event.data.arrayBuffer().then(buf => {
-          const view = new DataView(buf);
-          const headerLen = view.getUint16(0);
-          if (buf.byteLength > headerLen + 2) {
-            audioChunks.push(new Uint8Array(buf, headerLen + 2));
-          }
-        });
+      } else if (event.data instanceof ArrayBuffer) {
+        const buf = event.data;
+        const view = new DataView(buf);
+        const headerLen = view.getUint16(0);
+        if (buf.byteLength > headerLen + 2) {
+          audioChunks.push(new Uint8Array(buf, headerLen + 2));
+        }
       }
     };
 

@@ -96,6 +96,20 @@ describe('playEdgeTTS function', () => {
     expect(fn[0]).toMatch(/state\.edgeTtsVoice/);
   });
 
+  test('playEdgeTTS sets binaryType to arraybuffer for synchronous parsing', () => {
+    const fn = readerSrc.match(/function playEdgeTTS[\s\S]*?\n\}/);
+    expect(fn).not.toBeNull();
+    expect(fn[0]).toMatch(/\.binaryType\s*=\s*['"]arraybuffer['"]/);
+  });
+
+  test('playEdgeTTS parses binary messages as ArrayBuffer (not Blob)', () => {
+    const fn = readerSrc.match(/function playEdgeTTS[\s\S]*?\n\}/);
+    expect(fn).not.toBeNull();
+    // Should check for ArrayBuffer, not Blob
+    expect(fn[0]).toMatch(/instanceof ArrayBuffer/);
+    expect(fn[0]).not.toMatch(/instanceof Blob/);
+  });
+
   test('playEdgeTTS collects audio chunks from binary messages', () => {
     const fn = readerSrc.match(/function playEdgeTTS[\s\S]*?\n\}/);
     expect(fn).not.toBeNull();
