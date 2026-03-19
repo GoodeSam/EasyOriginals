@@ -2430,7 +2430,14 @@ function speakText(text) {
     if (state.apiKey) {
       playTTS(text).catch(err => console.error('TTS error:', err));
     } else {
-      playEdgeTTS(text).catch(err => console.error('Edge TTS error:', err));
+      playEdgeTTS(text).catch(() => {
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = 'en-US';
+          window.speechSynthesis.speak(utterance);
+        }
+      });
     }
   });
 }

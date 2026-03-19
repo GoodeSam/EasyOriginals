@@ -145,11 +145,11 @@ describe('speakText uses Edge TTS as fallback', () => {
     expect(fn[0]).toMatch(/playEdgeTTS/);
   });
 
-  test('speakText does NOT use speechSynthesis', () => {
+  test('speakText uses speechSynthesis only as last-resort fallback after Edge TTS fails', () => {
     const fn = readerSrc.match(/function speakText[\s\S]*?\n\}/);
     expect(fn).not.toBeNull();
-    expect(fn[0]).not.toMatch(/speechSynthesis/);
-    expect(fn[0]).not.toMatch(/SpeechSynthesisUtterance/);
+    // Edge TTS is the primary path; speechSynthesis only in the .catch
+    expect(fn[0]).toMatch(/playEdgeTTS[\s\S]*?\.catch[\s\S]*?speechSynthesis/);
   });
 });
 

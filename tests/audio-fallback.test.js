@@ -54,11 +54,11 @@ describe('speakText falls back to Edge TTS without API key', () => {
     expect(fn[0]).toMatch(/playEdgeTTS/);
   });
 
-  test('speakText does NOT use Web Speech API (speechSynthesis)', () => {
+  test('speakText uses speechSynthesis only as last-resort fallback after Edge TTS fails', () => {
     const fn = readerSrc.match(/function speakText[\s\S]*?\n\}/);
     expect(fn).not.toBeNull();
-    expect(fn[0]).not.toMatch(/speechSynthesis/);
-    expect(fn[0]).not.toMatch(/SpeechSynthesisUtterance/);
+    // Edge TTS is tried first; speechSynthesis only inside the .catch
+    expect(fn[0]).toMatch(/playEdgeTTS[\s\S]*?\.catch[\s\S]*?speechSynthesis/);
   });
 });
 
