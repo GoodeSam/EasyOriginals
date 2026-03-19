@@ -91,6 +91,7 @@ export function createSettingsPanel() {
         openaiModel: modelSelect.value,
         edgeTtsVoice: voiceSelect.value,
       });
+      if (window.invalidateSettings) window.invalidateSettings();
       status.textContent = 'Settings saved!';
       status.style.display = 'block';
       status.style.color = '#10b981';

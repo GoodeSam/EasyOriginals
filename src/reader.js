@@ -280,8 +280,14 @@ function loadSettings() {
   state.apiKey = s.openaiApiKey;
   state.model = s.openaiModel;
   state.translationProvider = s.translationProvider;
+  state.edgeTtsVoice = s.edgeTtsVoice || EDGE_TTS_DEFAULT_VOICE;
   state._settingsLoaded = true;
 }
+
+function invalidateSettings() {
+  state._settingsLoaded = false;
+}
+window.invalidateSettings = invalidateSettings;
 
 function safeParseJSON(str, fallback) {
   try {
