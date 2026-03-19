@@ -8,6 +8,7 @@ const KEYS = {
   translationProvider: 'reader-provider',
   openaiApiKey: 'reader-api-key',
   openaiModel: 'reader-model',
+  edgeTtsVoice: 'reader-edge-tts-voice',
 };
 
 // API key uses sessionStorage for reduced exposure — not persisted across sessions
@@ -19,6 +20,7 @@ const DEFAULTS = {
   translationProvider: 'chatgpt',
   openaiApiKey: '',
   openaiModel: DEFAULT_MODEL,
+  edgeTtsVoice: 'en-US-AriaNeural',
 };
 
 let _cache = null;

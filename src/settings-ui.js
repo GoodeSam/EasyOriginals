@@ -36,6 +36,10 @@ export function createSettingsPanel() {
         </select>
       </div>
 
+      <label for="edgeTtsVoice" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Read Aloud Voice (free, no API key needed)</label>
+      <select id="edgeTtsVoice" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:12px;">
+      </select>
+
       <button class="btn btn-primary" id="settingsSaveBtn" style="display:block;width:100%;padding:10px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;background:#4f46e5;color:#fff;">Save Settings</button>
       <div id="settingsStatus" style="font-size:12px;text-align:center;margin-top:8px;display:none;"></div>
     </div>
@@ -49,9 +53,21 @@ export function createSettingsPanel() {
   const saveBtn = panel.querySelector('#settingsSaveBtn');
   const status = panel.querySelector('#settingsStatus');
 
+  const voiceSelect = panel.querySelector('#edgeTtsVoice');
+
   providerSelect.value = settings.translationProvider;
   apiKeyInput.value = settings.openaiApiKey;
   modelSelect.value = settings.openaiModel;
+
+  // Populate voice options from EDGE_TTS_VOICES (exposed by reader.js)
+  const EDGE_TTS_VOICES = window.EDGE_TTS_VOICES || [];
+  EDGE_TTS_VOICES.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.value;
+    opt.textContent = v.label;
+    voiceSelect.appendChild(opt);
+  });
+  voiceSelect.value = settings.edgeTtsVoice || 'en-US-AriaNeural';
 
   function updateChatgptVisibility() {
     chatgptDiv.classList.toggle('hidden', providerSelect.value !== 'chatgpt');
@@ -73,6 +89,7 @@ export function createSettingsPanel() {
         translationProvider: providerSelect.value,
         openaiApiKey: apiKeyInput.value.trim(),
         openaiModel: modelSelect.value,
+        edgeTtsVoice: voiceSelect.value,
       });
       status.textContent = 'Settings saved!';
       status.style.display = 'block';

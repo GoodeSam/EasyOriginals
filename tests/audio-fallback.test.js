@@ -1,10 +1,11 @@
 /**
- * TDD Tests: audio fallback via browser speechSynthesis.
+ * TDD Tests: audio fallback via Edge TTS (Read Aloud).
  *
- * When no OpenAI API key is configured, audio playback should fall back
- * to the browser's built-in Web Speech API (speechSynthesis). A new
- * speakText(text) function serves as the universal entry point for all
- * audio playback, choosing the best available provider automatically.
+ * When no OpenAI API key is configured, audio playback falls back to
+ * Microsoft Edge's Read Aloud service (playEdgeTTS) which provides
+ * natural-sounding neural voices without any API key. The speakText()
+ * function serves as the universal entry point for all audio playback,
+ * choosing the best available provider automatically.
  *
  * @vitest-environment happy-dom
  */
@@ -44,37 +45,20 @@ describe('speakText uses OpenAI TTS when API key is set', () => {
   });
 });
 
-// ─── Browser speechSynthesis fallback ───────────────────────────────
+// ─── Edge TTS fallback ──────────────────────────────────────────────
 
-describe('speakText falls back to speechSynthesis without API key', () => {
-  test('speakText references speechSynthesis as fallback', () => {
+describe('speakText falls back to Edge TTS without API key', () => {
+  test('speakText calls playEdgeTTS as fallback', () => {
     const fn = readerSrc.match(/function speakText[\s\S]*?\n\}/);
     expect(fn).not.toBeNull();
-    expect(fn[0]).toMatch(/speechSynthesis/);
+    expect(fn[0]).toMatch(/playEdgeTTS/);
   });
 
-  test('speakText creates a SpeechSynthesisUtterance', () => {
+  test('speakText does NOT use Web Speech API (speechSynthesis)', () => {
     const fn = readerSrc.match(/function speakText[\s\S]*?\n\}/);
     expect(fn).not.toBeNull();
-    expect(fn[0]).toMatch(/SpeechSynthesisUtterance/);
-  });
-
-  test('speakText sets English language on the utterance', () => {
-    const fn = readerSrc.match(/function speakText[\s\S]*?\n\}/);
-    expect(fn).not.toBeNull();
-    expect(fn[0]).toMatch(/\.lang\s*=\s*['"]en/);
-  });
-
-  test('speakText cancels any in-progress speech before starting new', () => {
-    const fn = readerSrc.match(/function speakText[\s\S]*?\n\}/);
-    expect(fn).not.toBeNull();
-    expect(fn[0]).toMatch(/speechSynthesis\.cancel\(\)/);
-  });
-
-  test('speakText calls speechSynthesis.speak with the utterance', () => {
-    const fn = readerSrc.match(/function speakText[\s\S]*?\n\}/);
-    expect(fn).not.toBeNull();
-    expect(fn[0]).toMatch(/speechSynthesis\.speak\(/);
+    expect(fn[0]).not.toMatch(/speechSynthesis/);
+    expect(fn[0]).not.toMatch(/SpeechSynthesisUtterance/);
   });
 });
 

@@ -9,6 +9,18 @@ const GOOGLE_TRANSLATE_URL = 'https://translate.googleapis.com/translate_a/singl
 const MS_AUTH_URL = 'https://edge.microsoft.com/translate/auth';
 const MS_TRANSLATE_URL = 'https://api.cognitive.microsofttranslator.com/translate';
 const MS_DICT_URL = 'https://api.cognitive.microsofttranslator.com/dictionary/lookup';
+const EDGE_TTS_URL = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
+const EDGE_TTS_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
+const EDGE_TTS_DEFAULT_VOICE = 'en-US-AriaNeural';
+const EDGE_TTS_VOICES = [
+  { value: 'en-US-AriaNeural', label: 'Aria (US, female)' },
+  { value: 'en-US-GuyNeural', label: 'Guy (US, male)' },
+  { value: 'en-US-JennyNeural', label: 'Jenny (US, female)' },
+  { value: 'en-US-ChristopherNeural', label: 'Christopher (US, male)' },
+  { value: 'en-GB-SoniaNeural', label: 'Sonia (UK, female)' },
+  { value: 'en-GB-RyanNeural', label: 'Ryan (UK, male)' },
+  { value: 'en-AU-NatashaNeural', label: 'Natasha (AU, female)' },
+];
 
 // ===== State =====
 let state = {
@@ -40,6 +52,8 @@ let state = {
   gestureMode: 'menu',
   // Auto-play audio: when true, clicking words/sentences triggers TTS automatically
   autoPlayAudio: false,
+  // Edge TTS voice for free speech synthesis
+  edgeTtsVoice: EDGE_TTS_DEFAULT_VOICE,
 };
 
 // Expose state for testing (only in dev/test)
@@ -1902,6 +1916,7 @@ async function ensureSettings() {
     state.apiKey = s.openaiApiKey;
     state.model = s.openaiModel;
     state.translationProvider = s.translationProvider;
+    state.edgeTtsVoice = s.edgeTtsVoice || EDGE_TTS_DEFAULT_VOICE;
     state._settingsLoaded = true;
     _apiKeyAlertShown = false;
   }
@@ -2352,15 +2367,70 @@ async function playTTS(text) {
   audio.play().catch(revokeUrl);
 }
 
+function playEdgeTTS(text) {
+  const voice = state.edgeTtsVoice || EDGE_TTS_DEFAULT_VOICE;
+  const connId = crypto.randomUUID().replace(/-/g, '');
+  const requestId = crypto.randomUUID().replace(/-/g, '');
+
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(
+      `${EDGE_TTS_URL}?TrustedClientToken=${EDGE_TTS_TOKEN}&ConnectionId=${connId}`
+    );
+    const audioChunks = [];
+
+    ws.onopen = () => {
+      ws.send(
+        'Content-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n' +
+        JSON.stringify({
+          context: {
+            synthesis: {
+              audio: {
+                metadataoptions: { sentenceBoundaryEnabled: 'false', wordBoundaryEnabled: 'false' },
+                outputFormat: 'audio-24khz-48kbitrate-mono-mp3'
+              }
+            }
+          }
+        })
+      );
+
+      const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const ssml = `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-US'><voice name='${voice}'><prosody pitch='+0Hz' rate='+0%' volume='+0%'>${escaped}</prosody></voice></speak>`;
+      ws.send(`X-RequestId:${requestId}\r\nContent-Type:application/ssml+xml\r\nPath:ssml\r\n\r\n${ssml}`);
+    };
+
+    ws.onmessage = (event) => {
+      if (typeof event.data === 'string') {
+        if (event.data.includes('Path:turn.end')) {
+          ws.close();
+          const blob = new Blob(audioChunks, { type: 'audio/mpeg' });
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          const revokeUrl = () => URL.revokeObjectURL(url);
+          audio.onended = revokeUrl;
+          audio.onerror = revokeUrl;
+          audio.play().then(resolve).catch(err => { revokeUrl(); reject(err); });
+        }
+      } else if (event.data instanceof Blob) {
+        event.data.arrayBuffer().then(buf => {
+          const view = new DataView(buf);
+          const headerLen = view.getUint16(0);
+          if (buf.byteLength > headerLen + 2) {
+            audioChunks.push(new Uint8Array(buf, headerLen + 2));
+          }
+        });
+      }
+    };
+
+    ws.onerror = () => reject(new Error('Edge TTS connection failed'));
+  });
+}
+
 function speakText(text) {
   ensureSettings().then(() => {
     if (state.apiKey) {
       playTTS(text).catch(err => console.error('TTS error:', err));
-    } else if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      window.speechSynthesis.speak(utterance);
+    } else {
+      playEdgeTTS(text).catch(err => console.error('Edge TTS error:', err));
     }
   });
 }
@@ -2371,7 +2441,9 @@ function speakSentence() {
 }
 
 window.playTTS = playTTS;
+window.playEdgeTTS = playEdgeTTS;
 window.speakText = speakText;
+window.EDGE_TTS_VOICES = EDGE_TTS_VOICES;
 window.translateSentence = translateSentence;
 window.speakSentence = speakSentence;
 
