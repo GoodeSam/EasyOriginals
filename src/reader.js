@@ -1894,6 +1894,8 @@ paraCopyBtn.addEventListener('click', () => {
 });
 
 // ===== API Calls =====
+let _apiKeyAlertShown = false;
+
 async function ensureSettings() {
   if (!state._settingsLoaded) {
     const s = loadStorageSettings();
@@ -1901,6 +1903,7 @@ async function ensureSettings() {
     state.model = s.openaiModel;
     state.translationProvider = s.translationProvider;
     state._settingsLoaded = true;
+    _apiKeyAlertShown = false;
   }
   return state.translationProvider !== 'chatgpt' || !!state.apiKey;
 }
@@ -2212,7 +2215,10 @@ window.microsoftLookupWord = microsoftLookupWord;
 async function callOpenAI(messages, onError) {
   await ensureSettings();
   if (!state.apiKey) {
-    alert('Please set your OpenAI API key in Settings first.');
+    if (!_apiKeyAlertShown) {
+      _apiKeyAlertShown = true;
+      alert('Please set your OpenAI API key in Settings first.');
+    }
     return null;
   }
 
