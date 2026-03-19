@@ -12,6 +12,7 @@ const MS_DICT_URL = 'https://api.cognitive.microsofttranslator.com/dictionary/lo
 const EDGE_TTS_URL = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
 const EDGE_TTS_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
 const EDGE_TTS_DEFAULT_VOICE = 'en-US-AriaNeural';
+const SEC_MS_GEC_VERSION = '1-130.0.2849.68';
 const EDGE_TTS_VOICES = [
   { value: 'en-US-AriaNeural', label: 'Aria (US, female)' },
   { value: 'en-US-GuyNeural', label: 'Guy (US, male)' },
@@ -2367,14 +2368,29 @@ async function playTTS(text) {
   audio.play().catch(revokeUrl);
 }
 
-function playEdgeTTS(text) {
+async function generateSecMsGec() {
+  let ticks = Math.floor(Date.now() / 1000);
+  ticks += 11644473600;
+  ticks -= ticks % 300;
+  ticks *= 1e7;
+  const input = `${ticks}${EDGE_TTS_TOKEN}`;
+  const data = new TextEncoder().encode(input);
+  const hashBuf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuf))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
+}
+
+async function playEdgeTTS(text) {
   const voice = state.edgeTtsVoice || EDGE_TTS_DEFAULT_VOICE;
   const connId = crypto.randomUUID().replace(/-/g, '');
   const requestId = crypto.randomUUID().replace(/-/g, '');
+  const gecToken = await generateSecMsGec();
 
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(
-      `${EDGE_TTS_URL}?TrustedClientToken=${EDGE_TTS_TOKEN}&ConnectionId=${connId}`
+      `${EDGE_TTS_URL}?TrustedClientToken=${EDGE_TTS_TOKEN}&ConnectionId=${connId}&Sec-MS-GEC=${gecToken}&Sec-MS-GEC-Version=${SEC_MS_GEC_VERSION}`
     );
     ws.binaryType = 'arraybuffer';
     const audioChunks = [];
