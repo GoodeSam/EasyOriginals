@@ -151,11 +151,11 @@ describe('mouse movement in center does NOT exit fullscreen', () => {
 });
 
 describe('edge detection exits fullscreen', () => {
-  test('mousemove at top/bottom/right edge calls showBars', () => {
+  test('mousemove at top/bottom edge calls showBars (right edge does not)', () => {
     const moveMatch = readerSrc.match(/document\.addEventListener\('mousemove'[\s\S]*?\}\);/);
     expect(moveMatch).not.toBeNull();
     const handler = moveMatch[0];
-    const edgeMatch = handler.match(/if\s*\(atTop\s*\|\|\s*atBottom\s*\|\|\s*atRight\)\s*\{([\s\S]*?)\}/);
+    const edgeMatch = handler.match(/if\s*\(atTop\s*\|\|\s*atBottom\)\s*\{([\s\S]*?)\}/);
     expect(edgeMatch).not.toBeNull();
     expect(edgeMatch[1]).toMatch(/showBars\(\)/);
   });

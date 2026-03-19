@@ -68,6 +68,7 @@ const panelOverlay = $('#panelOverlay');
 const sentencePanel = $('#sentencePanel');
 const panelClose = $('#panelClose');
 const panelSentence = $('#panelSentence');
+const btnListen = $('#btnListen');
 const btnTranslate = $('#btnTranslate');
 const btnGrammar = $('#btnGrammar');
 const btnCopy = $('#btnCopy');
@@ -80,6 +81,7 @@ const grammarText = $('#grammarText');
 const wordPopup = $('#wordPopup');
 const popupWord = $('#popupWord');
 const wordPopupClose = $('#wordPopupClose');
+const wordListenBtn = $('#wordListenBtn');
 const defLoading = $('#defLoading');
 const defEnglish = $('#defEnglish');
 const defEnText = $('#defEnText');
@@ -472,6 +474,12 @@ function copyWithFeedback(btn, text, originalLabel) {
 function bindPanelEvents() {
   panelClose.addEventListener('click', closeSentencePanel);
   panelOverlay.addEventListener('click', closeSentencePanel);
+  btnListen.addEventListener('click', async () => {
+    await ensureSettings();
+    if (state.apiKey) {
+      playTTS(panelSentence.textContent).catch(err => console.error('Sentence listen TTS error:', err));
+    }
+  });
   btnTranslate.addEventListener('click', translateSentence);
   btnGrammar.addEventListener('click', analyzeGrammar);
   panelSentence.addEventListener('click', speakSentence);
@@ -479,6 +487,12 @@ function bindPanelEvents() {
     copyWithFeedback(btnCopy, panelSentence.textContent, '\ud83d\udccb Copy');
   });
 
+  wordListenBtn.addEventListener('click', async () => {
+    await ensureSettings();
+    if (state.apiKey) {
+      playTTS(popupWord.textContent).catch(err => console.error('Word listen TTS error:', err));
+    }
+  });
   wordPopupClose.addEventListener('click', closeWordPopup);
   toggleChinese.addEventListener('click', () => {
     const cnText = defCnText;
@@ -3486,9 +3500,8 @@ document.addEventListener('mousemove', (e) => {
 
     const atTop = clientY < EDGE_TRIGGER_PX;
     const atBottom = clientY > (window.innerHeight - EDGE_TRIGGER_PX);
-    const atRight = clientX > (window.innerWidth - EDGE_TRIGGER_PX);
 
-    if (atTop || atBottom || atRight) {
+    if (atTop || atBottom) {
       showBars();
       clearAutoHideTimer();
     } else {
