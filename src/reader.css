@@ -756,6 +756,114 @@ body {
   color: #4b5563;
 }
 
+/* ===== White theme – query panels ===== */
+[data-theme="white"] .sentence-panel {
+  background: #f5f5f5;
+}
+[data-theme="white"] .panel-header {
+  border-bottom-color: #d6d6d6;
+}
+[data-theme="white"] .panel-sentence {
+  color: #2d2a24;
+}
+[data-theme="white"] .panel-result {
+  background: #ebebeb;
+}
+[data-theme="white"] .word-popup {
+  background: #f5f5f5;
+}
+[data-theme="white"] .word-popup-header {
+  border-bottom-color: #d6d6d6;
+}
+[data-theme="white"] .word-popup-body {
+  color: #2d2a24;
+}
+[data-theme="white"] .para-popup {
+  background: #f5f5f5;
+}
+[data-theme="white"] .para-popup-header {
+  border-bottom-color: #d6d6d6;
+}
+[data-theme="white"] .para-popup-text {
+  color: #2d2a24;
+  border-bottom-color: #d6d6d6;
+}
+[data-theme="white"] .para-popup-translation {
+  color: #555;
+}
+
+/* ===== Dark theme – query panels ===== */
+[data-theme="black"] .sentence-panel {
+  background: #232323;
+}
+[data-theme="black"] .panel-header {
+  border-bottom-color: #444;
+}
+[data-theme="black"] .panel-sentence {
+  color: #d4d4d4;
+}
+[data-theme="black"] .panel-result {
+  background: #2e2e2e;
+}
+[data-theme="black"] .word-popup {
+  background: #232323;
+}
+[data-theme="black"] .word-popup-header {
+  border-bottom-color: #444;
+}
+[data-theme="black"] .word-popup-body {
+  color: #d4d4d4;
+}
+[data-theme="black"] .para-popup {
+  background: #232323;
+}
+[data-theme="black"] .para-popup-header {
+  border-bottom-color: #444;
+}
+[data-theme="black"] .para-popup-text {
+  color: #d4d4d4;
+  border-bottom-color: #444;
+}
+[data-theme="black"] .para-popup-translation {
+  color: #a0a0a0;
+}
+
+/* ===== Green theme – query panels ===== */
+[data-theme="green"] .sentence-panel {
+  background: #dff0e0;
+}
+[data-theme="green"] .panel-header {
+  border-bottom-color: #a3d1a7;
+}
+[data-theme="green"] .panel-sentence {
+  color: #1b3a1b;
+}
+[data-theme="green"] .panel-result {
+  background: #c8e6c9;
+}
+[data-theme="green"] .word-popup {
+  background: #dff0e0;
+}
+[data-theme="green"] .word-popup-header {
+  border-bottom-color: #a3d1a7;
+}
+[data-theme="green"] .word-popup-body {
+  color: #1b3a1b;
+}
+[data-theme="green"] .para-popup {
+  background: #dff0e0;
+}
+[data-theme="green"] .para-popup-header {
+  border-bottom-color: #a3d1a7;
+}
+[data-theme="green"] .para-popup-text {
+  color: #1b3a1b;
+  border-bottom-color: #a3d1a7;
+}
+[data-theme="green"] .para-popup-translation {
+  color: #2e5e2f;
+}
+
 /* ===== Feature Guide Overlay ===== */
 .feature-guide {
   display: none;
