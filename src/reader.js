@@ -217,10 +217,10 @@ function changeContentWidth(delta) {
 
 // ===== Page Theme =====
 const THEMES = {
-  white:  { bg: '#ffffff', text: '#2d2a24', paraBg: '#f5f5f5', paraBorder: '#d6d6d6', barBg: '#ffffff' },
-  black:  { bg: '#1a1a1a', text: '#d4d4d4', paraBg: '#232323', paraBorder: '#444444', barBg: '#1e1e1e' },
-  brown:  { bg: '#f5f0e8', text: '#2d2a24', paraBg: '#faf8f4', paraBorder: '#d6cdbf', barBg: '#ffffff' },
-  green:  { bg: '#e8f5e9', text: '#1b3a1b', paraBg: '#d6edd8', paraBorder: '#a3d1a7', barBg: '#dff0e0' },
+  white:  { bg: '#ffffff', text: '#2d2a24', paraBg: '#f5f5f5', paraBorder: '#d6d6d6', barBg: '#ffffff', searchBarBg: '#f5f5f5' },
+  black:  { bg: '#1a1a1a', text: '#d4d4d4', paraBg: '#232323', paraBorder: '#444444', barBg: '#1e1e1e', searchBarBg: '#1e1e1e' },
+  brown:  { bg: '#f5f0e8', text: '#2d2a24', paraBg: '#faf8f4', paraBorder: '#d6cdbf', barBg: '#ffffff', searchBarBg: '#ffffff' },
+  green:  { bg: '#e8f5e9', text: '#1b3a1b', paraBg: '#d6edd8', paraBorder: '#a3d1a7', barBg: '#dff0e0', searchBarBg: '#dff0e0' },
 };
 
 function loadTheme() {
@@ -248,6 +248,10 @@ function applyTheme(theme) {
   const bottomBar = document.querySelector('.bottom-bar');
   if (topBar) topBar.style.background = t.barBg;
   if (bottomBar) bottomBar.style.background = t.barBg;
+
+  // Update search bar background
+  const searchBar = document.querySelector('.search-bar');
+  if (searchBar) searchBar.style.background = t.searchBarBg;
 
   // Update swatch active state
   const swatches = document.querySelectorAll('#themePicker .theme-swatch');
