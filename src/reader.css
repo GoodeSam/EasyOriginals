@@ -227,6 +227,7 @@ body {
   max-width: 800px;
   margin: 0 auto;
   width: 100%;
+  order: 3;
   transition: max-width 0.3s ease, padding 0.3s ease;
 }
 @media (max-width: 640px) {
@@ -382,6 +383,7 @@ body {
   border-top: 1px solid #e5ddd0;
   gap: 20px;
   flex-shrink: 0;
+  order: 4;
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
 .bottom-bar.auto-hide {
@@ -581,15 +583,13 @@ body {
 }
 .side-panel {
   display: none;
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  max-height: 60vh;
+  order: 2;
+  max-height: 40vh;
   background: #fff;
   box-shadow: 0 4px 20px rgba(0,0,0,0.1);
   z-index: 160;
   flex-direction: column;
+  flex-shrink: 0;
 }
 .side-panel.active { display: flex; }
 .side-panel-header {

@@ -521,8 +521,8 @@ function bindToolbarEvents() {
     swatch.addEventListener('click', () => setTheme(swatch.dataset.theme));
   });
 
-  notesToggle.addEventListener('click', () => { notesPanel.classList.toggle('active'); renderNotes(); });
-  notesClose.addEventListener('click', () => notesPanel.classList.remove('active'));
+  notesToggle.addEventListener('click', () => { notesPanel.classList.toggle('active'); renderNotes(); recalcScreens(); });
+  notesClose.addEventListener('click', () => { notesPanel.classList.remove('active'); recalcScreens(); });
   notesExport.addEventListener('click', exportNotes);
 
   searchToggle.addEventListener('click', () => {
@@ -605,6 +605,7 @@ function handleReaderMouseOut(e) {
 
 function closeAllSidePanels() {
   document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('active'));
+  recalcScreens();
 }
 
 // Enter browser fullscreen (must be called from a user gesture like click/touch)
@@ -3215,9 +3216,11 @@ window.exportWordList = exportWordList;
 wordListToggle.addEventListener('click', () => {
   wordListPanel.classList.toggle('active');
   renderWordList();
+  recalcScreens();
 });
 wordListClose.addEventListener('click', () => {
   wordListPanel.classList.remove('active');
+  recalcScreens();
 });
 wordListExport.addEventListener('click', exportWordList);
 
@@ -3332,9 +3335,11 @@ document.addEventListener('visibilitychange', () => {
 historyToggle.addEventListener('click', () => {
   historyPanel.classList.toggle('active');
   renderHistory();
+  recalcScreens();
 });
 historyClose.addEventListener('click', () => {
   historyPanel.classList.remove('active');
+  recalcScreens();
 });
 historyClear.addEventListener('click', clearHistory);
 
