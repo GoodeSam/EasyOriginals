@@ -55,6 +55,9 @@ let state = {
   autoPlayAudio: false,
   // Edge TTS voice for free speech synthesis
   edgeTtsVoice: EDGE_TTS_DEFAULT_VOICE,
+  // Screen pagination
+  currentScreen: 0,
+  totalScreens: 1,
 };
 
 // Expose state for testing (only in dev/test)
@@ -193,6 +196,7 @@ function changeFontSize(delta) {
   state.fontSize = Math.min(32, Math.max(12, state.fontSize + delta));
   syncSetItem('reader-font-size', state.fontSize);
   applyFontSize();
+  recalcScreens();
 }
 
 function loadContentWidth() {
@@ -392,8 +396,8 @@ function bindNavigationEvents() {
     readerScreen.classList.remove('active');
     uploadScreen.classList.add('active');
   });
-  prevPageBtn.addEventListener('click', () => goToPage(state.currentPage - 1));
-  nextPageBtn.addEventListener('click', () => goToPage(state.currentPage + 1));
+  prevPageBtn.addEventListener('click', () => goToScreen(state.currentScreen - 1));
+  nextPageBtn.addEventListener('click', () => goToScreen(state.currentScreen + 1));
 
   document.addEventListener('keydown', (e) => {
     if (!readerScreen.classList.contains('active')) return;
@@ -421,64 +425,27 @@ function bindNavigationEvents() {
     // Skip navigation shortcuts when focus is on an input/editable element
     const tag = e.target.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return;
-    if (e.key === 'ArrowLeft') goToPage(state.currentPage - 1);
-    if (e.key === 'ArrowRight') goToPage(state.currentPage + 1);
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      readerContent.scrollTop += 80;
-    }
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      readerContent.scrollTop -= 80;
-    }
+    if (e.key === 'ArrowLeft') goToScreen(state.currentScreen - 1);
+    if (e.key === 'ArrowRight') goToScreen(state.currentScreen + 1);
+    if (e.key === 'ArrowUp') { e.preventDefault(); goToScreen(state.currentScreen - 1); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); goToScreen(state.currentScreen + 1); }
   });
 
-  // Two-phase scroll-based page navigation.
-  // Phase 1: scrolling hits a boundary → record that boundary was reached.
-  // Phase 2: user scrolls again in the same direction at that boundary → navigate.
-  // State resets when scrolling away from boundary or changing direction.
-  const SCROLL_EDGE_TOLERANCE = 40;
-  const WHEEL_NAV_COOLDOWN = 500;
-  const GESTURE_GAP = 300;
+  // Wheel-based screen navigation — one wheel gesture moves one screen
+  const WHEEL_NAV_COOLDOWN = 300;
   let lastWheelNav = 0;
-  let boundaryReached = null; // null | 'top' | 'bottom'
-  let lastBoundaryWheelAt = 0;  // timestamp of most recent boundary wheel event
 
   readerContent.addEventListener('wheel', (e) => {
+    e.preventDefault();
     const now = Date.now();
     if (now - lastWheelNav < WHEEL_NAV_COOLDOWN) return;
+    lastWheelNav = now;
+    if (e.deltaY > 0) goToScreen(state.currentScreen + 1);
+    else if (e.deltaY < 0) goToScreen(state.currentScreen - 1);
+  }, { passive: false });
 
-    const atBottom = readerContent.scrollTop + readerContent.clientHeight
-                     >= readerContent.scrollHeight - SCROLL_EDGE_TOLERANCE;
-    const atTop = readerContent.scrollTop <= SCROLL_EDGE_TOLERANCE;
-
-    if (atBottom && e.deltaY > 0) {
-      if (boundaryReached === 'bottom' && now - lastBoundaryWheelAt >= GESTURE_GAP) {
-        // Phase 2 — gap since last boundary event means this is a new gesture
-        goToPage(state.currentPage + 1);
-        lastWheelNav = now;
-        boundaryReached = null;
-      } else {
-        // Phase 1, or continued momentum from same gesture
-        boundaryReached = 'bottom';
-        lastBoundaryWheelAt = now;
-      }
-    } else if (atTop && e.deltaY < 0) {
-      if (boundaryReached === 'top' && now - lastBoundaryWheelAt >= GESTURE_GAP) {
-        // Phase 2 — gap since last boundary event means this is a new gesture
-        goToPage(state.currentPage - 1);
-        lastWheelNav = now;
-        boundaryReached = null;
-      } else {
-        // Phase 1, or continued momentum from same gesture
-        boundaryReached = 'top';
-        lastBoundaryWheelAt = now;
-      }
-    } else {
-      // Not at a matching boundary — reset
-      boundaryReached = null;
-    }
-  });
+  // Recalculate screens on window resize
+  window.addEventListener('resize', () => recalcScreens());
 }
 
 function emptyStateHtml(message) {
@@ -1671,12 +1638,44 @@ window.paginateParagraphs = paginateParagraphs;
 function goToPage(pageIndex, resetScroll = true) {
   if (pageIndex < 0 || pageIndex >= state.totalPages) return;
   state.currentPage = pageIndex;
+  state.currentScreen = 0;
   renderPage();
   updateNav();
   if (resetScroll) readerContent.scrollTop = 0;
 }
 
 window.goToPage = goToPage;
+
+function recalcScreens() {
+  const h = readerContent.clientHeight;
+  if (h <= 0) { state.totalScreens = 1; return; }
+  state.totalScreens = Math.max(1, Math.ceil(readerContent.scrollHeight / h));
+  state.currentScreen = Math.min(state.currentScreen, state.totalScreens - 1);
+  updateNav();
+}
+
+function goToScreen(screenIndex) {
+  if (screenIndex < 0) {
+    // Navigate to previous page, last screen
+    if (state.currentPage > 0) {
+      state.currentPage -= 1;
+      state.currentScreen = -1; // sentinel: set to last screen after render
+      renderPage();
+      state.currentScreen = Math.max(0, state.totalScreens - 1);
+      readerContent.scrollTop = state.currentScreen * readerContent.clientHeight;
+      updateNav();
+    }
+    return;
+  }
+  if (screenIndex >= state.totalScreens) {
+    // Navigate to next page, first screen
+    goToPage(state.currentPage + 1);
+    return;
+  }
+  state.currentScreen = screenIndex;
+  readerContent.scrollTop = screenIndex * readerContent.clientHeight;
+  updateNav();
+}
 
 function renderPage() {
   const page = state.pages[state.currentPage];
@@ -1745,13 +1744,16 @@ function renderPage() {
   if (searchBar.classList.contains('active') && searchInput.value.trim()) {
     highlightSearchOnPage();
   }
+
+  recalcScreens();
 }
 
 function updateNav() {
-  pageInfo.textContent = `Page ${state.currentPage + 1}`;
-  pageIndicator.textContent = `${state.currentPage + 1} / ${state.totalPages}`;
-  prevPageBtn.disabled = state.currentPage === 0;
-  nextPageBtn.disabled = state.currentPage >= state.totalPages - 1;
+  const screenLabel = state.totalScreens > 1 ? ` (${state.currentScreen + 1}/${state.totalScreens})` : '';
+  pageInfo.textContent = `Page ${state.currentPage + 1}${screenLabel}`;
+  pageIndicator.textContent = `${state.currentPage + 1} / ${state.totalPages}${screenLabel}`;
+  prevPageBtn.disabled = state.currentPage === 0 && state.currentScreen === 0;
+  nextPageBtn.disabled = state.currentPage >= state.totalPages - 1 && state.currentScreen >= state.totalScreens - 1;
 }
 
 // ===== Page Selection =====
