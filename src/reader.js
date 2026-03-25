@@ -1703,18 +1703,34 @@ function recalcScreens() {
     return;
   }
 
+  // Compute offset relative to readerContent's scroll coordinate system
+  const containerTop = readerContent.offsetTop;
+
   // Build screen offsets at paragraph boundaries
   const offsets = [0];
   const paragraphs = readerContent.querySelectorAll('.paragraph');
   let screenStart = 0;
 
   for (const p of paragraphs) {
-    const pBottom = p.offsetTop + p.offsetHeight;
-    // If this paragraph's bottom exceeds the current screen's viewport,
-    // start a new screen at this paragraph's top
-    if (pBottom - screenStart > viewportH && p.offsetTop > screenStart) {
-      screenStart = p.offsetTop;
-      offsets.push(screenStart);
+    const pTop = p.offsetTop - containerTop + readerContent.scrollTop;
+    const pHeight = p.offsetHeight;
+    const pBottom = pTop + pHeight;
+
+    if (pBottom - screenStart > viewportH && pTop > screenStart) {
+      // If this paragraph is taller than viewport, create sub-screen breaks
+      if (pHeight > viewportH) {
+        let subOffset = pTop;
+        while (subOffset - screenStart > viewportH) {
+          screenStart = subOffset;
+          offsets.push(screenStart);
+        }
+        // Continue: the last sub-screen covers the rest of this paragraph
+        screenStart = subOffset;
+        if (offsets[offsets.length - 1] !== screenStart) offsets.push(screenStart);
+      } else {
+        screenStart = pTop;
+        offsets.push(screenStart);
+      }
     }
   }
 
@@ -1727,7 +1743,10 @@ function recalcScreens() {
 
 function findScreenForElement(el) {
   if (!el) return 0;
-  const elTop = el.offsetTop;
+  // Use the closest paragraph for reliable offset (inline elements like <mark> have unreliable offsetTop)
+  const paragraph = el.closest('.paragraph') || el;
+  const containerTop = readerContent.offsetTop;
+  const elTop = paragraph.offsetTop - containerTop + readerContent.scrollTop;
   // Walk screenOffsets backwards to find which screen contains this element
   for (let i = state.screenOffsets.length - 1; i >= 0; i--) {
     if (state.screenOffsets[i] <= elTop) return i;
@@ -1740,8 +1759,9 @@ function goToScreen(screenIndex) {
     // Navigate to previous page, last screen
     if (state.currentPage > 0) {
       state.currentPage -= 1;
-      state.currentScreen = -1; // sentinel: set to last screen after render
+      state.currentScreen = 0;
       renderPage();
+      // After render and recalcScreens, jump to the last screen
       state.currentScreen = Math.max(0, state.totalScreens - 1);
       readerContent.scrollTop = state.screenOffsets[state.currentScreen] || 0;
       updateNav();
@@ -2708,6 +2728,7 @@ function openSearch() {
   searchBar.classList.add('active');
   searchInput.focus();
   searchInput.select();
+  recalcScreens();
 }
 
 function closeSearch() {
@@ -2718,6 +2739,7 @@ function closeSearch() {
   searchCount.textContent = '';
   // Clear highlights
   clearSearchHighlights();
+  recalcScreens();
 }
 
 let _searchAbort = null;
