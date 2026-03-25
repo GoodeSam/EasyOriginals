@@ -131,7 +131,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.top-bar-actions { display: flex; align-items: center; gap: 4px; }
+.top-bar-actions { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 /* ===== Theme Picker ===== */
 .theme-picker {
   display: flex;
