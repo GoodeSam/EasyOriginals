@@ -58,6 +58,7 @@ let state = {
   // Screen pagination
   currentScreen: 0,
   totalScreens: 1,
+  screenOffsets: [0],
 };
 
 // Expose state for testing (only in dev/test)
@@ -1648,10 +1649,32 @@ function goToPage(pageIndex, resetScroll = true) {
 window.goToPage = goToPage;
 
 function recalcScreens() {
-  const h = readerContent.clientHeight;
-  if (h <= 0) { state.totalScreens = 1; return; }
-  state.totalScreens = Math.max(1, Math.ceil(readerContent.scrollHeight / h));
+  const viewportH = readerContent.clientHeight;
+  if (viewportH <= 0) {
+    state.screenOffsets = [0];
+    state.totalScreens = 1;
+    return;
+  }
+
+  // Build screen offsets at paragraph boundaries
+  const offsets = [0];
+  const paragraphs = readerContent.querySelectorAll('.paragraph');
+  let screenStart = 0;
+
+  for (const p of paragraphs) {
+    const pBottom = p.offsetTop + p.offsetHeight;
+    // If this paragraph's bottom exceeds the current screen's viewport,
+    // start a new screen at this paragraph's top
+    if (pBottom - screenStart > viewportH && p.offsetTop > screenStart) {
+      screenStart = p.offsetTop;
+      offsets.push(screenStart);
+    }
+  }
+
+  state.screenOffsets = offsets;
+  state.totalScreens = state.screenOffsets.length;
   state.currentScreen = Math.min(state.currentScreen, state.totalScreens - 1);
+  readerContent.scrollTop = state.screenOffsets[state.currentScreen];
   updateNav();
 }
 
@@ -1663,7 +1686,7 @@ function goToScreen(screenIndex) {
       state.currentScreen = -1; // sentinel: set to last screen after render
       renderPage();
       state.currentScreen = Math.max(0, state.totalScreens - 1);
-      readerContent.scrollTop = state.currentScreen * readerContent.clientHeight;
+      readerContent.scrollTop = state.screenOffsets[state.currentScreen] || 0;
       updateNav();
     }
     return;
@@ -1674,7 +1697,7 @@ function goToScreen(screenIndex) {
     return;
   }
   state.currentScreen = screenIndex;
-  readerContent.scrollTop = screenIndex * readerContent.clientHeight;
+  readerContent.scrollTop = state.screenOffsets[screenIndex] || 0;
   updateNav();
 }
 

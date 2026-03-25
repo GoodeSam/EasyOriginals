@@ -42,11 +42,11 @@ describe('viewport-based screen pagination', () => {
     expect(js).toMatch(/function recalcScreens\s*\(/);
   });
 
-  test('recalcScreens calculates totalScreens from scrollHeight and clientHeight', () => {
+  test('recalcScreens calculates totalScreens from paragraph positions', () => {
     const fn = js.match(/function recalcScreens\s*\([^)]*\)\s*\{[\s\S]*?\n\}/);
     expect(fn).not.toBeNull();
-    expect(fn[0]).toMatch(/scrollHeight/);
     expect(fn[0]).toMatch(/clientHeight/);
+    expect(fn[0]).toMatch(/\.paragraph|querySelectorAll/);
   });
 
   test('recalcScreens clamps currentScreen within bounds', () => {
@@ -61,11 +61,11 @@ describe('viewport-based screen pagination', () => {
     expect(js).toMatch(/function goToScreen\s*\(/);
   });
 
-  test('goToScreen sets scrollTop based on screen index and clientHeight', () => {
+  test('goToScreen sets scrollTop based on screenOffsets', () => {
     const fn = js.match(/function goToScreen\s*\([^)]*\)\s*\{[\s\S]*?\n\}/);
     expect(fn).not.toBeNull();
     expect(fn[0]).toMatch(/scrollTop/);
-    expect(fn[0]).toMatch(/clientHeight/);
+    expect(fn[0]).toMatch(/screenOffsets/);
   });
 
   test('goToScreen navigates to next page when beyond last screen', () => {
