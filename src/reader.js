@@ -776,17 +776,29 @@ function bindSettingsPanel() {
   const settingsToggle = document.getElementById('settingsToggle');
   if (!settingsToggle) return;
   const panel = createSettingsPanel();
-  document.body.appendChild(panel);
+  readerScreen.appendChild(panel);
   settingsToggle.addEventListener('click', () => {
     panel.classList.toggle('active');
+    recalcScreens();
   });
+  // Close button inside settings panel
+  const settingsClose = panel.querySelector('#settingsClose');
+  if (settingsClose) {
+    settingsClose.addEventListener('click', () => {
+      panel.classList.remove('active');
+      recalcScreens();
+    });
+  }
   // Re-sync state when settings panel saves
-  panel.querySelector('#settingsSaveBtn').addEventListener('click', () => {
-    const s = loadStorageSettings();
-    state.apiKey = s.openaiApiKey;
-    state.model = s.openaiModel;
-    state.translationProvider = s.translationProvider;
-  });
+  const saveBtn = panel.querySelector('#settingsSaveBtn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      const s = loadStorageSettings();
+      state.apiKey = s.openaiApiKey;
+      state.model = s.openaiModel;
+      state.translationProvider = s.translationProvider;
+    });
+  }
 }
 
 function clearHover() {
