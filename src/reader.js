@@ -3744,6 +3744,14 @@ if (_topBarEl) {
   });
 }
 
+// Touch anywhere on screen recovers from fullscreen-reading auto-hide
+document.addEventListener('touchstart', () => {
+  if (readerScreen.classList.contains('fullscreen-reading')) {
+    showBars();
+    startAutoHideTimer();
+  }
+}, { passive: true });
+
 // Scrolling resets the auto-hide timer but does NOT exit fullscreen
 readerContent.addEventListener('scroll', () => {
   if (!readerScreen.classList.contains('active')) return;

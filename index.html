@@ -120,6 +120,37 @@
       <button class="page-indicator" id="pageIndicator" aria-label="Jump to page">1 / 1</button>
       <button class="btn btn-nav" id="nextPage">Next &#8594;</button>
     </div>
+
+    <!-- Notes Panel -->
+    <div class="side-panel notes-panel" id="notesPanel">
+      <div class="side-panel-header notes-header">
+        <span>My Notes</span>
+        <button class="icon-btn" id="notesClose" aria-label="Close notes panel">&times;</button>
+      </div>
+      <div class="side-panel-list notes-list" id="notesList"></div>
+      <button class="btn btn-sm side-panel-export notes-export" id="notesExport">Export Notes</button>
+    </div>
+
+    <!-- History Panel -->
+    <div class="side-panel history-panel" id="historyPanel">
+      <div class="side-panel-header history-header">
+        <span>Reading History</span>
+        <button class="icon-btn" id="historyClose" aria-label="Close history panel">&times;</button>
+      </div>
+      <div class="side-panel-list history-list" id="historyList"></div>
+      <button class="btn btn-sm side-panel-export history-clear" id="historyClear">Clear History</button>
+    </div>
+
+    <!-- Word List Panel -->
+    <div class="side-panel wordlist-panel" id="wordListPanel">
+      <div class="side-panel-header wordlist-header">
+        <span>Word List</span>
+        <button class="icon-btn" id="wordListClose" aria-label="Close word list panel">&times;</button>
+      </div>
+      <div class="side-panel-list wordlist-entries" id="wordListEntries"></div>
+      <button class="btn btn-sm side-panel-export wordlist-export" id="wordListExport">Export Word List</button>
+    </div>
+
   </div>
 
   <!-- Sentence Panel (slide-up) -->
@@ -173,36 +204,6 @@
   <div class="selection-toolbar" id="selectionToolbar">
     <button class="btn btn-sm" id="selCopy">&#128203; Copy</button>
     <button class="btn btn-sm" id="selNote">&#128221; Note</button>
-  </div>
-
-  <!-- Notes Panel -->
-  <div class="side-panel notes-panel" id="notesPanel">
-    <div class="side-panel-header notes-header">
-      <span>My Notes</span>
-      <button class="icon-btn" id="notesClose" aria-label="Close notes panel">&times;</button>
-    </div>
-    <div class="side-panel-list notes-list" id="notesList"></div>
-    <button class="btn btn-sm side-panel-export notes-export" id="notesExport">Export Notes</button>
-  </div>
-
-  <!-- History Panel -->
-  <div class="side-panel history-panel" id="historyPanel">
-    <div class="side-panel-header history-header">
-      <span>Reading History</span>
-      <button class="icon-btn" id="historyClose" aria-label="Close history panel">&times;</button>
-    </div>
-    <div class="side-panel-list history-list" id="historyList"></div>
-    <button class="btn btn-sm side-panel-export history-clear" id="historyClear">Clear History</button>
-  </div>
-
-  <!-- Word List Panel -->
-  <div class="side-panel wordlist-panel" id="wordListPanel">
-    <div class="side-panel-header wordlist-header">
-      <span>Word List</span>
-      <button class="icon-btn" id="wordListClose" aria-label="Close word list panel">&times;</button>
-    </div>
-    <div class="side-panel-list wordlist-entries" id="wordListEntries"></div>
-    <button class="btn btn-sm side-panel-export wordlist-export" id="wordListExport">Export Word List</button>
   </div>
 
   <!-- Settings and Auto-Play panels are toggled from toolbar icons above -->
