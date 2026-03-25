@@ -218,6 +218,7 @@ function changeContentWidth(delta) {
   state.contentWidth = Math.min(1600, Math.max(500, state.contentWidth + delta));
   syncSetItem('reader-content-width', state.contentWidth);
   applyContentWidth();
+  recalcScreens();
 }
 
 // ===== Page Theme =====
@@ -325,6 +326,7 @@ function saveBookmark() {
   const data = {
     page: state.currentPage,
     scrollTop: readerContent.scrollTop,
+    currentScreen: state.currentScreen,
   };
   syncSetItem(getBookmarkKey(), JSON.stringify(data));
   updateBookmarkIcon();
@@ -357,10 +359,10 @@ function restoreBookmark() {
   const bm = loadBookmark();
   if (bm && Number.isInteger(bm.page) && bm.page >= 0 && bm.page < state.totalPages) {
     goToPage(bm.page, false);
-    // Restore scroll after render
-    const scrollTop = Number.isFinite(bm.scrollTop) ? bm.scrollTop : 0;
+    // Restore screen position after render
     requestAnimationFrame(() => {
-      readerContent.scrollTop = scrollTop;
+      const screen = Number.isInteger(bm.currentScreen) ? bm.currentScreen : 0;
+      goToScreen(Math.min(screen, state.totalScreens - 1));
     });
     return true;
   }
@@ -447,6 +449,27 @@ function bindNavigationEvents() {
 
   // Recalculate screens on window resize
   window.addEventListener('resize', () => recalcScreens());
+
+  // Touch swipe navigation between screens
+  let touchStartX = 0;
+  let touchStartY = 0;
+  readerContent.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+
+  readerContent.addEventListener('touchend', (e) => {
+    if (e.changedTouches.length !== 1) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    // Require horizontal swipe: |dx| > 50px and more horizontal than vertical
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) goToScreen(state.currentScreen + 1);   // swipe left → next
+      else goToScreen(state.currentScreen - 1);            // swipe right → prev
+    }
+  }, { passive: true });
 }
 
 function emptyStateHtml(message) {
@@ -577,6 +600,30 @@ function bindToolbarEvents() {
     syncSetItem('reader-auto-play-audio', state.autoPlayAudio);
     applyAutoPlayAudio();
   });
+
+  // Word list panel toggle/close
+  wordListToggle.addEventListener('click', () => {
+    wordListPanel.classList.toggle('active');
+    renderWordList();
+    recalcScreens();
+  });
+  wordListClose.addEventListener('click', () => {
+    wordListPanel.classList.remove('active');
+    recalcScreens();
+  });
+  wordListExport.addEventListener('click', exportWordList);
+
+  // History panel toggle/close
+  historyToggle.addEventListener('click', () => {
+    historyPanel.classList.toggle('active');
+    renderHistory();
+    recalcScreens();
+  });
+  historyClose.addEventListener('click', () => {
+    historyPanel.classList.remove('active');
+    recalcScreens();
+  });
+  historyClear.addEventListener('click', clearHistory);
 }
 
 function handleReaderHover(e) {
@@ -1678,6 +1725,16 @@ function recalcScreens() {
   updateNav();
 }
 
+function findScreenForElement(el) {
+  if (!el) return 0;
+  const elTop = el.offsetTop;
+  // Walk screenOffsets backwards to find which screen contains this element
+  for (let i = state.screenOffsets.length - 1; i >= 0; i--) {
+    if (state.screenOffsets[i] <= elTop) return i;
+  }
+  return 0;
+}
+
 function goToScreen(screenIndex) {
   if (screenIndex < 0) {
     // Navigate to previous page, last screen
@@ -2751,11 +2808,14 @@ function goToSearchMatch() {
     highlightSearchOnPage();
   }
 
-  // Scroll the current match into view
+  // Navigate to the screen containing the current match
   requestAnimationFrame(() => {
     const currentEl = readerContent.querySelector('.search-highlight.current');
     if (currentEl) {
-      if (currentEl.scrollIntoView) currentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const targetScreen = findScreenForElement(currentEl);
+      if (targetScreen !== state.currentScreen) {
+        goToScreen(targetScreen);
+      }
     }
   });
 }
@@ -3235,17 +3295,7 @@ function exportWordList() {
 
 window.exportWordList = exportWordList;
 
-// Word list panel toggle/close
-wordListToggle.addEventListener('click', () => {
-  wordListPanel.classList.toggle('active');
-  renderWordList();
-  recalcScreens();
-});
-wordListClose.addEventListener('click', () => {
-  wordListPanel.classList.remove('active');
-  recalcScreens();
-});
-wordListExport.addEventListener('click', exportWordList);
+// Word list panel toggle/close — listeners in bindToolbarEvents()
 
 // ===== Reading History =====
 const MAX_HISTORY_ENTRIES = 50;
@@ -3354,17 +3404,7 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-// History panel toggle/close
-historyToggle.addEventListener('click', () => {
-  historyPanel.classList.toggle('active');
-  renderHistory();
-  recalcScreens();
-});
-historyClose.addEventListener('click', () => {
-  historyPanel.classList.remove('active');
-  recalcScreens();
-});
-historyClear.addEventListener('click', clearHistory);
+// History panel toggle/close — listeners in bindToolbarEvents()
 
 // ===== Feature Guide =====
 const FEATURE_REGISTRY = [
