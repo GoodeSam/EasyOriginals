@@ -977,11 +977,10 @@ body {
   color: #059669;
   background: rgba(5,150,105,0.1);
 }
-.settings-panel { /* full-width at top, no width override */ }
 .settings-panel .side-panel-header { font-family: -apple-system, sans-serif; }
 
 /* ===== Auth Screen ===== */
-.auth-screen { /* alias for #authScreen via .screen */ }
+.auth-screen { }
 #authScreen {
   justify-content: center;
   align-items: center;
@@ -1077,8 +1076,7 @@ body {
 /* Panels are now at the top — no right-side compensation needed */
 
 /* ===== Fullscreen Reading Mode ===== */
-.fullscreen-reading {
-}
+.fullscreen-reading { }
 @media (pointer: fine) {
   .cursor-hidden, .cursor-hidden * {
     cursor: none !important;

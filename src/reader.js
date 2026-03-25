@@ -2305,6 +2305,8 @@ async function translateSentence() {
     btnTranslate.textContent = '\ud83c\udf10 Translate';
     btnTranslate.disabled = false;
     console.error('Translation error:', err);
+    translationText.textContent = 'Translation failed. Please try again.';
+    panelTranslation.style.display = 'block';
   }
 }
 
@@ -2347,6 +2349,8 @@ Format with clear labels. Be concise but thorough. Use Chinese for explanations.
     btnGrammar.textContent = '\ud83d\udd2c Grammar';
     btnGrammar.disabled = false;
     console.error('Grammar analysis error:', err);
+    grammarText.textContent = 'Grammar analysis failed. Please try again.';
+    panelGrammar.style.display = 'block';
   }
 }
 
@@ -2448,6 +2452,16 @@ async function playEdgeTTS(text) {
     };
 
     ws.onerror = () => reject(new Error('Edge TTS connection failed'));
+
+    let settled = false;
+    const originalResolve = resolve;
+    const originalReject = reject;
+    resolve = (v) => { settled = true; originalResolve(v); };
+    reject = (e) => { settled = true; originalReject(e); };
+
+    ws.onclose = () => {
+      if (!settled) reject(new Error('Edge TTS connection closed unexpectedly'));
+    };
   });
 }
 
@@ -2772,6 +2786,7 @@ function rebuildSentenceWithHighlights(sentEl, sentenceText, matches) {
   // Collect all child nodes (word spans and text nodes)
   const fragment = document.createDocumentFragment();
   let charPos = 0;
+  let matchPtr = 0; // pointer into sorted matches for O(n) scanning
 
   // Process character by character through the original sentence text
   // Build new nodes with highlight spans where needed
@@ -2800,10 +2815,18 @@ function rebuildSentenceWithHighlights(sentEl, sentenceText, matches) {
     }
     charPos = nodeStart + nodeText.length;
 
-    // Check if any match overlaps this node
-    const overlapping = matches.filter(m =>
-      m.offset < nodeStart + nodeText.length && m.offset + m.length > nodeStart
-    );
+    // Advance pointer past matches that end before this node
+    while (matchPtr < matches.length && matches[matchPtr].offset + matches[matchPtr].length <= nodeStart) {
+      matchPtr++;
+    }
+
+    // Collect overlapping matches using pointer (matches are sorted by offset)
+    const overlapping = [];
+    for (let mi = matchPtr; mi < matches.length && matches[mi].offset < nodeStart + nodeText.length; mi++) {
+      if (matches[mi].offset + matches[mi].length > nodeStart) {
+        overlapping.push(matches[mi]);
+      }
+    }
 
     function makeWordSpan(content, originalWord) {
       const w = document.createElement('span');
@@ -2952,6 +2975,12 @@ function downloadMarkdown(filename, content) {
 
 async function exportToDocx() {
   const _JSZip = (typeof JSZip !== 'undefined') ? JSZip : window.JSZip;
+  if (!_JSZip) {
+    alert('Export failed: JSZip library is not loaded.');
+    return;
+  }
+
+  try {
   const zip = new _JSZip();
 
   // Collect all text paragraphs across all pages
@@ -3017,6 +3046,10 @@ async function exportToDocx() {
   a.download = `${baseName}.docx`;
   a.click();
   URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error('Export to DOCX failed:', err);
+    alert('Export failed. Please try again.');
+  }
 }
 
 window.exportToDocx = exportToDocx;
@@ -3046,7 +3079,8 @@ const wordListExport = $('#wordListExport');
 
 function loadWordList() {
   const raw = localStorage.getItem('reader-wordlist');
-  return raw ? safeParseJSON(raw, []) : [];
+  const list = raw ? safeParseJSON(raw, []) : [];
+  return Array.isArray(list) ? list.filter(e => e && typeof e.word === 'string') : [];
 }
 
 function saveWordList(list) {
@@ -3119,8 +3153,13 @@ function renderWordList() {
       `<div class="wordlist-cn">${escapeHtml(entry.chineseDef)}</div>` +
       `<div class="wordlist-en">${escapeHtml(entry.englishDef)}</div>` +
       contextHtml +
-      `<div class="wordlist-time">${timeStr}</div>` +
-      `<button class="wordlist-delete" data-word="${escapeHtml(entry.word)}" data-book="${escapeHtml(entry.book)}">&times;</button>`;
+      `<div class="wordlist-time">${timeStr}</div>`;
+    const delBtn = document.createElement('button');
+    delBtn.className = 'wordlist-delete';
+    delBtn.dataset.word = entry.word;
+    delBtn.dataset.book = entry.book;
+    delBtn.innerHTML = '&times;';
+    el.appendChild(delBtn);
     wordListEntries.appendChild(el);
   }
 
