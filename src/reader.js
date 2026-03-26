@@ -4,7 +4,6 @@ import { createSettingsPanel } from './settings-ui.js';
 import { setItem as syncSetItem, removeItem as syncRemoveItem } from './sync-storage.js';
 const TTS_MODEL = 'tts-1';
 const TTS_VOICE = 'alloy';
-const SENTENCES_PER_PAGE = 40;
 const GOOGLE_TRANSLATE_URL = 'https://translate.googleapis.com/translate_a/single';
 const MS_AUTH_URL = 'https://edge.microsoft.com/translate/auth';
 const MS_TRANSLATE_URL = 'https://api.cognitive.microsofttranslator.com/translate';
@@ -25,9 +24,7 @@ const EDGE_TTS_VOICES = [
 
 // ===== State =====
 let state = {
-  pages: [],        // Array of pages, each page is array of paragraphs, each paragraph is array of sentences
-  currentPage: 0,
-  totalPages: 0,
+  paragraphs: [],   // Flat array of paragraphs, each paragraph has sentences array
   apiKey: '',
   model: DEFAULT_MODEL,
   translationProvider: 'chatgpt',  // 'chatgpt' | 'google' | 'microsoft' | 'offline'
@@ -38,7 +35,7 @@ let state = {
   activeSentenceEl: null,
   fileName: '',
   // Search state
-  searchMatches: [],   // [{pageIndex, paraIndex, sentIndex, wordIndex, offset, length}]
+  searchMatches: [],   // [{paraIndex, sentIndex, offset, length}]
   searchCurrent: -1,
   // Hover state
   hoveredWord: null,
@@ -74,9 +71,6 @@ const backBtn = $('#backBtn');
 const bookTitle = $('#bookTitle');
 const pageInfo = $('#pageInfo');
 const readerContent = $('#readerContent');
-const prevPageBtn = $('#prevPage');
-const nextPageBtn = $('#nextPage');
-const pageIndicator = $('#pageIndicator');
 
 // Sentence panel
 const panelOverlay = $('#panelOverlay');
@@ -318,7 +312,6 @@ function getBookmarkKey() {
 
 function saveBookmark() {
   const data = {
-    page: state.currentPage,
     scrollTop: readerContent.scrollTop,
   };
   syncSetItem(getBookmarkKey(), JSON.stringify(data));
@@ -340,7 +333,7 @@ function updateBookmarkIcon() {
   if (bm) {
     bookmarkBtn.innerHTML = '&#9733;';
     bookmarkBtn.classList.add('bookmarked');
-    bookmarkBtn.title = `Bookmarked at page ${bm.page + 1} — click to update, long-press to remove`;
+    bookmarkBtn.title = 'Bookmarked — click to update, long-press to remove';
   } else {
     bookmarkBtn.innerHTML = '&#9734;';
     bookmarkBtn.classList.remove('bookmarked');
@@ -350,12 +343,9 @@ function updateBookmarkIcon() {
 
 function restoreBookmark() {
   const bm = loadBookmark();
-  if (bm && Number.isInteger(bm.page) && bm.page >= 0 && bm.page < state.totalPages) {
-    goToPage(bm.page, false);
-    // Restore scroll after render
-    const scrollTop = Number.isFinite(bm.scrollTop) ? bm.scrollTop : 0;
+  if (bm && Number.isFinite(bm.scrollTop)) {
     requestAnimationFrame(() => {
-      readerContent.scrollTop = scrollTop;
+      readerContent.scrollTop = bm.scrollTop;
     });
     return true;
   }
@@ -392,8 +382,6 @@ function bindNavigationEvents() {
     readerScreen.classList.remove('active');
     uploadScreen.classList.add('active');
   });
-  prevPageBtn.addEventListener('click', () => goToPage(state.currentPage - 1));
-  nextPageBtn.addEventListener('click', () => goToPage(state.currentPage + 1));
 
   document.addEventListener('keydown', (e) => {
     if (!readerScreen.classList.contains('active')) return;
@@ -421,8 +409,6 @@ function bindNavigationEvents() {
     // Skip navigation shortcuts when focus is on an input/editable element
     const tag = e.target.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return;
-    if (e.key === 'ArrowLeft') goToPage(state.currentPage - 1);
-    if (e.key === 'ArrowRight') goToPage(state.currentPage + 1);
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       readerContent.scrollTop += 80;
@@ -430,53 +416,6 @@ function bindNavigationEvents() {
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       readerContent.scrollTop -= 80;
-    }
-  });
-
-  // Two-phase scroll-based page navigation.
-  // Phase 1: scrolling hits a boundary → record that boundary was reached.
-  // Phase 2: user scrolls again in the same direction at that boundary → navigate.
-  // State resets when scrolling away from boundary or changing direction.
-  const SCROLL_EDGE_TOLERANCE = 40;
-  const WHEEL_NAV_COOLDOWN = 500;
-  const GESTURE_GAP = 300;
-  let lastWheelNav = 0;
-  let boundaryReached = null; // null | 'top' | 'bottom'
-  let lastBoundaryWheelAt = 0;  // timestamp of most recent boundary wheel event
-
-  readerContent.addEventListener('wheel', (e) => {
-    const now = Date.now();
-    if (now - lastWheelNav < WHEEL_NAV_COOLDOWN) return;
-
-    const atBottom = readerContent.scrollTop + readerContent.clientHeight
-                     >= readerContent.scrollHeight - SCROLL_EDGE_TOLERANCE;
-    const atTop = readerContent.scrollTop <= SCROLL_EDGE_TOLERANCE;
-
-    if (atBottom && e.deltaY > 0) {
-      if (boundaryReached === 'bottom' && now - lastBoundaryWheelAt >= GESTURE_GAP) {
-        // Phase 2 — gap since last boundary event means this is a new gesture
-        goToPage(state.currentPage + 1);
-        lastWheelNav = now;
-        boundaryReached = null;
-      } else {
-        // Phase 1, or continued momentum from same gesture
-        boundaryReached = 'bottom';
-        lastBoundaryWheelAt = now;
-      }
-    } else if (atTop && e.deltaY < 0) {
-      if (boundaryReached === 'top' && now - lastBoundaryWheelAt >= GESTURE_GAP) {
-        // Phase 2 — gap since last boundary event means this is a new gesture
-        goToPage(state.currentPage - 1);
-        lastWheelNav = now;
-        boundaryReached = null;
-      } else {
-        // Phase 1, or continued momentum from same gesture
-        boundaryReached = 'top';
-        lastBoundaryWheelAt = now;
-      }
-    } else {
-      // Not at a matching boundary — reset
-      boundaryReached = null;
     }
   });
 }
@@ -811,9 +750,8 @@ async function handleFile(file) {
     }
 
     const paragraphs = splitIntoParagraphs(text);
-    paginateParagraphs(paragraphs);
 
-    if (state.totalPages === 0) {
+    if (paragraphs.length === 0) {
       alert('No readable content found in this file.');
       return;
     }
@@ -822,12 +760,9 @@ async function handleFile(file) {
     uploadScreen.classList.remove('active');
     readerScreen.classList.add('active');
 
+    renderAllContent(paragraphs);
     updateBookmarkIcon();
-
-    // Try restoring bookmark, else go to page 0
-    if (!restoreBookmark()) {
-      goToPage(0);
-    }
+    restoreBookmark();
 
     startAutoHideTimer();
   } catch (err) {
@@ -924,9 +859,8 @@ async function handleURL(url) {
 
     state.fileName = pageTitle;
     const paragraphs = splitIntoParagraphs(text);
-    paginateParagraphs(paragraphs);
 
-    if (state.totalPages === 0) {
+    if (paragraphs.length === 0) {
       showUrlError('No readable content found on this page.');
       return;
     }
@@ -935,11 +869,9 @@ async function handleURL(url) {
     uploadScreen.classList.remove('active');
     readerScreen.classList.add('active');
 
+    renderAllContent(paragraphs);
     updateBookmarkIcon();
-
-    if (!restoreBookmark()) {
-      goToPage(0);
-    }
+    restoreBookmark();
 
     startAutoHideTimer();
   } catch (err) {
@@ -1612,77 +1544,12 @@ function splitIntoParagraphs(input) {
 window.splitIntoParagraphs = splitIntoParagraphs;
 window.handleFile = handleFile;
 
-function paginateParagraphs(paragraphs) {
-  state.pages = [];
-  let currentPage = [];
-  let sentenceCount = 0;
-
-  for (const para of paragraphs) {
-    if (para.type === 'image') {
-      currentPage.push(para);
-      sentenceCount += 1;
-      if (sentenceCount >= SENTENCES_PER_PAGE) {
-        state.pages.push(currentPage);
-        currentPage = [];
-        sentenceCount = 0;
-      }
-      continue;
-    }
-
-    // Split large text paragraphs across pages
-    const remaining = SENTENCES_PER_PAGE - sentenceCount;
-    if (para.sentences.length <= remaining) {
-      // Fits on current page
-      currentPage.push(para);
-      sentenceCount += para.sentences.length;
-      if (sentenceCount >= SENTENCES_PER_PAGE) {
-        state.pages.push(currentPage);
-        currentPage = [];
-        sentenceCount = 0;
-      }
-    } else {
-      // Split the paragraph across pages
-      let offset = 0;
-      while (offset < para.sentences.length) {
-        const space = SENTENCES_PER_PAGE - sentenceCount;
-        const chunk = para.sentences.slice(offset, offset + space);
-        currentPage.push({
-          type: 'text',
-          text: chunk.join(' '),
-          sentences: chunk,
-        });
-        sentenceCount += chunk.length;
-        offset += chunk.length;
-        if (sentenceCount >= SENTENCES_PER_PAGE) {
-          state.pages.push(currentPage);
-          currentPage = [];
-          sentenceCount = 0;
-        }
-      }
-    }
-  }
-  if (currentPage.length > 0) state.pages.push(currentPage);
-  state.totalPages = state.pages.length;
-}
-
-window.paginateParagraphs = paginateParagraphs;
-
 // ===== Rendering =====
-function goToPage(pageIndex, resetScroll = true) {
-  if (pageIndex < 0 || pageIndex >= state.totalPages) return;
-  state.currentPage = pageIndex;
-  renderPage();
-  updateNav();
-  if (resetScroll) readerContent.scrollTop = 0;
-}
-
-window.goToPage = goToPage;
-
-function renderPage() {
-  const page = state.pages[state.currentPage];
+function renderAllContent(paragraphs) {
+  state.paragraphs = paragraphs;
   readerContent.innerHTML = '';
 
-  for (const para of page) {
+  for (const para of state.paragraphs) {
     const pEl = document.createElement('div');
     pEl.className = 'paragraph';
 
@@ -1747,55 +1614,7 @@ function renderPage() {
   }
 }
 
-function updateNav() {
-  pageInfo.textContent = `Page ${state.currentPage + 1}`;
-  pageIndicator.textContent = `${state.currentPage + 1} / ${state.totalPages}`;
-  prevPageBtn.disabled = state.currentPage === 0;
-  nextPageBtn.disabled = state.currentPage >= state.totalPages - 1;
-}
-
-// ===== Page Selection =====
-pageIndicator.addEventListener('click', () => {
-  // Don't create duplicate input
-  if (document.getElementById('pageSelectInput')) return;
-
-  pageIndicator.style.display = 'none';
-
-  const input = document.createElement('input');
-  input.id = 'pageSelectInput';
-  input.type = 'number';
-  input.className = 'page-select-input';
-  input.min = 1;
-  input.max = state.totalPages;
-  input.value = state.currentPage + 1;
-
-  function closeInput() {
-    if (input.parentNode) input.parentNode.removeChild(input);
-    pageIndicator.style.display = '';
-  }
-
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const num = parseInt(input.value, 10);
-      if (!isNaN(num) && num >= 1 && num <= state.totalPages) {
-        goToPage(num - 1);
-      }
-      closeInput();
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      closeInput();
-    }
-  });
-
-  input.addEventListener('blur', () => {
-    closeInput();
-  });
-
-  pageIndicator.parentNode.insertBefore(input, pageIndicator.nextSibling);
-  input.focus();
-  input.select();
-});
+window.renderAllContent = renderAllContent;
 
 // ===== Sentence Panel =====
 function openSentencePanel(sentenceEl) {
@@ -2659,44 +2478,22 @@ async function performSearch() {
   const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const re = new RegExp(escaped, 'gi');
 
-  // Search current page first, then remaining pages, for faster initial results
-  function searchPage(pi) {
-    const page = state.pages[pi];
-    for (let pai = 0; pai < page.length; pai++) {
-      const para = page[pai];
-      if (para.type === 'image') continue;
-      for (let si = 0; si < para.sentences.length; si++) {
-        const sent = para.sentences[si];
-        let m;
-        re.lastIndex = 0;
-        while ((m = re.exec(sent)) !== null) {
-          state.searchMatches.push({ pageIndex: pi, paraIndex: pai, sentIndex: si, offset: m.index, length: m[0].length });
-        }
+  // Search all paragraphs
+  for (let pai = 0; pai < state.paragraphs.length; pai++) {
+    const para = state.paragraphs[pai];
+    if (para.type === 'image') continue;
+    for (let si = 0; si < para.sentences.length; si++) {
+      const sent = para.sentences[si];
+      let m;
+      re.lastIndex = 0;
+      while ((m = re.exec(sent)) !== null) {
+        state.searchMatches.push({ paraIndex: pai, sentIndex: si, offset: m.index, length: m[0].length });
       }
     }
   }
 
-  // Pages after current, then remaining — yield to main thread every 20 pages
-  const BATCH_SIZE = 20;
-  for (let i = 0; i < state.pages.length; i++) {
-    const pi = (state.currentPage + i) % state.pages.length;
-    searchPage(pi);
-    if ((i + 1) % BATCH_SIZE === 0) {
-      searchCount.textContent = `${state.searchMatches.length}+ ...`;
-      await new Promise(r => setTimeout(r, 0));
-      if (token.abort) return;
-    }
-  }
-  if (token.abort) return;
-
-  // Re-sort by page order so navigation is sequential
-  state.searchMatches.sort((a, b) => a.pageIndex - b.pageIndex || a.paraIndex - b.paraIndex || a.sentIndex - b.sentIndex || a.offset - b.offset);
-
   if (state.searchMatches.length > 0) {
-    // Jump to first match on or after current page
-    let firstIdx = state.searchMatches.findIndex(m => m.pageIndex >= state.currentPage);
-    if (firstIdx === -1) firstIdx = 0;
-    state.searchCurrent = firstIdx;
+    state.searchCurrent = 0;
     goToSearchMatch();
   } else {
     searchCount.textContent = '0 results';
@@ -2718,12 +2515,7 @@ function goToSearchMatch() {
 
   searchCount.textContent = `${state.searchCurrent + 1} / ${state.searchMatches.length}`;
 
-  // Navigate to the page if needed
-  if (state.currentPage !== match.pageIndex) {
-    goToPage(match.pageIndex);
-  } else {
-    highlightSearchOnPage();
-  }
+  highlightSearchOnPage();
 
   // Scroll the current match into view
   requestAnimationFrame(() => {
@@ -2740,7 +2532,7 @@ function highlightSearchOnPage() {
 
   if (!searchInput.value.trim()) return;
 
-  const matchesOnPage = state.searchMatches.filter(m => m.pageIndex === state.currentPage);
+  const matchesOnPage = state.searchMatches;
   if (matchesOnPage.length === 0) return;
 
   // Group matches by (paraIndex, sentIndex)
@@ -2983,20 +2775,18 @@ async function exportToDocx() {
   try {
   const zip = new _JSZip();
 
-  // Collect all text paragraphs across all pages
+  // Collect all text paragraphs
   const paragraphXmls = [];
-  for (const page of state.pages) {
-    for (const para of page) {
-      if (para.type !== 'text') continue;
-      const escaped = para.text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-      paragraphXmls.push(
-        `<w:p><w:r><w:t>${escaped}</w:t></w:r></w:p>`
-      );
-    }
+  for (const para of state.paragraphs) {
+    if (para.type !== 'text') continue;
+    const escaped = para.text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+    paragraphXmls.push(
+      `<w:p><w:r><w:t>${escaped}</w:t></w:r></w:p>`
+    );
   }
 
   const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -3243,16 +3033,14 @@ function saveReadingHistory() {
 
   const entry = {
     fileName: state.fileName,
-    page: state.currentPage,
     scrollTop: readerContent.scrollTop,
-    totalPages: state.totalPages,
     date: new Date().toISOString(),
   };
 
   let history = loadHistory();
 
-  // Deduplicate: remove existing entry for same file+page
-  history = history.filter(h => !(h.fileName === entry.fileName && h.page === entry.page));
+  // Deduplicate: remove existing entry for same file
+  history = history.filter(h => h.fileName !== entry.fileName);
 
   history.push(entry);
 
@@ -3284,16 +3072,11 @@ function renderHistory() {
     el.className = 'history-item';
     const d = new Date(entry.date);
     const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const pageDiv = document.createElement('div');
-    pageDiv.className = 'history-page';
-    pageDiv.textContent = `Page ${parseInt(entry.page, 10) + 1} / ${parseInt(entry.totalPages, 10)}`;
     const dateDiv = document.createElement('div');
     dateDiv.className = 'history-date';
     dateDiv.textContent = dateStr;
-    el.appendChild(pageDiv);
     el.appendChild(dateDiv);
     el.addEventListener('click', () => {
-      goToPage(entry.page, false);
       requestAnimationFrame(() => {
         readerContent.scrollTop = entry.scrollTop;
       });

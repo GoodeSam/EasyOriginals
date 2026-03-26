@@ -59,11 +59,11 @@ describe('reader.js URL handling', () => {
   });
 
   test('handleURL feeds content through the same pipeline as file uploads', () => {
-    // Should call splitIntoParagraphs and paginateParagraphs
+    // Should call splitIntoParagraphs and renderAllContent
     const fnMatch = readerSrc.match(/function (handleURL|loadURL)[\s\S]*?\n\}/);
     expect(fnMatch).not.toBeNull();
     expect(fnMatch[0]).toMatch(/splitIntoParagraphs/);
-    expect(fnMatch[0]).toMatch(/paginateParagraphs/);
+    expect(fnMatch[0]).toMatch(/renderAllContent/);
   });
 
   test('handleURL transitions to reader screen', () => {
