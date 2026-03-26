@@ -454,7 +454,7 @@ body {
 }
 .panel-title { font-weight: 700; font-size: 15px; font-family: sans-serif; }
 .panel-close { font-size: 24px; }
-.panel-body { padding: 16px 24px 24px; }
+.panel-body { padding: 16px 24px 24px; max-width: 800px; margin: 0 auto; }
 .panel-sentence {
   font-size: var(--reader-font-size, 18px);
   line-height: 1.7;
@@ -718,14 +718,13 @@ body {
 .para-popup {
   display: none;
   position: fixed;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 90%;
-  max-width: 600px;
+  bottom: 0;
+  left: 0;
+  right: 0;
   max-height: 80vh;
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 30px rgba(0,0,0,0.15);
   z-index: 1101;
   overflow: hidden;
 }
@@ -741,6 +740,8 @@ body {
   padding: 16px;
   overflow-y: auto;
   max-height: calc(80vh - 50px);
+  max-width: 800px;
+  margin: 0 auto;
 }
 .para-popup-text {
   font-size: var(--reader-font-size, 18px);
