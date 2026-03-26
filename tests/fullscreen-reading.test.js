@@ -29,10 +29,17 @@ describe('fullscreen reading mode class', () => {
     expect(fnMatch[0]).toMatch(/fullscreen-reading/);
   });
 
-  test('showBars removes fullscreen-reading class from readerScreen', () => {
-    const fnMatch = readerSrc.match(/function showBars[\s\S]*?\n\}/);
+  test('exitFullscreenReading removes fullscreen-reading class from readerScreen', () => {
+    const fnMatch = readerSrc.match(/function exitFullscreenReading[\s\S]*?\n\}/);
     expect(fnMatch).not.toBeNull();
     expect(fnMatch[0]).toMatch(/fullscreen-reading/);
+  });
+
+  test('showBars does not exit fullscreen-reading (only reveals UI temporarily)', () => {
+    const fnMatch = readerSrc.match(/function showBars[\s\S]*?\n\}/);
+    expect(fnMatch).not.toBeNull();
+    expect(fnMatch[0]).not.toMatch(/fullscreen-reading/);
+    expect(fnMatch[0]).not.toMatch(/exitFullscreen/);
   });
 });
 
@@ -111,8 +118,8 @@ describe('browser fullscreen via user gesture', () => {
     expect(clickContext).not.toBeNull();
   });
 
-  test('showBars calls exitFullscreen to restore browser chrome', () => {
-    const fnMatch = readerSrc.match(/function showBars[\s\S]*?\n\}/);
+  test('exitFullscreenReading calls exitFullscreen to restore browser chrome', () => {
+    const fnMatch = readerSrc.match(/function exitFullscreenReading[\s\S]*?\n\}/);
     expect(fnMatch).not.toBeNull();
     expect(fnMatch[0]).toMatch(/exitFullscreen/);
   });

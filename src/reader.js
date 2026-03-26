@@ -620,7 +620,8 @@ function handleReaderClick(e) {
     return;
   }
 
-  // Clicking empty area of reader content closes all side panels
+  // Clicking empty area of reader content closes panels
+  closeSentencePanel();
   closeAllSidePanels();
 }
 
@@ -3421,9 +3422,11 @@ function showBars() {
   if (searchBarEl) searchBarEl.classList.remove('auto-hide');
   // Reveal side-toggle buttons
   document.querySelectorAll('.side-toggle').forEach(t => t.classList.remove('auto-hide'));
-  // Exit fullscreen reading mode
+}
+
+function exitFullscreenReading() {
+  showBars();
   readerScreen.classList.remove('fullscreen-reading');
-  // Exit browser fullscreen to restore address bar and tab bar
   if (document.fullscreenElement && document.exitFullscreen) {
     document.exitFullscreen().catch(() => {});
   }
@@ -3499,7 +3502,7 @@ readerContent.addEventListener('scroll', () => {
 // Sync app state when user exits browser fullscreen (e.g. pressing Escape)
 document.addEventListener('fullscreenchange', () => {
   if (!document.fullscreenElement && readerScreen.classList.contains('fullscreen-reading')) {
-    showBars();
+    exitFullscreenReading();
     startAutoHideTimer();
   }
 });
