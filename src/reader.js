@@ -197,7 +197,8 @@ function changeFontSize(delta) {
   state.fontSize = Math.min(32, Math.max(12, state.fontSize + delta));
   syncSetItem('reader-font-size', state.fontSize);
   applyFontSize();
-  recalcScreens();
+  // Defer recalcScreens until after browser reflow so paragraph dimensions reflect the new font size
+  requestAnimationFrame(() => { recalcScreens(); });
 }
 
 function loadContentWidth() {
@@ -218,7 +219,8 @@ function changeContentWidth(delta) {
   state.contentWidth = Math.min(1600, Math.max(500, state.contentWidth + delta));
   syncSetItem('reader-content-width', state.contentWidth);
   applyContentWidth();
-  recalcScreens();
+  // Defer recalcScreens until after browser reflow so paragraph dimensions reflect the new width
+  requestAnimationFrame(() => { recalcScreens(); });
 }
 
 // ===== Page Theme =====
@@ -1928,6 +1930,11 @@ function openSentencePanel(sentenceEl) {
   grammarText.textContent = '';
   btnCopy.textContent = '\ud83d\udccb Copy';
 
+  // Calculate max-height to fit within viewport, accounting for top bar
+  const topBarHeight = document.querySelector('.top-bar') ? document.querySelector('.top-bar').offsetHeight : 0;
+  const availableHeight = window.innerHeight - topBarHeight - 16;
+  sentencePanel.style.maxHeight = availableHeight + 'px';
+
   panelOverlay.classList.add('active');
   sentencePanel.classList.add('active');
   // Move focus into the dialog and trap it for keyboard/screen-reader users
@@ -1959,6 +1966,7 @@ function closeSentencePanel() {
   sentencePanel.removeEventListener('keydown', _sentencePanelTrap);
   panelOverlay.classList.remove('active');
   sentencePanel.classList.remove('active');
+  sentencePanel.style.maxHeight = '';
   if (state.activeSentenceEl) {
     state.activeSentenceEl.classList.remove('active');
     // Restore focus to the sentence that opened the panel
