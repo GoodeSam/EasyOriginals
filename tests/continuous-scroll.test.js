@@ -200,3 +200,49 @@ describe('continuous scroll: history uses scroll position', () => {
     expect(body).not.toMatch(/totalPages/);
   });
 });
+
+describe('continuous scroll: history records paragraph position and progress', () => {
+  let readerSrc;
+
+  beforeEach(() => {
+    readerSrc = fs.readFileSync(
+      path.resolve(__dirname, '../src/reader.js'),
+      'utf-8'
+    );
+  });
+
+  test('saveReadingHistory records paragraphIndex', () => {
+    const fnMatch = readerSrc.match(/function saveReadingHistory\(\)\s*\{([\s\S]*?)\n\}/);
+    expect(fnMatch).not.toBeNull();
+    expect(fnMatch[1]).toMatch(/paragraphIndex/);
+  });
+
+  test('saveReadingHistory records progressPercent', () => {
+    const fnMatch = readerSrc.match(/function saveReadingHistory\(\)\s*\{([\s\S]*?)\n\}/);
+    expect(fnMatch).not.toBeNull();
+    expect(fnMatch[1]).toMatch(/progressPercent/);
+  });
+
+  test('has getReadingPosition helper that computes paragraph index and progress', () => {
+    expect(readerSrc).toMatch(/function getReadingPosition\(/);
+    const fnMatch = readerSrc.match(/function getReadingPosition\([^)]*\)\s*\{([\s\S]*?)\n\}/);
+    expect(fnMatch).not.toBeNull();
+    const body = fnMatch[1];
+    expect(body).toMatch(/paragraphIndex/);
+    expect(body).toMatch(/progressPercent/);
+  });
+
+  test('renderHistory displays paragraph position and progress', () => {
+    const fnMatch = readerSrc.match(/function renderHistory\(\)\s*\{([\s\S]*?)\n\}/);
+    expect(fnMatch).not.toBeNull();
+    const body = fnMatch[1];
+    expect(body).toMatch(/paragraphIndex|progressPercent/);
+  });
+
+  test('renderHistory click handler restores scroll position', () => {
+    const fnMatch = readerSrc.match(/function renderHistory\(\)\s*\{([\s\S]*?)\n\}/);
+    expect(fnMatch).not.toBeNull();
+    const body = fnMatch[1];
+    expect(body).toMatch(/scrollTop/);
+  });
+});

@@ -3028,12 +3028,38 @@ function saveHistoryToStorage(history) {
   syncSetItem('reader-history', JSON.stringify(history));
 }
 
+function getReadingPosition() {
+  const paragraphs = readerContent.querySelectorAll('.paragraph');
+  const scrollTop = readerContent.scrollTop;
+  const scrollHeight = readerContent.scrollHeight;
+  const clientHeight = readerContent.clientHeight;
+  const maxScroll = scrollHeight - clientHeight;
+  const progressPercent = maxScroll > 0 ? Math.round((scrollTop / maxScroll) * 100) : 100;
+
+  let paragraphIndex = 0;
+  const viewportTop = readerContent.getBoundingClientRect().top;
+  for (let i = 0; i < paragraphs.length; i++) {
+    const rect = paragraphs[i].getBoundingClientRect();
+    if (rect.bottom > viewportTop) {
+      paragraphIndex = i;
+      break;
+    }
+  }
+
+  return { paragraphIndex, progressPercent, scrollTop };
+}
+
+window.getReadingPosition = getReadingPosition;
+
 function saveReadingHistory() {
   if (!state.fileName) return;
 
+  const pos = getReadingPosition();
   const entry = {
     fileName: state.fileName,
-    scrollTop: readerContent.scrollTop,
+    scrollTop: pos.scrollTop,
+    paragraphIndex: pos.paragraphIndex,
+    progressPercent: pos.progressPercent,
     date: new Date().toISOString(),
   };
 
@@ -3072,9 +3098,15 @@ function renderHistory() {
     el.className = 'history-item';
     const d = new Date(entry.date);
     const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const progressDiv = document.createElement('div');
+    progressDiv.className = 'history-progress';
+    const paraNum = (entry.paragraphIndex != null ? entry.paragraphIndex + 1 : '?');
+    const pct = entry.progressPercent != null ? entry.progressPercent : '?';
+    progressDiv.textContent = `Paragraph ${paraNum} · ${pct}%`;
     const dateDiv = document.createElement('div');
     dateDiv.className = 'history-date';
     dateDiv.textContent = dateStr;
+    el.appendChild(progressDiv);
     el.appendChild(dateDiv);
     el.addEventListener('click', () => {
       requestAnimationFrame(() => {
