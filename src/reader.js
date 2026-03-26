@@ -200,6 +200,7 @@ function loadContentWidth() {
 
 function applyContentWidth() {
   readerContent.style.maxWidth = state.contentWidth + 'px';
+  document.documentElement.style.setProperty('--reader-content-width', state.contentWidth + 'px');
   widthLabel.textContent = state.contentWidth;
 }
 
