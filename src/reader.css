@@ -1004,6 +1004,7 @@ body {
 }
 .toolbar-toggle:hover { background: rgba(0, 0, 0, 0.5); }
 .fullscreen-reading .toolbar-toggle { display: flex; }
+.fullscreen-reading .top-bar:not(.auto-hide) ~ .toolbar-toggle { display: none; }
 
 /* ===== Fullscreen Reading Mode ===== */
 .fullscreen-reading { }
@@ -1046,6 +1047,9 @@ body {
 }
 .fullscreen-reading ~ .side-panel {
   display: none;
+}
+.fullscreen-reading ~ .side-panel.active {
+  display: flex;
 }
 
 /* ===== Reduced Motion ===== */

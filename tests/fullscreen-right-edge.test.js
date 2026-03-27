@@ -31,15 +31,15 @@ describe('edge detection only uses top and bottom edges', () => {
     expect(moveMatch[0]).toMatch(/atBottom/);
   });
 
-  test('showBars condition uses only atTopZone || atBottom (no atRight)', () => {
+  test('showBars condition uses atTopZone || atBottom (no atRight)', () => {
     const moveMatch = readerSrc.match(
       /document\.addEventListener\('mousemove'[\s\S]*?\}\);/
     );
     expect(moveMatch).not.toBeNull();
     const handler = moveMatch[0];
-    // The if-condition that calls showBars should be atTopZone || atBottom only
+    // The if-condition that calls showBars should include atTopZone || atBottom
     const edgeMatch = handler.match(
-      /if\s*\(atTopZone\s*\|\|\s*atBottom\)\s*\{/
+      /if\s*\(atTopZone\s*\|\|\s*atBottom[\s\S]*?\)\s*\{/
     );
     expect(edgeMatch).not.toBeNull();
   });
@@ -95,7 +95,7 @@ describe('top and bottom edges still exit fullscreen', () => {
     expect(moveMatch).not.toBeNull();
     const handler = moveMatch[0];
     const edgeMatch = handler.match(
-      /if\s*\(atTopZone\s*\|\|\s*atBottom\)\s*\{([\s\S]*?)\}/
+      /if\s*\(atTopZone\s*\|\|\s*atBottom[\s\S]*?\)\s*\{([\s\S]*?)\}/
     );
     expect(edgeMatch).not.toBeNull();
     expect(edgeMatch[1]).toMatch(/showBars\(\)/);
@@ -108,7 +108,7 @@ describe('top and bottom edges still exit fullscreen', () => {
     expect(moveMatch).not.toBeNull();
     const handler = moveMatch[0];
     const edgeMatch = handler.match(
-      /if\s*\(atTopZone\s*\|\|\s*atBottom\)\s*\{([\s\S]*?)\}/
+      /if\s*\(atTopZone\s*\|\|\s*atBottom[\s\S]*?\)\s*\{([\s\S]*?)\}/
     );
     expect(edgeMatch).not.toBeNull();
     expect(edgeMatch[1]).toMatch(/clearAutoHideTimer\(\)/);

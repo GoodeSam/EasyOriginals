@@ -3535,6 +3535,7 @@ document.addEventListener('mousemove', (e) => {
   if (_mouseMoveRaf) return;
   const clientX = e.clientX;
   const clientY = e.clientY;
+  const target = e.target;
   _mouseMoveRaf = requestAnimationFrame(() => {
     _mouseMoveRaf = null;
     showCursor();
@@ -3542,8 +3543,9 @@ document.addEventListener('mousemove', (e) => {
 
     const atTopZone = clientY >= 20 && clientY < EDGE_TRIGGER_PX;
     const atBottom = clientY > (window.innerHeight - EDGE_TRIGGER_PX);
+    const overTopBar = target && target.closest && target.closest('.top-bar');
 
-    if (atTopZone || atBottom) {
+    if (atTopZone || atBottom || overTopBar) {
       showBars();
       clearAutoHideTimer();
     } else {
