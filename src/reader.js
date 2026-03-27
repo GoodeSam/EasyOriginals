@@ -3462,8 +3462,10 @@ featureGuide.addEventListener('click', (e) => {
 
 // ===== Auto-Hide Bars =====
 const AUTO_HIDE_DELAY = 5000;
+const BAR_TRANSITION_MS = 350; // slightly longer than CSS 0.3s to ensure animation completes
 const EDGE_TRIGGER_PX = 50;
 let autoHideTimer = null;
+let _fullscreenDelayTimer = null;
 
 function startAutoHideTimer() {
   clearAutoHideTimer();
@@ -3479,8 +3481,16 @@ function startAutoHideTimer() {
     document.querySelectorAll('.side-toggle').forEach(t => t.classList.add('auto-hide'));
     // Close all side panels for fullscreen reading
     document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('active'));
-    // Enter fullscreen reading mode
-    readerScreen.classList.add('fullscreen-reading');
+    // Delay fullscreen layout change until bars have finished their hide transition
+    // so the position:absolute switch doesn't cause a visible content jump
+    if (!readerScreen.classList.contains('fullscreen-reading')) {
+      _fullscreenDelayTimer = setTimeout(() => {
+        _fullscreenDelayTimer = null;
+        const scrollPos = readerContent.scrollTop;
+        readerScreen.classList.add('fullscreen-reading');
+        readerContent.scrollTop = scrollPos;
+      }, BAR_TRANSITION_MS);
+    }
   }, AUTO_HIDE_DELAY);
 }
 
@@ -3488,6 +3498,10 @@ function clearAutoHideTimer() {
   if (autoHideTimer !== null) {
     clearTimeout(autoHideTimer);
     autoHideTimer = null;
+  }
+  if (_fullscreenDelayTimer !== null) {
+    clearTimeout(_fullscreenDelayTimer);
+    _fullscreenDelayTimer = null;
   }
 }
 
@@ -3503,8 +3517,17 @@ function showBars() {
 }
 
 function exitFullscreenReading() {
-  showBars();
+  // Cancel any pending fullscreen delay
+  if (_fullscreenDelayTimer !== null) {
+    clearTimeout(_fullscreenDelayTimer);
+    _fullscreenDelayTimer = null;
+  }
+  // Remove fullscreen layout first while bars are still hidden (auto-hide),
+  // so the position revert (absolute→static) is invisible, then show bars smoothly
+  const scrollPos = readerContent.scrollTop;
   readerScreen.classList.remove('fullscreen-reading');
+  readerContent.scrollTop = scrollPos;
+  showBars();
   if (document.fullscreenElement && document.exitFullscreen) {
     document.exitFullscreen().catch(() => {});
   }
