@@ -983,6 +983,28 @@ body {
 /* ===== Side-panel layout compensation ===== */
 /* Panels are now at the top — no right-side compensation needed */
 
+/* ===== Toolbar Toggle Button ===== */
+.toolbar-toggle {
+  display: none;
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 20;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease;
+}
+.toolbar-toggle:hover { background: rgba(0, 0, 0, 0.5); }
+.fullscreen-reading .toolbar-toggle { display: flex; }
+
 /* ===== Fullscreen Reading Mode ===== */
 .fullscreen-reading { }
 @media (pointer: fine) {

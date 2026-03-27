@@ -3549,6 +3549,25 @@ if (_topBarEl) {
   });
 }
 
+// Toolbar toggle button — shows/hides toolbar in immersive mode
+const toolbarToggle = document.getElementById('toolbarToggle');
+if (toolbarToggle) {
+  toolbarToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const topBar = document.querySelector('.top-bar');
+    if (topBar && topBar.classList.contains('auto-hide')) {
+      showBars();
+      clearAutoHideTimer();
+    } else {
+      startAutoHideTimer();
+      // Immediately hide bars
+      if (topBar) topBar.classList.add('auto-hide');
+      const searchBarEl = document.getElementById('searchBar');
+      if (searchBarEl) searchBarEl.classList.add('auto-hide');
+    }
+  });
+}
+
 // Scrolling resets the auto-hide timer but does NOT exit fullscreen
 readerContent.addEventListener('scroll', () => {
   if (!readerScreen.classList.contains('active')) return;
