@@ -3494,10 +3494,10 @@ document.addEventListener('mousemove', (e) => {
     showCursor();
     startCursorHideTimer();
 
-    const atTop = clientY < EDGE_TRIGGER_PX;
+    const atTopZone = clientY >= 20 && clientY < EDGE_TRIGGER_PX;
     const atBottom = clientY > (window.innerHeight - EDGE_TRIGGER_PX);
 
-    if (atTop || atBottom) {
+    if (atTopZone || atBottom) {
       showBars();
       clearAutoHideTimer();
     } else {
