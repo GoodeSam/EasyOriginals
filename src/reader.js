@@ -1718,12 +1718,15 @@ function translateParaPopup() {
       if (token !== _paraPopupToken) return;
       if (result) {
         paraPopupTranslation.textContent = result;
+        paraListenTransBtn.style.display = '';
       } else {
         paraPopupTranslation.textContent = 'Translation unavailable.';
+        paraListenTransBtn.style.display = 'none';
       }
     }).catch((err) => {
       if (token !== _paraPopupToken) return;
       paraPopupTranslation.textContent = 'Translation failed: ' + err.message;
+      paraListenTransBtn.style.display = 'none';
     });
   } else {
     paraPopupTranslation.textContent = 'Translation unavailable.';
@@ -1733,6 +1736,7 @@ function translateParaPopup() {
 function openParaPopup(paraEl) {
   const text = paraEl.textContent.trim();
   paraPopupText.textContent = text;
+  paraListenTransBtn.style.display = 'none';
   paraPopupOverlay.classList.add('active');
   paraPopup.classList.add('active');
   // Focus into popup and trap for keyboard/screen-reader users
@@ -1754,9 +1758,21 @@ function closeParaPopup() {
   paraPopup.classList.remove('active');
 }
 
+const paraListenBtn = $('#paraListenBtn');
+const paraListenTransBtn = $('#paraListenTransBtn');
+
 paraPopupClose.addEventListener('click', closeParaPopup);
 paraPopupOverlay.addEventListener('click', closeParaPopup);
 paraTranslateBtn.addEventListener('click', translateParaPopup);
+paraListenBtn.addEventListener('click', () => {
+  speakText(paraPopupText.textContent);
+});
+paraListenTransBtn.addEventListener('click', () => {
+  const text = paraPopupTranslation.textContent;
+  if (text && text !== 'Translating...' && text !== 'Translation unavailable.' && !text.startsWith('Translation failed:')) {
+    speakText(text);
+  }
+});
 paraPopupText.addEventListener('click', () => {
   if (!state.autoPlayAudio) return;
   speakText(paraPopupText.textContent);
