@@ -117,10 +117,10 @@ describe('reader.js: sidebar auto-hide integration', () => {
     expect(showBarsMatch[1]).toMatch(/side-toggle/);
   });
 
-  test('reader.js mousemove handler reveals toggles at right edge', () => {
+  test('reader.js mousemove handler reveals bars at screen edges', () => {
     const src = fs.readFileSync(path.resolve(__dirname, '../src/reader.js'), 'utf-8');
-    // Should check for right edge in mousemove handler
-    expect(src).toMatch(/atRight|clientX.*innerWidth|window\.innerWidth.*clientX/);
+    // Should check for top/bottom edges in mousemove handler
+    expect(src).toMatch(/atTop|atBottom|clientY.*innerHeight|EDGE_TRIGGER_PX/);
   });
 
   test('reader.js does not auto-hide toggles when their panel is active', () => {

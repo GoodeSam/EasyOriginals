@@ -434,12 +434,13 @@ body {
   border-radius: 16px 16px 0 0;
   box-shadow: 0 -4px 30px rgba(0,0,0,0.15);
   z-index: 101;
-  transform: translateY(100%);
+  transform: translateY(calc(100% + 100px));
   transition: transform 0.3s ease;
   max-height: 60vh;
   overflow-y: auto;
+  visibility: hidden;
 }
-.sentence-panel.active { transform: translateY(0); }
+.sentence-panel.active { transform: translateY(0); visibility: visible; }
 
 .panel-header {
   display: flex;

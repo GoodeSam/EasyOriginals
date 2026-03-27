@@ -170,13 +170,15 @@ export function bindAuthUI() {
       clearRemoteProvider();
       logout();
       // Clear user-scoped data from localStorage on sign-out
-      SYNC_KEYS.forEach(k => localStorage.removeItem(k));
-      sessionStorage.removeItem('reader-api-key');
-      localStorage.removeItem('reader-api-key'); // clean up any legacy localStorage keys
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('reader-bookmark-')) localStorage.removeItem(key);
-      }
+      try {
+        SYNC_KEYS.forEach(k => localStorage.removeItem(k));
+        sessionStorage.removeItem('reader-api-key');
+        localStorage.removeItem('reader-api-key');
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('reader-bookmark-')) localStorage.removeItem(key);
+        }
+      } catch (e) { console.warn('Logout cleanup failed:', e); }
       userMenu.classList.remove('active');
       uploadScreen.classList.remove('active');
       document.getElementById('readerScreen').classList.remove('active');

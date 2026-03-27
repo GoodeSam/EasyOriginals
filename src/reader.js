@@ -9,6 +9,7 @@ const MS_AUTH_URL = 'https://edge.microsoft.com/translate/auth';
 const MS_TRANSLATE_URL = 'https://api.cognitive.microsofttranslator.com/translate';
 const MS_DICT_URL = 'https://api.cognitive.microsofttranslator.com/dictionary/lookup';
 const EDGE_TTS_URL = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
+// Public Edge browser TTS API token (embedded in Edge browser itself, not a secret)
 const EDGE_TTS_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
 const EDGE_TTS_DEFAULT_VOICE = 'en-US-AriaNeural';
 const SEC_MS_GEC_VERSION = '1-130.0.2849.68';
@@ -1584,8 +1585,6 @@ function renderAllContent(paragraphs) {
         } else {
           const wordEl = document.createElement('span');
           wordEl.className = 'word';
-          wordEl.setAttribute('tabindex', '0');
-          wordEl.setAttribute('role', 'button');
           wordEl.textContent = w;
           sEl.appendChild(wordEl);
         }
@@ -2325,6 +2324,7 @@ function clearPosTag() {
 
 function showWordPopup(word, sentenceContext, event) {
   closeWordPopup();
+  _wordPopupPrevFocus = document.activeElement;
   popupWord.textContent = word;
   defLoading.style.display = 'block';
   defLoading.textContent = 'Looking up definition...';
@@ -2336,13 +2336,23 @@ function showWordPopup(word, sentenceContext, event) {
   defPronunciation.style.display = 'none';
   clearPosTag();
 
-  const x = Math.max(0, Math.min(event.clientX, window.innerWidth - 700));
-  const y = event.clientY > window.innerHeight / 2
-    ? event.clientY - 20
-    : event.clientY + 20;
+  // Use pointer coordinates if available, otherwise fall back to target element rect
+  let cx, cy;
+  if (Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
+    cx = event.clientX;
+    cy = event.clientY;
+  } else {
+    const rect = (event.target || event.currentTarget).getBoundingClientRect();
+    cx = rect.left + rect.width / 2;
+    cy = rect.top + rect.height / 2;
+  }
+  const x = Math.max(0, Math.min(cx, window.innerWidth - 700));
+  const y = cy > window.innerHeight / 2
+    ? cy - 20
+    : cy + 20;
 
   wordPopup.style.left = x + 'px';
-  if (event.clientY > window.innerHeight / 2) {
+  if (cy > window.innerHeight / 2) {
     wordPopup.style.bottom = (window.innerHeight - y) + 'px';
     wordPopup.style.top = 'auto';
   } else {
@@ -2351,11 +2361,18 @@ function showWordPopup(word, sentenceContext, event) {
   }
 
   wordPopup.classList.add('active');
+  wordPopup.addEventListener('keydown', _wordPopupTrap);
+  if (wordPopupClose) wordPopupClose.focus();
   lookupWord(word, sentenceContext);
 }
 
+let _wordPopupPrevFocus = null;
+function _wordPopupTrap(e) { trapFocus(e, wordPopup); }
+
 function closeWordPopup() {
+  wordPopup.removeEventListener('keydown', _wordPopupTrap);
   wordPopup.classList.remove('active');
+  if (_wordPopupPrevFocus) { _wordPopupPrevFocus.focus(); _wordPopupPrevFocus = null; }
   ++_lookupToken;
 }
 
@@ -2458,14 +2475,7 @@ function closeSearch() {
   clearSearchHighlights();
 }
 
-let _searchAbort = null;
-
 async function performSearch() {
-  // Abort any in-flight search
-  if (_searchAbort) _searchAbort.abort = true;
-  const token = { abort: false };
-  _searchAbort = token;
-
   const query = searchInput.value.trim();
   state.searchMatches = [];
   state.searchCurrent = -1;
@@ -2744,7 +2754,7 @@ function renderNotes() {
     el.innerHTML = `
       <div>${escapeHtml(note.text)}</div>
       <div class="note-date">${escapeHtml(note.date)}</div>
-      <button class="note-delete" data-index="${realIndex}">&times;</button>
+      <button class="note-delete" data-index="${realIndex}" aria-label="Delete note">&times;</button>
     `;
     notesList.appendChild(el);
   });
@@ -2951,6 +2961,7 @@ function renderWordList() {
     delBtn.dataset.word = entry.word;
     delBtn.dataset.book = entry.book;
     delBtn.innerHTML = '&times;';
+    delBtn.setAttribute('aria-label', 'Delete word from list');
     el.appendChild(delBtn);
     wordListEntries.appendChild(el);
   }
@@ -3038,7 +3049,7 @@ function getReadingPosition() {
   const maxScroll = scrollHeight - clientHeight;
   const progressPercent = maxScroll > 0 ? Math.round((scrollTop / maxScroll) * 100) : 100;
 
-  let paragraphIndex = 0;
+  let paragraphIndex = Math.max(0, paragraphs.length - 1);
   const viewportTop = readerContent.getBoundingClientRect().top;
   for (let i = 0; i < paragraphs.length; i++) {
     const rect = paragraphs[i].getBoundingClientRect();
@@ -3098,6 +3109,8 @@ function renderHistory() {
   for (const entry of fileHistory) {
     const el = document.createElement('div');
     el.className = 'history-item';
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '0');
     const d = new Date(entry.date);
     const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const progressDiv = document.createElement('div');
@@ -3105,15 +3118,20 @@ function renderHistory() {
     const paraNum = (entry.paragraphIndex != null ? entry.paragraphIndex + 1 : '?');
     const pct = entry.progressPercent != null ? entry.progressPercent : '?';
     progressDiv.textContent = `Paragraph ${paraNum} · ${pct}%`;
+    el.setAttribute('aria-label', `Paragraph ${paraNum}, ${pct}% — ${dateStr}`);
     const dateDiv = document.createElement('div');
     dateDiv.className = 'history-date';
     dateDiv.textContent = dateStr;
     el.appendChild(progressDiv);
     el.appendChild(dateDiv);
-    el.addEventListener('click', () => {
+    function goToEntry() {
       requestAnimationFrame(() => {
         readerContent.scrollTop = entry.scrollTop;
       });
+    }
+    el.addEventListener('click', goToEntry);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToEntry(); }
     });
     historyList.appendChild(el);
   }
@@ -3362,13 +3380,21 @@ function renderFeatureGuide() {
   }
 }
 
+let _featureGuidePrevFocus = null;
+function _featureGuideTrap(e) { trapFocus(e, featureGuide); }
+
 function openFeatureGuide() {
+  _featureGuidePrevFocus = document.activeElement;
   renderFeatureGuide();
   featureGuide.classList.add('active');
+  featureGuide.addEventListener('keydown', _featureGuideTrap);
+  if (featureGuideClose) featureGuideClose.focus();
 }
 
 function closeFeatureGuide() {
+  featureGuide.removeEventListener('keydown', _featureGuideTrap);
   featureGuide.classList.remove('active');
+  if (_featureGuidePrevFocus) { _featureGuidePrevFocus.focus(); _featureGuidePrevFocus = null; }
 }
 
 if (helpBtn) helpBtn.addEventListener('click', openFeatureGuide);

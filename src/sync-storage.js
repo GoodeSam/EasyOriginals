@@ -57,7 +57,15 @@ function scheduleFlush() {
         await _remoteProvider.push(key, value);
       } catch (err) {
         console.warn('Sync push failed for', key, err);
+        // Re-enqueue failed key for retry (only if not already superseded)
+        if (!_pendingWrites.has(key)) {
+          _pendingWrites.set(key, value);
+        }
       }
+    }
+    // Schedule another flush if there are failed/new writes pending
+    if (_pendingWrites.size > 0) {
+      scheduleFlush();
     }
   });
 }
