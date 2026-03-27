@@ -170,11 +170,13 @@ function init() {
 }
 
 function loadFontSize() {
-  const saved = localStorage.getItem('reader-font-size');
-  if (saved) {
-    const parsed = parseInt(saved, 10);
-    if (Number.isFinite(parsed)) state.fontSize = Math.min(32, Math.max(12, parsed));
-  }
+  try {
+    const saved = localStorage.getItem('reader-font-size');
+    if (saved) {
+      const parsed = parseInt(saved, 10);
+      if (Number.isFinite(parsed)) state.fontSize = Math.min(32, Math.max(12, parsed));
+    }
+  } catch (e) { /* storage unavailable — use default */ }
   applyFontSize();
 }
 
@@ -191,11 +193,13 @@ function changeFontSize(delta) {
 }
 
 function loadContentWidth() {
-  const saved = localStorage.getItem('reader-content-width');
-  if (saved) {
-    const parsed = parseInt(saved, 10);
-    if (Number.isFinite(parsed)) state.contentWidth = Math.min(1600, Math.max(500, parsed));
-  }
+  try {
+    const saved = localStorage.getItem('reader-content-width');
+    if (saved) {
+      const parsed = parseInt(saved, 10);
+      if (Number.isFinite(parsed)) state.contentWidth = Math.min(1600, Math.max(500, parsed));
+    }
+  } catch (e) { /* storage unavailable — use default */ }
   applyContentWidth();
 }
 
@@ -220,8 +224,11 @@ const THEMES = {
 };
 
 function loadTheme() {
-  const saved = localStorage.getItem('reader-theme');
-  const theme = (saved && THEMES[saved]) ? saved : 'brown';
+  let theme = 'brown';
+  try {
+    const saved = localStorage.getItem('reader-theme');
+    if (saved && THEMES[saved]) theme = saved;
+  } catch (e) { /* storage unavailable — use default */ }
   applyTheme(theme);
 }
 
@@ -263,8 +270,10 @@ function setTheme(theme) {
 window.setTheme = setTheme;
 
 function loadAutoPlayAudio() {
-  const saved = localStorage.getItem('reader-auto-play-audio');
-  if (saved === 'true') state.autoPlayAudio = true;
+  try {
+    const saved = localStorage.getItem('reader-auto-play-audio');
+    if (saved === 'true') state.autoPlayAudio = true;
+  } catch (e) { /* storage unavailable — use default */ }
   applyAutoPlayAudio();
 }
 
@@ -299,8 +308,10 @@ function safeParseJSON(str, fallback) {
 }
 
 function loadNotes() {
-  const saved = localStorage.getItem('reader-notes');
-  if (saved) state.notes = safeParseJSON(saved, []);
+  try {
+    const saved = localStorage.getItem('reader-notes');
+    if (saved) state.notes = safeParseJSON(saved, []);
+  } catch (e) { /* storage unavailable */ }
 }
 
 function saveNotes() {
@@ -321,8 +332,10 @@ function saveBookmark() {
 }
 
 function loadBookmark() {
-  const raw = localStorage.getItem(getBookmarkKey());
-  return raw ? safeParseJSON(raw, null) : null;
+  try {
+    const raw = localStorage.getItem(getBookmarkKey());
+    return raw ? safeParseJSON(raw, null) : null;
+  } catch (e) { return null; }
 }
 
 function removeBookmark() {
@@ -2346,7 +2359,8 @@ function showWordPopup(word, sentenceContext, event) {
     cx = rect.left + rect.width / 2;
     cy = rect.top + rect.height / 2;
   }
-  const x = Math.max(0, Math.min(cx, window.innerWidth - 700));
+  const popupWidth = Math.min(680, window.innerWidth * 0.94);
+  const x = Math.max(0, Math.min(cx, window.innerWidth - popupWidth));
   const y = cy > window.innerHeight / 2
     ? cy - 20
     : cy + 20;
@@ -2712,7 +2726,8 @@ function clearSearchHighlights() {
 
 // ===== Selection Toolbar =====
 function showSelectionToolbar(x, y) {
-  selectionToolbar.style.left = Math.max(8, Math.min(x - 40, window.innerWidth - 160)) + 'px';
+  const toolbarWidth = selectionToolbar.offsetWidth || 120;
+  selectionToolbar.style.left = Math.max(8, Math.min(x - 40, window.innerWidth - toolbarWidth - 8)) + 'px';
   selectionToolbar.style.top = (y - 45) + 'px';
   selectionToolbar.classList.add('active');
 }
@@ -3033,8 +3048,10 @@ const historyList = $('#historyList');
 const historyClear = $('#historyClear');
 
 function loadHistory() {
-  const raw = localStorage.getItem('reader-history');
-  return raw ? safeParseJSON(raw, []) : [];
+  try {
+    const raw = localStorage.getItem('reader-history');
+    return raw ? safeParseJSON(raw, []) : [];
+  } catch (e) { return []; }
 }
 
 function saveHistoryToStorage(history) {
