@@ -40,6 +40,14 @@ export function createSettingsPanel() {
       <select id="edgeTtsVoice" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:12px;">
       </select>
 
+      <label for="speechRate" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Speech Rate</label>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:12px;color:#888;">Slow</span>
+        <input type="range" id="speechRate" min="-50" max="100" step="5" value="0" style="flex:1;">
+        <span style="font-size:12px;color:#888;">Fast</span>
+        <span id="speechRateLabel" style="font-size:12px;font-weight:600;min-width:36px;text-align:center;">Normal</span>
+      </div>
+
       <button class="btn btn-primary" id="settingsSaveBtn" style="display:block;width:100%;padding:10px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;background:#4f46e5;color:#fff;">Save Settings</button>
       <div id="settingsStatus" style="font-size:12px;text-align:center;margin-top:8px;display:none;"></div>
     </div>
@@ -69,6 +77,18 @@ export function createSettingsPanel() {
   });
   voiceSelect.value = settings.edgeTtsVoice || 'en-US-AriaNeural';
 
+  const speechRateInput = panel.querySelector('#speechRate');
+  const speechRateLabel = panel.querySelector('#speechRateLabel');
+  const savedRate = Number(settings.speechRate) || 0;
+  speechRateInput.value = savedRate;
+
+  function updateRateLabel(val) {
+    const n = Number(val);
+    speechRateLabel.textContent = n === 0 ? 'Normal' : (n > 0 ? '+' : '') + n + '%';
+  }
+  updateRateLabel(savedRate);
+  speechRateInput.addEventListener('input', () => updateRateLabel(speechRateInput.value));
+
   function updateChatgptVisibility() {
     chatgptDiv.classList.toggle('hidden', providerSelect.value !== 'chatgpt');
   }
@@ -90,6 +110,7 @@ export function createSettingsPanel() {
         openaiApiKey: apiKeyInput.value.trim(),
         openaiModel: modelSelect.value,
         edgeTtsVoice: voiceSelect.value,
+        speechRate: Number(speechRateInput.value),
       });
       if (window.invalidateSettings) window.invalidateSettings();
       status.textContent = allSaved ? 'Settings saved!' : 'Settings applied (some may not persist)';

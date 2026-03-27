@@ -9,6 +9,7 @@ const KEYS = {
   openaiApiKey: 'reader-api-key',
   openaiModel: 'reader-model',
   edgeTtsVoice: 'reader-edge-tts-voice',
+  speechRate: 'reader-speech-rate',
 };
 
 // API key uses sessionStorage for reduced exposure — not persisted across sessions
@@ -21,6 +22,7 @@ const DEFAULTS = {
   openaiApiKey: '',
   openaiModel: DEFAULT_MODEL,
   edgeTtsVoice: 'en-US-AriaNeural',
+  speechRate: 0,
 };
 
 let _cache = null;

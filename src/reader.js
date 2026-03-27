@@ -53,6 +53,8 @@ let state = {
   autoPlayAudio: false,
   // Edge TTS voice for free speech synthesis
   edgeTtsVoice: EDGE_TTS_DEFAULT_VOICE,
+  // Speech rate adjustment for TTS (-50 to +100, maps to SSML prosody rate percentage)
+  speechRate: 0,
 };
 
 // Expose state for testing (only in dev/test)
@@ -290,6 +292,7 @@ function loadSettings() {
   state.model = s.openaiModel;
   state.translationProvider = s.translationProvider;
   state.edgeTtsVoice = s.edgeTtsVoice || EDGE_TTS_DEFAULT_VOICE;
+  state.speechRate = Number(s.speechRate) || 0;
   state._settingsLoaded = true;
 }
 
@@ -1791,6 +1794,7 @@ async function ensureSettings() {
     state.model = s.openaiModel;
     state.translationProvider = s.translationProvider;
     state.edgeTtsVoice = s.edgeTtsVoice || EDGE_TTS_DEFAULT_VOICE;
+    state.speechRate = Number(s.speechRate) || 0;
     state._settingsLoaded = true;
     _apiKeyAlertShown = false;
   }
@@ -2288,7 +2292,9 @@ async function playEdgeTTS(text) {
       );
 
       const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      const ssml = `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-US'><voice name='${voice}'><prosody pitch='+0Hz' rate='+0%' volume='+0%'>${escaped}</prosody></voice></speak>`;
+      const rateVal = Number(state.speechRate) || 0;
+      const rateStr = (rateVal >= 0 ? '+' : '') + rateVal + '%';
+      const ssml = `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-US'><voice name='${voice}'><prosody pitch='+0Hz' rate='${rateStr}' volume='+0%'>${escaped}</prosody></voice></speak>`;
       ws.send(`X-RequestId:${requestId}\r\nContent-Type:application/ssml+xml\r\nPath:ssml\r\n\r\n${ssml}`);
     };
 
