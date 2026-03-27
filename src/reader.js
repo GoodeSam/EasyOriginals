@@ -621,6 +621,8 @@ function handleReaderClick(e) {
 
 
   const wordEl = e.target.closest('.word');
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
   if (wordEl) {
     e.stopPropagation();
     const sentenceEl = wordEl.closest('.sentence');
@@ -632,6 +634,18 @@ function handleReaderClick(e) {
       if (state.autoPlayAudio) speakText(cleanWord);
     }
     return;
+  }
+
+  // On touch devices, tap on a sentence opens sentence translation
+  if (isTouchDevice) {
+    const sentenceEl = e.target.closest('.sentence');
+    if (sentenceEl) {
+      openSentencePanel(sentenceEl);
+      if (state.gestureMode === 'direct') {
+        translateSentence();
+      }
+      return;
+    }
   }
 
   // Clicking empty area of reader content closes panels
