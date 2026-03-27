@@ -85,16 +85,16 @@ export function createSettingsPanel() {
       return;
     }
     try {
-      saveSettings({
+      const allSaved = saveSettings({
         translationProvider: providerSelect.value,
         openaiApiKey: apiKeyInput.value.trim(),
         openaiModel: modelSelect.value,
         edgeTtsVoice: voiceSelect.value,
       });
       if (window.invalidateSettings) window.invalidateSettings();
-      status.textContent = 'Settings saved!';
+      status.textContent = allSaved ? 'Settings saved!' : 'Settings applied (some may not persist)';
       status.style.display = 'block';
-      status.style.color = '#10b981';
+      status.style.color = allSaved ? '#10b981' : '#f59e0b';
       setTimeout(() => { status.style.display = 'none'; }, 2000);
     } catch (e) {
       status.textContent = 'Failed to save: ' + e.message;

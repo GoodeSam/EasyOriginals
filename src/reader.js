@@ -28,7 +28,7 @@ let state = {
   paragraphs: [],   // Flat array of paragraphs, each paragraph has sentences array
   apiKey: '',
   model: DEFAULT_MODEL,
-  translationProvider: 'chatgpt',  // 'chatgpt' | 'google' | 'microsoft' | 'offline'
+  translationProvider: 'microsoft',  // 'chatgpt' | 'google' | 'microsoft' | 'offline'
   offlineDict: null,  // loaded from dict-en.json
   msAuthToken: '',
   msAuthExpiry: 0,
@@ -2300,18 +2300,17 @@ async function playEdgeTTS(text) {
 
 function speakText(text) {
   ensureSettings().then(() => {
-    if (state.apiKey) {
-      playTTS(text).catch(err => console.error('TTS error:', err));
-    } else {
-      playEdgeTTS(text).catch(() => {
-        if (window.speechSynthesis) {
-          window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.lang = 'en-US';
-          window.speechSynthesis.speak(utterance);
-        }
-      });
-    }
+    // Prefer Edge TTS (Microsoft, free), fall back to OpenAI TTS, then browser speech
+    playEdgeTTS(text).catch(() => {
+      if (state.apiKey) {
+        playTTS(text).catch(err => console.error('TTS error:', err));
+      } else if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        window.speechSynthesis.speak(utterance);
+      }
+    });
   });
 }
 

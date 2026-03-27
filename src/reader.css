@@ -980,99 +980,6 @@ body {
 }
 .settings-panel .side-panel-header { font-family: -apple-system, sans-serif; }
 
-/* ===== Auth Screen ===== */
-.auth-screen { }
-#authScreen {
-  justify-content: center;
-  align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-.auth-card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 48px 40px;
-  text-align: center;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-  max-width: 400px;
-  width: 100%;
-}
-.auth-card h2 { font-size: 28px; margin-bottom: 4px; color: #333; }
-.auth-subtitle { color: #777; margin-bottom: 24px; font-size: 14px; font-family: sans-serif; }
-.auth-form { display: flex; flex-direction: column; gap: 10px; }
-.auth-error {
-  color: #e11d48;
-  font-size: 13px;
-  font-family: sans-serif;
-  text-align: left;
-  padding: 6px 0;
-}
-.auth-btn {
-  width: 100%;
-  padding: 10px;
-  font-size: 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-}
-.auth-btn-google {
-  background: #fff;
-  color: #333;
-  border: 1px solid #d1d5db;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-}
-.auth-btn-google:hover { background: #f3f4f6; border-color: #9ca3af; }
-.auth-btn-guest {
-  background: transparent;
-  color: #6b7280;
-  border: 1px dashed #d1d5db;
-}
-.auth-btn-guest:hover { background: #f9fafb; color: #374151; }
-.auth-divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: #aaa;
-  font-size: 12px;
-  font-family: sans-serif;
-  margin: 4px 0;
-}
-.auth-divider::before,
-.auth-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: #e5e7eb;
-}
-
-/* ===== User Menu ===== */
-.user-menu-wrapper { position: relative; }
-.user-menu {
-  display: none;
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-  padding: 10px 14px;
-  min-width: 160px;
-  z-index: 200;
-  text-align: center;
-}
-.user-menu.active { display: block; }
-.user-menu-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 8px;
-  font-family: -apple-system, sans-serif;
-  word-break: break-all;
-}
-.user-menu-logout { width: 100%; }
-
 /* ===== Side-panel layout compensation ===== */
 /* Panels are now at the top — no right-side compensation needed */
 
@@ -1084,9 +991,14 @@ body {
   }
 }
 .fullscreen-reading .top-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
   transform: translateY(-100%);
   opacity: 0;
   pointer-events: none;
+  z-index: 10;
 }
 .fullscreen-reading .bottom-bar {
   transform: translateY(100%);
@@ -1094,6 +1006,9 @@ body {
   pointer-events: none;
 }
 .fullscreen-reading .search-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
   transform: translateY(-100%);
   opacity: 0;
   pointer-events: none;
@@ -1125,9 +1040,6 @@ body {
   .upload-area { padding: 40px 30px; max-width: 400px; }
   .upload-icon { font-size: 48px; margin-bottom: 12px; }
   .upload-area h2 { font-size: 22px; }
-  .auth-card { padding: 36px 28px; }
-  .auth-card h2 { font-size: 22px; }
-
   .top-bar { padding: 8px 12px; gap: 6px; }
   .book-title { font-size: 14px; }
   .icon-btn { font-size: 18px; padding: 8px; min-width: 36px; min-height: 36px; }
@@ -1162,9 +1074,6 @@ body {
   .upload-icon { font-size: 40px; margin-bottom: 8px; }
   .upload-area h2 { font-size: 20px; }
   .upload-area p { font-size: 13px; }
-  .auth-card { padding: 28px 20px; max-width: 100%; margin: 0 16px; border-radius: 12px; }
-  .auth-card h2 { font-size: 20px; }
-
   .top-bar { padding: 6px 8px; gap: 4px; }
   .book-title { font-size: 13px; }
   .icon-btn { font-size: 16px; padding: 10px; min-width: 44px; min-height: 44px; }

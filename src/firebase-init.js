@@ -1,10 +1,8 @@
 /**
  * Firebase initialization module.
- * Centralizes Firebase app, auth, and firestore setup.
- * Uses Google Sign-In (no email/password required).
+ * Centralizes Firebase app and firestore setup.
  */
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -18,23 +16,19 @@ const firebaseConfig = {
 
 const _hasPlaceholders = firebaseConfig.apiKey.includes('placeholder') || firebaseConfig.appId.includes('placeholder') || firebaseConfig.messagingSenderId === '000000000000';
 
-let app, auth, db;
+let app, db;
 if (_hasPlaceholders) {
-  console.warn('Firebase config contains placeholder values. Auth and sync features are disabled.');
-  // Create null stubs so imports don't crash — auth-ui checks before using
+  console.warn('Firebase config contains placeholder values. Sync features are disabled.');
   app = null;
-  auth = null;
   db = null;
 } else {
   try {
     app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
     db = getFirestore(app);
   } catch (err) {
     throw new Error('Firebase initialization failed: ' + err.message + '. Check your Firebase config.');
   }
 }
 
-export { app, auth, db };
-export { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged };
+export { app, db };
 export { doc, setDoc, getDoc };

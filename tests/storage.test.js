@@ -56,7 +56,7 @@ describe('saveSettings', () => {
 describe('loadSettings', () => {
   test('returns defaults when localStorage is empty', () => {
     const settings = loadSettings();
-    expect(settings.translationProvider).toBe('chatgpt');
+    expect(settings.translationProvider).toBe('microsoft');
     expect(settings.openaiApiKey).toBe('');
     expect(settings.openaiModel).toBe('gpt-4o-mini');
   });

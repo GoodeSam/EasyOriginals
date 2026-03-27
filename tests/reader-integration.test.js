@@ -152,7 +152,7 @@ describe('toolbar order: grouped by function', () => {
       'wordListToggle', 'historyToggle', 'notesToggle',
       'fontDecrease', 'fontIncrease', 'widthDecrease', 'widthIncrease',
       'gestureModeBtn', 'exportDocxBtn', 'settingsToggle', 'helpBtn',
-      'userMenuBtn', 'pageInfo',
+      'pageInfo',
     ];
     for (const id of ids) {
       expect(actions).toMatch(new RegExp(`id="${id}"`));
@@ -201,13 +201,12 @@ describe('toolbar order: grouped by function', () => {
     expect(pos('widthIncrease')).toBeLessThan(pos('gestureModeBtn'));
   });
 
-  // Group 4 — Utility: export, settings, help, account, page info (rightmost)
-  test('utility group: export → settings → help → account → page, at end', () => {
+  // Group 4 — Utility: export, settings, help, page info (rightmost)
+  test('utility group: export → settings → help → page, at end', () => {
     expect(pos('gestureModeBtn')).toBeLessThan(pos('exportDocxBtn'));
     expect(pos('exportDocxBtn')).toBeLessThan(pos('settingsToggle'));
     expect(pos('settingsToggle')).toBeLessThan(pos('helpBtn'));
-    expect(pos('helpBtn')).toBeLessThan(pos('userMenuBtn'));
-    expect(pos('userMenuBtn')).toBeLessThan(pos('pageInfo'));
+    expect(pos('helpBtn')).toBeLessThan(pos('pageInfo'));
   });
 });
 

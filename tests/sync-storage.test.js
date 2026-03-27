@@ -23,6 +23,8 @@ const SYNC_KEYS = [
   'reader-history',
   'reader-provider',
   'reader-model',
+  'reader-auto-play-audio',
+  'reader-edge-tts-voice',
 ];
 
 describe('guest mode storage (default)', () => {

@@ -17,7 +17,7 @@ const SESSION_KEYS = new Set(['openaiApiKey']);
 export const DEFAULT_MODEL = 'gpt-4o-mini';
 
 const DEFAULTS = {
-  translationProvider: 'chatgpt',
+  translationProvider: 'microsoft',
   openaiApiKey: '',
   openaiModel: DEFAULT_MODEL,
   edgeTtsVoice: 'en-US-AriaNeural',
@@ -64,12 +64,14 @@ export function saveSettings(obj) {
   if (obj.translationProvider && !VALID_PROVIDERS.includes(obj.translationProvider)) {
     throw new Error('Invalid translation provider: ' + obj.translationProvider);
   }
+  let allSaved = true;
   for (const [key, storageKey] of Object.entries(KEYS)) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      safeSetItem(storageKey, obj[key], key);
+      if (!safeSetItem(storageKey, obj[key], key)) allSaved = false;
       if (_cache) _cache[key] = obj[key];
     }
   }
+  return allSaved;
 }
 
 export function getSettings() {

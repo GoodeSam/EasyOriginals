@@ -18,6 +18,8 @@ export const SYNC_KEYS = [
   'reader-history',
   'reader-provider',
   'reader-model',
+  'reader-auto-play-audio',
+  'reader-edge-tts-voice',
 ];
 
 let _remoteProvider = null;
@@ -28,6 +30,7 @@ let _pendingWrites = new Map(); // key → value (coalesced)
 let _flushScheduled = false;
 
 export function setRemoteProvider(provider) {
+  _pendingWrites.clear();
   _remoteProvider = provider;
 }
 
@@ -49,22 +52,26 @@ function scheduleFlush() {
   _flushScheduled = true;
   _writeQueue = _writeQueue.then(async () => {
     _flushScheduled = false;
-    if (!_remoteProvider || _pendingWrites.size === 0) return;
+    // Capture the provider at flush start so we can detect account switches
+    const provider = _remoteProvider;
+    if (!provider || _pendingWrites.size === 0) return;
     const batch = new Map(_pendingWrites);
     _pendingWrites.clear();
     for (const [key, value] of batch) {
+      // Abort if provider changed (account switch/logout)
+      if (_remoteProvider !== provider) return;
       try {
-        await _remoteProvider.push(key, value);
+        await provider.push(key, value);
       } catch (err) {
         console.warn('Sync push failed for', key, err);
-        // Re-enqueue failed key for retry (only if not already superseded)
-        if (!_pendingWrites.has(key)) {
+        // Re-enqueue only if provider hasn't changed and key not superseded
+        if (_remoteProvider === provider && !_pendingWrites.has(key)) {
           _pendingWrites.set(key, value);
         }
       }
     }
     // Schedule another flush if there are failed/new writes pending
-    if (_pendingWrites.size > 0) {
+    if (_remoteProvider === provider && _pendingWrites.size > 0) {
       scheduleFlush();
     }
   });
@@ -76,9 +83,10 @@ function enqueueRemoteWrite(key, value) {
 }
 
 export function setItem(key, value) {
-  try { localStorage.setItem(key, value); } catch (e) { console.warn('localStorage.setItem failed:', e); }
+  const strValue = String(value);
+  try { localStorage.setItem(key, strValue); } catch (e) { console.warn('localStorage.setItem failed:', e); }
   if (_remoteProvider) {
-    enqueueRemoteWrite(key, value);
+    enqueueRemoteWrite(key, strValue);
   }
 }
 
