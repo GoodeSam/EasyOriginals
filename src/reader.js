@@ -48,7 +48,7 @@ let state = {
   // Theme
   theme: 'brown',
   // Gesture mode: 'menu' (show action buttons) or 'direct' (auto-translate)
-  gestureMode: 'menu',
+  gestureMode: 'direct',
   // Auto-play audio: when true, clicking words/sentences triggers TTS automatically
   autoPlayAudio: false,
   // Edge TTS voice for free speech synthesis
