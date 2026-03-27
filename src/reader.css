@@ -1017,10 +1017,12 @@ body {
   left: 0;
   right: 0;
   top: 0;
+  z-index: 10;
+}
+.fullscreen-reading .top-bar.auto-hide {
   transform: translateY(-100%);
   opacity: 0;
   pointer-events: none;
-  z-index: 10;
 }
 .fullscreen-reading .bottom-bar {
   transform: translateY(100%);
@@ -1031,6 +1033,8 @@ body {
   position: absolute;
   left: 0;
   right: 0;
+}
+.fullscreen-reading .search-bar.auto-hide {
   transform: translateY(-100%);
   opacity: 0;
   pointer-events: none;
