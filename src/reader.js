@@ -1753,6 +1753,8 @@ function openParaPopup(paraEl) {
     paraPopupTranslation.style.display = 'none';
     paraPopupTranslation.textContent = '';
   }
+
+  if (state.autoPlayAudio) speakText(text);
 }
 
 function closeParaPopup() {
