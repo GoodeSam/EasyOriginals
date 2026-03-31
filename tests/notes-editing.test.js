@@ -126,3 +126,95 @@ describe('Editable notes in notes panel', () => {
     expect(readerSrc).toMatch(/function saveNotes/);
   });
 });
+
+describe('Note button click feedback', () => {
+  let readerSrc;
+
+  beforeEach(() => {
+    readerSrc = fs.readFileSync(
+      path.resolve(__dirname, '../src/reader.js'),
+      'utf-8'
+    );
+  });
+
+  test('has noteWithFeedback function', () => {
+    expect(readerSrc).toMatch(/function noteWithFeedback\(/);
+  });
+
+  test('noteWithFeedback accepts btn, text, and originalLabel parameters', () => {
+    expect(readerSrc).toMatch(/function noteWithFeedback\(\s*btn\s*,\s*text\s*,\s*originalLabel\s*\)/);
+  });
+
+  test('noteWithFeedback disables button to prevent duplicate operations', () => {
+    const match = readerSrc.match(/function noteWithFeedback\([^)]*\)[\s\S]*?^}/m);
+    expect(match).not.toBeNull();
+    expect(match[0]).toMatch(/btn\.disabled\s*=\s*true/);
+  });
+
+  test('noteWithFeedback re-enables button after feedback', () => {
+    const match = readerSrc.match(/function noteWithFeedback\([^)]*\)[\s\S]*?^}/m);
+    expect(match).not.toBeNull();
+    expect(match[0]).toMatch(/btn\.disabled\s*=\s*false/);
+  });
+
+  test('noteWithFeedback shows checkmark on success', () => {
+    const match = readerSrc.match(/function noteWithFeedback\([^)]*\)[\s\S]*?^}/m);
+    expect(match).not.toBeNull();
+    expect(match[0]).toMatch(/\\u2714|✔|Noted/);
+  });
+
+  test('noteWithFeedback uses 300ms timeout for feedback reset', () => {
+    const match = readerSrc.match(/function noteWithFeedback\([^)]*\)[\s\S]*?^}/m);
+    expect(match).not.toBeNull();
+    expect(match[0]).toMatch(/setTimeout\(.*300\)/s);
+  });
+
+  test('noteWithFeedback calls addNote', () => {
+    const match = readerSrc.match(/function noteWithFeedback\([^)]*\)[\s\S]*?^}/m);
+    expect(match).not.toBeNull();
+    expect(match[0]).toMatch(/addNote\(\s*text\s*\)/);
+  });
+
+  test('noteWithFeedback adds noted class for highlight styling', () => {
+    const match = readerSrc.match(/function noteWithFeedback\([^)]*\)[\s\S]*?^}/m);
+    expect(match).not.toBeNull();
+    expect(match[0]).toMatch(/classList\.add\(['"]noted['"]\)/);
+  });
+
+  test('btnNote click handler uses noteWithFeedback', () => {
+    expect(readerSrc).toMatch(/btnNote\.addEventListener\(['"]click['"],\s*\(\)\s*=>\s*\{[\s\S]*?noteWithFeedback\(\s*btnNote\b/);
+  });
+
+  test('wordNoteBtn click handler uses noteWithFeedback', () => {
+    expect(readerSrc).toMatch(/wordNoteBtn\.addEventListener\(['"]click['"],\s*\(\)\s*=>\s*\{[\s\S]*?noteWithFeedback\(\s*wordNoteBtn\b/);
+  });
+
+  test('paraNoteBtn click handler uses noteWithFeedback', () => {
+    expect(readerSrc).toMatch(/paraNoteBtn\.addEventListener\(['"]click['"],\s*\(\)\s*=>\s*\{[\s\S]*?noteWithFeedback\(\s*paraNoteBtn\b/);
+  });
+
+  test('selNote click handler uses noteWithFeedback', () => {
+    expect(readerSrc).toMatch(/selNote\.addEventListener\(['"]click['"],\s*\(\)\s*=>\s*\{[\s\S]*?noteWithFeedback\(\s*selNote\b/);
+  });
+});
+
+describe('Note button feedback CSS', () => {
+  let cssSrc;
+
+  beforeEach(() => {
+    cssSrc = fs.readFileSync(
+      path.resolve(__dirname, '../src/reader.css'),
+      'utf-8'
+    );
+  });
+
+  test('has .noted class for highlight styling', () => {
+    expect(cssSrc).toMatch(/\.noted\b/);
+  });
+
+  test('.noted class sets a distinct background or color', () => {
+    const match = cssSrc.match(/\.noted\b[^{]*\{([^}]*)\}/);
+    expect(match).not.toBeNull();
+    expect(match[1]).toMatch(/background|color/);
+  });
+});

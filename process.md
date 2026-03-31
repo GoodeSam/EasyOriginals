@@ -346,6 +346,7 @@ How URL loading works:
 
 
 
+
 \>> 使用TDD实现：停止操作5秒以后，自动隐藏浏览器的网址栏和浏览器的其他内容，整个电脑屏幕仅仅只展现文档的阅读内容
 
 Implement a fullscreen reading mode using TDD: after 5 seconds of inactivity, automatically hide the toolbar, sidebar, status bar, and all UI chrome to display only the document content.
@@ -1715,7 +1716,7 @@ Ask Codex whether this Zustand pattern could cause stale state.
 **Audit type**: Mini (5-dim)
 **Fixer**: Claude
 **Model**: gpt-5.3-codex | **Effort**: high | **Sandbox**: workspace-write
-**Thread ID**: `019d3305-90d1-7830-9eae-046fe7c06404` *(use ****`/continue 019d3305-90d1-7830-9eae-046fe7c06404`**** to iterate further — Codex only)*
+**Thread ID**: `019d3305-90d1-7830-9eae-046fe7c06404` *(use ******`/continue 019d3305-90d1-7830-9eae-046fe7c06404`****** to iterate further — Codex only)*
 **Rounds**: 2
 
 ## Result: ACCEPTED
@@ -1760,27 +1761,17 @@ Ask Codex whether this Zustand pattern could cause stale state.
 - Revert: `git checkout .` to undo all changes
 - Continue: `/continue 019d3305-90d1-7830-9eae-046fe7c06404` to address remaining issues
 
-
-
 ——————
 
 Append the final report（English first，then Chinese) to the end of the current document at  
 /Users/victor/projects/EasyOriginals/[process.md](http://process.md) (append only, do not overwrite).
 
-
-
 \>> 使用TDD实现：在用户进行 **单词 / 句子 / 段落选择后**，可以将内容加入到 Notes 中；并且可以从 toolbar 进入 Notes 页面进行手动编辑。    Implement using TDD: Allow users to add selected text (words, sentences, or paragraphs) from the editor to Notes, and add a toolbar button to access a Notes page for manual editing.
-
-
 
 Append the final report（English first，then Chinese) to the end of the current document at  
 /Users/victor/projects/EasyOriginals/[process.md](http://process.md) (append only, do not overwrite).
 
-
-
-
-
->> 使用TDD实现：在用户进行 **单词 / 句子 / 段落选择后**，可以将内容加入到 Notes 中；并且可以从 toolbar 进入 Notes 页面进行手动编辑。    Implement using TDD: Allow users to add selected text (words, sentences, or paragraphs) from the editor to Notes, and add a toolbar button to access a Notes page for manual editing.
+> > 使用TDD实现：在用户进行 **单词 / 句子 / 段落选择后**，可以将内容加入到 Notes 中；并且可以从 toolbar 进入 Notes 页面进行手动编辑。    Implement using TDD: Allow users to add selected text (words, sentences, or paragraphs) from the editor to Notes, and add a toolbar button to access a Notes page for manual editing.
 
 ---
 
@@ -1802,15 +1793,16 @@ Written **before** implementation (TDD red-green cycle). Three test groups:
 
 ### 2. HTML Changes: `index.html`
 
-| Location | Element Added |
-|---|---|
-| Sentence panel (`.panel-actions`) | `<button class="btn btn-sm" id="btnNote">📝 Note</button>` after Copy |
-| Paragraph popup (`.para-popup-actions`) | `<button class="btn btn-sm" id="paraNoteBtn">📝 Note</button>` after Copy |
+| Location                                   | Element Added                                                                            |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Sentence panel (`.panel-actions`)          | `<button class="btn btn-sm" id="btnNote">📝 Note</button>` after Copy                    |
+| Paragraph popup (`.para-popup-actions`)    | `<button class="btn btn-sm" id="paraNoteBtn">📝 Note</button>` after Copy                |
 | Word popup (new `.word-popup-actions` div) | `<button class="btn btn-sm" id="wordNoteBtn">📝 Note</button>` before `.word-popup-body` |
 
 ### 3. JavaScript Changes: `src/reader.js`
 
 **New element references:**
+
 ```javascript
 const btnNote = $('#btnNote');
 const paraNoteBtn = $('#paraNoteBtn');
@@ -1818,11 +1810,13 @@ const wordNoteBtn = $('#wordNoteBtn');
 ```
 
 **New event handlers (3):**
+
 - `btnNote.click` → extracts `panelSentence.textContent` → `addNote(text)`
 - `paraNoteBtn.click` → extracts `paraPopupText.textContent` → `addNote(text)`
 - `wordNoteBtn.click` → extracts `popupWord.textContent` → `addNote(text)`
 
-**New function — `updateNote(index, newText)`:**
+**New function — ****`updateNote(index, newText)`****:**
+
 ```javascript
 function updateNote(index, newText) {
   if (index < 0 || index >= state.notes.length) return;
@@ -1832,7 +1826,8 @@ function updateNote(index, newText) {
 }
 ```
 
-**Updated `renderNotes()`:**
+**Updated ****`renderNotes()`****:**
+
 - Each note item now renders a `.note-text` div, a `.note-actions` container with edit (✎) and delete (×) buttons.
 - Clicking the edit button replaces the `.note-text` div with a `<textarea>` for inline editing.
 - Save on blur or Enter; cancel on Escape.
@@ -1882,15 +1877,16 @@ All 16 new tests and all 397 existing tests pass.
 
 ### 2. HTML 变更：`index.html`
 
-| 位置 | 新增元素 |
-|---|---|
-| 句子面板（`.panel-actions`） | `<button class="btn btn-sm" id="btnNote">📝 Note</button>`（Copy 按钮之后） |
-| 段落弹窗（`.para-popup-actions`） | `<button class="btn btn-sm" id="paraNoteBtn">📝 Note</button>`（Copy 按钮之后） |
+| 位置                                | 新增元素                                                                                  |
+| --------------------------------- | ------------------------------------------------------------------------------------- |
+| 句子面板（`.panel-actions`）            | `<button class="btn btn-sm" id="btnNote">📝 Note</button>`（Copy 按钮之后）                 |
+| 段落弹窗（`.para-popup-actions`）       | `<button class="btn btn-sm" id="paraNoteBtn">📝 Note</button>`（Copy 按钮之后）             |
 | 单词弹窗（新增 `.word-popup-actions` 容器） | `<button class="btn btn-sm" id="wordNoteBtn">📝 Note</button>`（`.word-popup-body` 之前） |
 
 ### 3. JavaScript 变更：`src/reader.js`
 
 **新增元素引用：**
+
 ```javascript
 const btnNote = $('#btnNote');
 const paraNoteBtn = $('#paraNoteBtn');
@@ -1898,11 +1894,13 @@ const wordNoteBtn = $('#wordNoteBtn');
 ```
 
 **新增事件处理器（3 个）：**
+
 - `btnNote.click` → 提取 `panelSentence.textContent` → `addNote(text)`
 - `paraNoteBtn.click` → 提取 `paraPopupText.textContent` → `addNote(text)`
 - `wordNoteBtn.click` → 提取 `popupWord.textContent` → `addNote(text)`
 
-**新增函数 — `updateNote(index, newText)`：**
+**新增函数 — ****`updateNote(index, newText)`****：**
+
 ```javascript
 function updateNote(index, newText) {
   if (index < 0 || index >= state.notes.length) return;
@@ -1912,7 +1910,8 @@ function updateNote(index, newText) {
 }
 ```
 
-**更新 `renderNotes()`：**
+**更新 ****`renderNotes()`****：**
+
 - 每个笔记项现在渲染 `.note-text` 文本容器、`.note-actions` 操作容器（含编辑 ✎ 和删除 × 按钮）。
 - 点击编辑按钮将 `.note-text` 替换为 `<textarea>` 进行行内编辑。
 - 失焦或按 Enter 保存；按 Escape 取消。
@@ -1940,4 +1939,177 @@ function updateNote(index, newText) {
  index.html                        — 新增 3 个 Note 按钮
  src/reader.js                     — 3 个元素引用、3 个事件处理器、updateNote()、renderNotes() 更新
  src/reader.css                    — 编辑按钮及行内编辑样式
+```
+
+
+
+\>> 使用TDD实现，用户点击 note 后 **“0.3秒内确认成功” + “避免重复操作”，**&#x70B9;击 note 图标后：
+
+- 图标从「未选中」→「已选中」
+- 颜色变化（灰 → 高亮色）
+- 或出现 ✔ 标记
+
+Using TDD, implement note button click handling: toggle icon state from unselected to selected (gray to highlight color or display ✔ mark), confirm success within 0.3 seconds, and prevent duplicate operations.
+
+
+
+
+---
+
+# Note Button Click Feedback: Toggle State, Confirmation & Duplicate Prevention
+
+## Overview
+
+Implemented using TDD: all Note buttons now show visual feedback on click — icon toggles to a highlighted "✔ Noted" state, confirms success within 0.3 seconds, and the button is disabled during the feedback window to prevent duplicate operations.
+
+## What Changed
+
+### 1. New Tests: 14 tests added to `tests/notes-editing.test.js`
+
+Written **before** implementation (TDD red-green cycle). Two new test groups:
+
+- **Note button click feedback** (12 tests):
+  - `noteWithFeedback(btn, text, originalLabel)` function exists with correct 3-parameter signature
+  - Disables button (`btn.disabled = true`) to prevent duplicate operations
+  - Re-enables button (`btn.disabled = false`) after feedback completes
+  - Shows checkmark text (`✔ Noted`) on success
+  - Uses 300ms `setTimeout` for feedback reset
+  - Calls `addNote(text)` to persist the note
+  - Adds `.noted` CSS class for highlight styling
+  - All 4 Note button handlers (`btnNote`, `wordNoteBtn`, `paraNoteBtn`, `selNote`) use `noteWithFeedback`
+
+- **Note button feedback CSS** (2 tests):
+  - `.noted` class exists in reader.css
+  - `.noted` class sets a distinct background or color
+
+### 2. JavaScript Changes: `src/reader.js`
+
+**New function — `noteWithFeedback(btn, text, originalLabel)`:**
+```javascript
+function noteWithFeedback(btn, text, originalLabel) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  addNote(text);
+  btn.classList.add('noted');
+  btn.textContent = '\u2714 Noted';
+  setTimeout(() => {
+    btn.textContent = originalLabel;
+    btn.classList.remove('noted');
+    btn.disabled = false;
+  }, 300);
+}
+```
+
+**Updated click handlers (4):**
+- `btnNote` (sentence panel) → `noteWithFeedback(btnNote, text, '📝 Note')`
+- `wordNoteBtn` (word popup) → `noteWithFeedback(wordNoteBtn, text, '📝 Note')`
+- `paraNoteBtn` (paragraph popup) → `noteWithFeedback(paraNoteBtn, text, '📝 Note')`
+- `selNote` (selection toolbar) → `noteWithFeedback(selNote, sel, '📝 Note')`
+
+### 3. CSS Changes: `src/reader.css`
+
+```css
+.noted {
+  background: #22c55e;
+  color: #fff;
+}
+```
+
+Green background with white text — provides clear visual confirmation that the note was saved.
+
+## Test Results
+
+```
+ Test Files  31 passed (31)
+      Tests  427 passed (427)
+```
+
+All 14 new tests and all 413 existing tests pass.
+
+## Files Changed
+
+```
+ tests/notes-editing.test.js  — 14 new tests (total now 30)
+ src/reader.js                — noteWithFeedback() function, 4 handlers updated
+ src/reader.css               — .noted highlight class
+```
+
+---
+
+# 笔记按钮点击反馈：状态切换、确认提示与防重复操作
+
+## 概述
+
+使用 TDD 实现：所有笔记按钮点击后显示视觉反馈 —— 图标切换为高亮的「✔ Noted」状态，0.3 秒内确认成功，且在反馈期间禁用按钮以防止重复操作。
+
+## 变更内容
+
+### 1. 新增测试：`tests/notes-editing.test.js` 中新增 14 个测试
+
+在实现代码之前编写（TDD 红-绿循环），分两组：
+
+- **笔记按钮点击反馈**（12 个测试）：
+  - `noteWithFeedback(btn, text, originalLabel)` 函数存在且签名正确（3 个参数）
+  - 点击后禁用按钮（`btn.disabled = true`）防止重复操作
+  - 反馈完成后重新启用按钮（`btn.disabled = false`）
+  - 成功时显示勾选文本（`✔ Noted`）
+  - 使用 300ms `setTimeout` 重置反馈状态
+  - 调用 `addNote(text)` 持久化笔记
+  - 添加 `.noted` CSS 类实现高亮样式
+  - 全部 4 个笔记按钮（`btnNote`、`wordNoteBtn`、`paraNoteBtn`、`selNote`）均使用 `noteWithFeedback`
+
+- **笔记按钮反馈 CSS**（2 个测试）：
+  - `.noted` 类存在于 reader.css 中
+  - `.noted` 类设置了明显的背景色或文字颜色
+
+### 2. JavaScript 变更：`src/reader.js`
+
+**新增函数 — `noteWithFeedback(btn, text, originalLabel)`：**
+```javascript
+function noteWithFeedback(btn, text, originalLabel) {
+  if (btn.disabled) return;        // 防止重复操作
+  btn.disabled = true;             // 禁用按钮
+  addNote(text);                   // 保存笔记
+  btn.classList.add('noted');      // 添加高亮样式
+  btn.textContent = '\u2714 Noted'; // 显示确认文本
+  setTimeout(() => {
+    btn.textContent = originalLabel; // 恢复原始标签
+    btn.classList.remove('noted');   // 移除高亮
+    btn.disabled = false;            // 重新启用
+  }, 300);
+}
+```
+
+**更新点击处理器（4 个）：**
+- `btnNote`（句子面板）→ `noteWithFeedback(btnNote, text, '📝 Note')`
+- `wordNoteBtn`（单词弹窗）→ `noteWithFeedback(wordNoteBtn, text, '📝 Note')`
+- `paraNoteBtn`（段落弹窗）→ `noteWithFeedback(paraNoteBtn, text, '📝 Note')`
+- `selNote`（选中文本工具栏）→ `noteWithFeedback(selNote, sel, '📝 Note')`
+
+### 3. CSS 变更：`src/reader.css`
+
+```css
+.noted {
+  background: #22c55e;
+  color: #fff;
+}
+```
+
+绿色背景配白色文字 —— 提供清晰的视觉确认，表明笔记已保存。
+
+## 测试结果
+
+```
+ Test Files  31 passed (31)
+      Tests  427 passed (427)
+```
+
+全部 14 个新测试和 413 个已有测试均通过。
+
+## 变更文件
+
+```
+ tests/notes-editing.test.js  — 新增 14 个测试（总计 30 个）
+ src/reader.js                — noteWithFeedback() 函数，4 个处理器更新
+ src/reader.css               — .noted 高亮样式类
 ```

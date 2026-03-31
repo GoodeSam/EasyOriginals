@@ -470,7 +470,7 @@ function bindPanelEvents() {
   });
   btnNote.addEventListener('click', () => {
     const text = panelSentence.textContent.trim();
-    if (text) addNote(text);
+    if (text) noteWithFeedback(btnNote, text, '\ud83d\udcdd Note');
   });
 
   wordListenBtn.addEventListener('click', () => {
@@ -485,7 +485,7 @@ function bindPanelEvents() {
   });
   wordNoteBtn.addEventListener('click', () => {
     const text = popupWord.textContent.trim();
-    if (text) addNote(text);
+    if (text) noteWithFeedback(wordNoteBtn, text, '\ud83d\udcdd Note');
   });
 
   selCopy.addEventListener('click', () => {
@@ -495,7 +495,7 @@ function bindPanelEvents() {
   });
   selNote.addEventListener('click', () => {
     const sel = window.getSelection().toString().trim();
-    if (sel) addNote(sel);
+    if (sel) noteWithFeedback(selNote, sel, '\ud83d\udcdd Note');
     hideSelectionToolbar();
   });
 
@@ -1798,7 +1798,7 @@ paraCopyBtn.addEventListener('click', () => {
 });
 paraNoteBtn.addEventListener('click', () => {
   const text = paraPopupText.textContent.trim();
-  if (text) addNote(text);
+  if (text) noteWithFeedback(paraNoteBtn, text, '\ud83d\udcdd Note');
 });
 
 // ===== API Calls =====
@@ -2789,6 +2789,19 @@ function hideSelectionToolbar() {
 }
 
 // ===== Notes =====
+function noteWithFeedback(btn, text, originalLabel) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  addNote(text);
+  btn.classList.add('noted');
+  btn.textContent = '\u2714 Noted';
+  setTimeout(() => {
+    btn.textContent = originalLabel;
+    btn.classList.remove('noted');
+    btn.disabled = false;
+  }, 300);
+}
+
 function addNote(text) {
   state.notes.push({
     text,

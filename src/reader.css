@@ -668,6 +668,10 @@ body {
 .word-popup-actions {
   padding: 4px 16px 0;
 }
+.noted {
+  background: #22c55e;
+  color: #fff;
+}
 
 /* ===== History Panel ===== */
 .history-item {
