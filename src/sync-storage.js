@@ -57,9 +57,19 @@ function scheduleFlush() {
     if (!provider || _pendingWrites.size === 0) return;
     const batch = new Map(_pendingWrites);
     _pendingWrites.clear();
-    for (const [key, value] of batch) {
+    const batchEntries = [...batch.entries()];
+    for (let i = 0; i < batchEntries.length; i++) {
+      const [key, value] = batchEntries[i];
       // Abort if provider changed (account switch/logout)
-      if (_remoteProvider !== provider) return;
+      if (_remoteProvider !== provider) {
+        // Re-enqueue unprocessed items so they aren't lost
+        for (let j = i; j < batchEntries.length; j++) {
+          const [k, v] = batchEntries[j];
+          if (!_pendingWrites.has(k)) _pendingWrites.set(k, v);
+        }
+        if (_pendingWrites.size > 0) scheduleFlush();
+        return;
+      }
       try {
         await provider.push(key, value);
       } catch (err) {
@@ -70,8 +80,9 @@ function scheduleFlush() {
         }
       }
     }
-    // Schedule another flush if there are failed/new writes pending
+    // Schedule another flush if there are failed/new writes pending (with delay to avoid tight retry loops)
     if (_remoteProvider === provider && _pendingWrites.size > 0) {
+      await new Promise(r => setTimeout(r, 2000));
       scheduleFlush();
     }
   });
@@ -85,7 +96,7 @@ function enqueueRemoteWrite(key, value) {
 export function setItem(key, value) {
   const strValue = String(value);
   try { localStorage.setItem(key, strValue); } catch (e) { console.warn('localStorage.setItem failed:', e); }
-  if (_remoteProvider) {
+  if (_remoteProvider && isAllowedKey(key)) {
     enqueueRemoteWrite(key, strValue);
   }
 }
@@ -95,7 +106,7 @@ export const DELETED_SENTINEL = '__sync_deleted__';
 
 export function removeItem(key) {
   try { localStorage.removeItem(key); } catch (e) { console.warn('localStorage.removeItem failed:', e); }
-  if (_remoteProvider) {
+  if (_remoteProvider && isAllowedKey(key)) {
     enqueueRemoteWrite(key, DELETED_SENTINEL);
   }
 }

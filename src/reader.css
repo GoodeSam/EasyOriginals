@@ -637,17 +637,37 @@ body {
   border-left: 3px solid #eab308;
   position: relative;
 }
-.note-item .note-delete {
+.note-actions {
   position: absolute;
   top: 6px;
   right: 8px;
+  display: flex;
+  gap: 4px;
+}
+.note-item .note-edit,
+.note-item .note-delete {
   background: none;
   border: none;
   cursor: pointer;
   color: #ccc;
   font-size: 16px;
+  padding: 0 2px;
 }
+.note-item .note-edit:hover { color: #2563eb; }
 .note-item .note-delete:hover { color: #e11d48; }
+.note-edit-input {
+  width: 100%;
+  font-size: 14px;
+  line-height: 1.5;
+  font-family: inherit;
+  border: 1px solid #eab308;
+  border-radius: 4px;
+  padding: 4px 6px;
+  resize: vertical;
+}
+.word-popup-actions {
+  padding: 4px 16px 0;
+}
 
 /* ===== History Panel ===== */
 .history-item {

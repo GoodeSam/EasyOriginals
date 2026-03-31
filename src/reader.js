@@ -84,6 +84,7 @@ const btnListen = $('#btnListen');
 const btnTranslate = $('#btnTranslate');
 const btnGrammar = $('#btnGrammar');
 const btnCopy = $('#btnCopy');
+const btnNote = $('#btnNote');
 const panelTranslation = $('#panelTranslation');
 const translationText = $('#translationText');
 const panelGrammar = $('#panelGrammar');
@@ -100,6 +101,7 @@ const defEnText = $('#defEnText');
 const defChineseSection = $('#defChineseSection');
 const toggleChinese = $('#toggleChinese');
 const defCnText = $('#defCnText');
+const wordNoteBtn = $('#wordNoteBtn');
 const defPronunciation = $('#defPronunciation');
 
 // Paragraph popup
@@ -109,6 +111,7 @@ const paraPopupClose = $('#paraPopupClose');
 const paraPopupText = $('#paraPopupText');
 const paraTranslateBtn = $('#paraTranslateBtn');
 const paraCopyBtn = $('#paraCopyBtn');
+const paraNoteBtn = $('#paraNoteBtn');
 const paraPopupTranslation = $('#paraPopupTranslation');
 
 // Gesture mode button
@@ -465,6 +468,10 @@ function bindPanelEvents() {
   btnCopy.addEventListener('click', () => {
     copyWithFeedback(btnCopy, panelSentence.textContent, '\ud83d\udccb Copy');
   });
+  btnNote.addEventListener('click', () => {
+    const text = panelSentence.textContent.trim();
+    if (text) addNote(text);
+  });
 
   wordListenBtn.addEventListener('click', () => {
     speakText(popupWord.textContent);
@@ -475,6 +482,10 @@ function bindPanelEvents() {
     const isVisible = cnText.style.display !== 'none';
     cnText.style.display = isVisible ? 'none' : 'block';
     toggleChinese.textContent = isVisible ? 'Show Chinese Definition' : 'Hide Chinese Definition';
+  });
+  wordNoteBtn.addEventListener('click', () => {
+    const text = popupWord.textContent.trim();
+    if (text) addNote(text);
   });
 
   selCopy.addEventListener('click', () => {
@@ -1785,6 +1796,10 @@ paraPopupText.addEventListener('click', () => {
 paraCopyBtn.addEventListener('click', () => {
   copyWithFeedback(paraCopyBtn, paraPopupText.textContent, '\uD83D\uDCCB Copy');
 });
+paraNoteBtn.addEventListener('click', () => {
+  const text = paraPopupText.textContent.trim();
+  if (text) addNote(text);
+});
 
 // ===== API Calls =====
 let _apiKeyAlertShown = false;
@@ -2790,6 +2805,13 @@ function deleteNote(index) {
   renderNotes();
 }
 
+function updateNote(index, newText) {
+  if (index < 0 || index >= state.notes.length) return;
+  state.notes[index].text = newText;
+  saveNotes();
+  renderNotes();
+}
+
 function renderNotes() {
   notesList.innerHTML = '';
   const bookNotes = state.notes.filter(n => n.book === state.fileName);
@@ -2804,11 +2826,42 @@ function renderNotes() {
     const el = document.createElement('div');
     el.className = 'note-item';
     el.innerHTML = `
-      <div>${escapeHtml(note.text)}</div>
+      <div class="note-text">${escapeHtml(note.text)}</div>
       <div class="note-date">${escapeHtml(note.date)}</div>
-      <button class="note-delete" data-index="${realIndex}" aria-label="Delete note">&times;</button>
+      <div class="note-actions">
+        <button class="note-edit" data-index="${realIndex}" aria-label="Edit note">&#9998;</button>
+        <button class="note-delete" data-index="${realIndex}" aria-label="Delete note">&times;</button>
+      </div>
     `;
     notesList.appendChild(el);
+  });
+
+  notesList.querySelectorAll('.note-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = Number.parseInt(btn.dataset.index, 10);
+      if (!Number.isInteger(i) || i < 0) return;
+      const noteItem = btn.closest('.note-item');
+      const textDiv = noteItem.querySelector('.note-text');
+      const textarea = document.createElement('textarea');
+      textarea.className = 'note-edit-input';
+      textarea.value = state.notes[i].text;
+      textarea.rows = 3;
+      textDiv.replaceWith(textarea);
+      textarea.focus();
+      const save = () => {
+        const newText = textarea.value.trim();
+        if (newText && newText !== state.notes[i].text) {
+          updateNote(i, newText);
+        } else {
+          renderNotes();
+        }
+      };
+      textarea.addEventListener('blur', save);
+      textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); save(); }
+        if (e.key === 'Escape') renderNotes();
+      });
+    });
   });
 
   notesList.querySelectorAll('.note-delete').forEach(btn => {
@@ -3003,7 +3056,7 @@ function renderWordList() {
     el.innerHTML =
       `<div><span class="wordlist-word">${escapeHtml(entry.word)}</span>` +
       `<span class="wordlist-pron">${escapeHtml(entry.pronunciation)}</span>` +
-      `<span class="wordlist-count">&times;${entry.queryCount}</span></div>` +
+      `<span class="wordlist-count">&times;${escapeHtml(String(Number(entry.queryCount) || 0))}</span></div>` +
       `<div class="wordlist-cn">${escapeHtml(entry.chineseDef)}</div>` +
       `<div class="wordlist-en">${escapeHtml(entry.englishDef)}</div>` +
       contextHtml +
