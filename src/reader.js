@@ -2481,7 +2481,7 @@ async function lookupWord(word, sentenceContext) {
         posSpan.textContent = posMatch[1];
         const spacer = document.createElement('span');
         spacer.className = 'pos-spacer';
-        spacer.innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;';
+        spacer.textContent = '\uFF1A ';
         defEnglish.insertBefore(spacer, defEnText);
         defEnglish.insertBefore(posSpan, spacer);
         defEnText.textContent = enRaw.slice(posMatch[0].length);
