@@ -617,18 +617,8 @@ function closeAllSidePanels() {
   document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('active'));
 }
 
-// Enter browser fullscreen (must be called from a user gesture like click/touch)
-function enterBrowserFullscreen() {
-  if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-    document.documentElement.requestFullscreen().catch(() => {});
-  }
-}
-
 function handleReaderClick(e) {
   if (window.getSelection().toString().trim().length > 0) return;
-
-  // Enter browser fullscreen on any click in reader (user gesture required by API)
-  enterBrowserFullscreen();
 
   // Check for margin bar click (left border zone) on a paragraph
   const paraEl = e.target.closest('.paragraph');
