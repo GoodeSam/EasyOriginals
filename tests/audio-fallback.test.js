@@ -65,12 +65,12 @@ describe('speakText falls back to Edge TTS without API key', () => {
 // ─── All callers use speakText ──────────────────────────────────────
 
 describe('all audio callers use speakText (no direct apiKey guards)', () => {
-  test('btnListen handler calls speakText', () => {
+  test('btnListen handler calls speakWithFeedback (which wraps speakText)', () => {
     const handler = readerSrc.match(
       /btnListen\.addEventListener\s*\(\s*['"]click['"]\s*,[\s\S]*?\}\s*\)/
     );
     expect(handler).not.toBeNull();
-    expect(handler[0]).toMatch(/speakText\(/);
+    expect(handler[0]).toMatch(/speakWithFeedback\(/);
   });
 
   test('btnListen handler does NOT guard on state.apiKey', () => {
@@ -81,12 +81,12 @@ describe('all audio callers use speakText (no direct apiKey guards)', () => {
     expect(handler[0]).not.toMatch(/state\.apiKey/);
   });
 
-  test('wordListenBtn handler calls speakText', () => {
+  test('wordListenBtn handler calls speakWithFeedback (which wraps speakText)', () => {
     const handler = readerSrc.match(
       /wordListenBtn\.addEventListener\s*\(\s*['"]click['"]\s*,[\s\S]*?\}\s*\)/
     );
     expect(handler).not.toBeNull();
-    expect(handler[0]).toMatch(/speakText\(/);
+    expect(handler[0]).toMatch(/speakWithFeedback\(/);
   });
 
   test('wordListenBtn handler does NOT guard on state.apiKey', () => {

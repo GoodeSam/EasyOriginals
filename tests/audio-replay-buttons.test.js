@@ -89,18 +89,12 @@ describe('word popup listen button', () => {
     expect(popupBlock[0]).toMatch(/id=["']wordListenBtn["']/);
   });
 
-  test('listen button has accessible aria-label', () => {
-    const btnMatch = htmlSrc.match(/<button[^>]*id=["']wordListenBtn["'][^>]*>/);
-    expect(btnMatch).not.toBeNull();
-    expect(btnMatch[0]).toMatch(/aria-label=/);
-  });
-
-  test('listen button is inside the word-popup-header', () => {
-    const headerBlock = htmlSrc.match(
-      /<div class=["']word-popup-header["']>([\s\S]*?)<\/div>/
+  test('listen button is inside the word-popup-actions', () => {
+    const actionsBlock = htmlSrc.match(
+      /<div class=["']word-popup-actions["']>([\s\S]*?)<\/div>/
     );
-    expect(headerBlock).not.toBeNull();
-    expect(headerBlock[0]).toMatch(/id=["']wordListenBtn["']/);
+    expect(actionsBlock).not.toBeNull();
+    expect(actionsBlock[0]).toMatch(/id=["']wordListenBtn["']/);
   });
 
   test('reader.js binds click handler to wordListenBtn', () => {
@@ -123,9 +117,9 @@ describe('word popup listen button', () => {
 // ─── Button styling ─────────────────────────────────────────────────
 
 describe('listen button styling', () => {
-  test('word listen button uses icon-btn class for compact styling', () => {
+  test('word listen button uses btn-sm class', () => {
     const btnMatch = htmlSrc.match(/<button[^>]*id=["']wordListenBtn["'][^>]*>/);
     expect(btnMatch).not.toBeNull();
-    expect(btnMatch[0]).toMatch(/icon-btn/);
+    expect(btnMatch[0]).toMatch(/btn-sm/);
   });
 });

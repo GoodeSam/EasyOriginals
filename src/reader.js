@@ -2,6 +2,7 @@
 import { loadSettings as loadStorageSettings, DEFAULT_MODEL } from './storage.js';
 import { createSettingsPanel } from './settings-ui.js';
 import { setItem as syncSetItem, removeItem as syncRemoveItem } from './sync-storage.js';
+import { parseEnglishDefinition } from './definition-utils.js';
 const TTS_MODEL = 'tts-1';
 const TTS_VOICE = 'alloy';
 const GOOGLE_TRANSLATE_URL = 'https://translate.googleapis.com/translate_a/single';
@@ -2472,22 +2473,19 @@ async function lookupWord(word, sentenceContext) {
     const pronMatch = pronLine ? [null, pronLine.replace(/^.*?PRON:\s*/, '')] : null;
 
     if (enMatch) {
-      const enRaw = enMatch[1].trim();
-      const posMatch = enRaw.match(/^\(([^)]+)\)\s*/);
+      const { pos, separator, definition } = parseEnglishDefinition(enMatch[1].trim());
       clearPosTag();
-      if (posMatch) {
+      if (pos) {
         const posSpan = document.createElement('strong');
         posSpan.className = 'pos-tag';
-        posSpan.textContent = posMatch[1];
+        posSpan.textContent = pos;
         const spacer = document.createElement('span');
         spacer.className = 'pos-spacer';
-        spacer.textContent = '\uFF1A ';
+        spacer.textContent = separator;
         defEnglish.insertBefore(spacer, defEnText);
         defEnglish.insertBefore(posSpan, spacer);
-        defEnText.textContent = enRaw.slice(posMatch[0].length);
-      } else {
-        defEnText.textContent = enRaw;
       }
+      defEnText.textContent = definition;
       defEnglish.style.display = 'block';
     }
     if (pronMatch) {

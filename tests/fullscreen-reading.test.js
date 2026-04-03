@@ -99,23 +99,8 @@ describe('browser fullscreen via user gesture', () => {
     expect(fnMatch[0]).not.toMatch(/requestFullscreen/);
   });
 
-  test('enterBrowserFullscreen function exists', () => {
-    expect(readerSrc).toMatch(/function enterBrowserFullscreen/);
-  });
-
-  test('enterBrowserFullscreen calls requestFullscreen', () => {
-    const fnMatch = readerSrc.match(/function enterBrowserFullscreen[\s\S]*?\n\}/);
-    expect(fnMatch).not.toBeNull();
-    expect(fnMatch[0]).toMatch(/requestFullscreen/);
-  });
-
-  test('reader content click triggers enterBrowserFullscreen', () => {
-    // handleReaderClick or a click listener on readerContent should
-    // call enterBrowserFullscreen so fullscreen is entered via user gesture
-    expect(readerSrc).toMatch(/enterBrowserFullscreen/);
-    // It should be called in handleReaderClick or a click handler
-    const clickContext = readerSrc.match(/handleReaderClick[\s\S]*?enterBrowserFullscreen|click[\s\S]*?enterBrowserFullscreen/);
-    expect(clickContext).not.toBeNull();
+  test('reader does not automatically enter browser fullscreen on click', () => {
+    expect(readerSrc).not.toMatch(/enterBrowserFullscreen/);
   });
 
   test('exitFullscreenReading calls exitFullscreen to restore browser chrome', () => {
