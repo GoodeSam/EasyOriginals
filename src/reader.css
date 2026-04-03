@@ -666,10 +666,16 @@ body {
   resize: vertical;
 }
 .word-popup-actions {
+  display: flex;
+  gap: 8px;
   padding: 4px 16px 0;
 }
 .noted {
   background: #22c55e;
+  color: #fff;
+}
+.speaking {
+  background: #6366f1;
   color: #fff;
 }
 

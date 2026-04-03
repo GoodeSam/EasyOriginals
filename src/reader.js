@@ -474,7 +474,16 @@ function bindPanelEvents() {
   });
 
   wordListenBtn.addEventListener('click', () => {
+    if (wordListenBtn.disabled) return;
+    wordListenBtn.disabled = true;
+    wordListenBtn.classList.add('speaking');
+    wordListenBtn.textContent = '\u{1F50A} Speaking\u2026';
     speakText(popupWord.textContent);
+    setTimeout(() => {
+      wordListenBtn.textContent = '\u{1F50A} Speak';
+      wordListenBtn.classList.remove('speaking');
+      wordListenBtn.disabled = false;
+    }, 1500);
   });
   wordPopupClose.addEventListener('click', closeWordPopup);
   toggleChinese.addEventListener('click', () => {
