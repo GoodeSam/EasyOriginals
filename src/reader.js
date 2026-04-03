@@ -460,7 +460,7 @@ function bindPanelEvents() {
   panelClose.addEventListener('click', closeSentencePanel);
   panelOverlay.addEventListener('click', closeSentencePanel);
   btnListen.addEventListener('click', () => {
-    speakText(panelSentence.textContent);
+    speakWithFeedback(btnListen, panelSentence.textContent, '\u{1F50A} Listen');
   });
   btnTranslate.addEventListener('click', translateSentence);
   btnGrammar.addEventListener('click', analyzeGrammar);
@@ -474,16 +474,7 @@ function bindPanelEvents() {
   });
 
   wordListenBtn.addEventListener('click', () => {
-    if (wordListenBtn.disabled) return;
-    wordListenBtn.disabled = true;
-    wordListenBtn.classList.add('speaking');
-    wordListenBtn.textContent = '\u{1F50A} Speaking\u2026';
-    speakText(popupWord.textContent);
-    setTimeout(() => {
-      wordListenBtn.textContent = '\u{1F50A} Speak';
-      wordListenBtn.classList.remove('speaking');
-      wordListenBtn.disabled = false;
-    }, 1500);
+    speakWithFeedback(wordListenBtn, popupWord.textContent, '\u{1F50A} Speak');
   });
   wordPopupClose.addEventListener('click', closeWordPopup);
   toggleChinese.addEventListener('click', () => {
@@ -1780,12 +1771,12 @@ paraPopupClose.addEventListener('click', closeParaPopup);
 paraPopupOverlay.addEventListener('click', closeParaPopup);
 paraTranslateBtn.addEventListener('click', translateParaPopup);
 paraListenBtn.addEventListener('click', () => {
-  speakText(paraPopupText.textContent);
+  speakWithFeedback(paraListenBtn, paraPopupText.textContent, '\u{1F50A} Listen');
 });
 paraListenTransBtn.addEventListener('click', () => {
   const text = paraPopupTranslation.textContent;
   if (text && text !== 'Translating...' && text !== 'Translation unavailable.' && !text.startsWith('Translation failed:')) {
-    speakText(text);
+    speakWithFeedback(paraListenTransBtn, text, '\u{1F50A} Listen Translation');
   }
 });
 paraPopupText.addEventListener('click', () => {
@@ -2785,6 +2776,20 @@ function showSelectionToolbar(x, y) {
 
 function hideSelectionToolbar() {
   selectionToolbar.classList.remove('active');
+}
+
+// ===== Speak Feedback =====
+function speakWithFeedback(btn, text, originalLabel) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  btn.classList.add('speaking');
+  btn.textContent = '\u{1F50A} Speaking\u2026';
+  speakText(text);
+  setTimeout(() => {
+    btn.textContent = originalLabel;
+    btn.classList.remove('speaking');
+    btn.disabled = false;
+  }, 1500);
 }
 
 // ===== Notes =====
