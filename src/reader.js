@@ -4,7 +4,14 @@ import { createSettingsPanel } from './settings-ui.js';
 import { setItem as syncSetItem, removeItem as syncRemoveItem } from './sync-storage.js';
 import { parseEnglishDefinition } from './definition-utils.js';
 const TTS_MODEL = 'tts-1';
-const TTS_VOICE = 'alloy';
+const OPENAI_TTS_VOICES = [
+  { value: 'alloy', label: 'Alloy', persona: 'Neutral and balanced' },
+  { value: 'echo', label: 'Echo', persona: 'Warm and resonant' },
+  { value: 'fable', label: 'Fable', persona: 'Expressive and British' },
+  { value: 'onyx', label: 'Onyx', persona: 'Deep and authoritative' },
+  { value: 'nova', label: 'Nova', persona: 'Friendly and upbeat' },
+  { value: 'shimmer', label: 'Shimmer', persona: 'Clear and refined' },
+];
 const GOOGLE_TRANSLATE_URL = 'https://translate.googleapis.com/translate_a/single';
 const MS_AUTH_URL = 'https://edge.microsoft.com/translate/auth';
 const MS_TRANSLATE_URL = 'https://api.cognitive.microsofttranslator.com/translate';
@@ -56,6 +63,8 @@ let state = {
   edgeTtsVoice: EDGE_TTS_DEFAULT_VOICE,
   // Speech rate adjustment for TTS (-50 to +100, maps to SSML prosody rate percentage)
   speechRate: 0,
+  // OpenAI TTS voice selection
+  openaiTtsVoice: 'alloy',
 };
 
 // Expose state for testing (only in dev/test)
@@ -297,6 +306,7 @@ function loadSettings() {
   state.translationProvider = s.translationProvider;
   state.edgeTtsVoice = s.edgeTtsVoice || EDGE_TTS_DEFAULT_VOICE;
   state.speechRate = Number(s.speechRate) || 0;
+  state.openaiTtsVoice = s.openaiTtsVoice || 'alloy';
   state._settingsLoaded = true;
 }
 
@@ -1803,6 +1813,7 @@ async function ensureSettings() {
     state.translationProvider = s.translationProvider;
     state.edgeTtsVoice = s.edgeTtsVoice || EDGE_TTS_DEFAULT_VOICE;
     state.speechRate = Number(s.speechRate) || 0;
+    state.openaiTtsVoice = s.openaiTtsVoice || 'alloy';
     state._settingsLoaded = true;
     _apiKeyAlertShown = false;
   }
@@ -2232,6 +2243,7 @@ Format with clear labels. Be concise but thorough. Use Chinese for explanations.
 window.analyzeGrammar = analyzeGrammar;
 
 async function playTTS(text) {
+  const voice = state.openaiTtsVoice || 'alloy';
   const resp = await window.fetch('https://api.openai.com/v1/audio/speech', {
     method: 'POST',
     headers: {
@@ -2241,7 +2253,7 @@ async function playTTS(text) {
     body: JSON.stringify({
       model: TTS_MODEL,
       input: text,
-      voice: TTS_VOICE,
+      voice: voice,
       response_format: 'mp3'
     })
   });
@@ -2367,6 +2379,7 @@ window.playTTS = playTTS;
 window.playEdgeTTS = playEdgeTTS;
 window.speakText = speakText;
 window.EDGE_TTS_VOICES = EDGE_TTS_VOICES;
+window.OPENAI_TTS_VOICES = OPENAI_TTS_VOICES;
 window.translateSentence = translateSentence;
 window.speakSentence = speakSentence;
 

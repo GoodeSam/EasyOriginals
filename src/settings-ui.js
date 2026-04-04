@@ -34,6 +34,10 @@ export function createSettingsPanel() {
           <option value="gpt-4o">GPT-4o</option>
           <option value="gpt-4-turbo">GPT-4 Turbo</option>
         </select>
+
+        <label for="openaiTtsVoice" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">TTS Voice Persona</label>
+        <select id="openaiTtsVoice" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:12px;">
+        </select>
       </div>
 
       <label for="edgeTtsVoice" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Read Aloud Voice (free, no API key needed)</label>
@@ -62,6 +66,7 @@ export function createSettingsPanel() {
   const status = panel.querySelector('#settingsStatus');
 
   const voiceSelect = panel.querySelector('#edgeTtsVoice');
+  const openaiVoiceSelect = panel.querySelector('#openaiTtsVoice');
 
   providerSelect.value = settings.translationProvider;
   apiKeyInput.value = settings.openaiApiKey;
@@ -76,6 +81,16 @@ export function createSettingsPanel() {
     voiceSelect.appendChild(opt);
   });
   voiceSelect.value = settings.edgeTtsVoice || 'en-US-AriaNeural';
+
+  // Populate OpenAI TTS voice options
+  const OPENAI_TTS_VOICES = window.OPENAI_TTS_VOICES || [];
+  OPENAI_TTS_VOICES.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.value;
+    opt.textContent = `${v.label} — ${v.persona}`;
+    openaiVoiceSelect.appendChild(opt);
+  });
+  openaiVoiceSelect.value = settings.openaiTtsVoice || 'alloy';
 
   const speechRateInput = panel.querySelector('#speechRate');
   const speechRateLabel = panel.querySelector('#speechRateLabel');
@@ -110,6 +125,7 @@ export function createSettingsPanel() {
         openaiApiKey: apiKeyInput.value.trim(),
         openaiModel: modelSelect.value,
         edgeTtsVoice: voiceSelect.value,
+        openaiTtsVoice: openaiVoiceSelect.value,
         speechRate: Number(speechRateInput.value),
       });
       if (window.invalidateSettings) window.invalidateSettings();
