@@ -40,6 +40,12 @@ export function createSettingsPanel() {
         </select>
       </div>
 
+      <label for="ttsSource" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Voice Source</label>
+      <select id="ttsSource" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:12px;">
+        <option value="edge">Read Aloud (free, no API key needed)</option>
+        <option value="openai">OpenAI TTS Voice Persona (API key required)</option>
+      </select>
+
       <label for="edgeTtsVoice" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Read Aloud Voice (free, no API key needed)</label>
       <select id="edgeTtsVoice" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:12px;">
       </select>
@@ -67,10 +73,12 @@ export function createSettingsPanel() {
 
   const voiceSelect = panel.querySelector('#edgeTtsVoice');
   const openaiVoiceSelect = panel.querySelector('#openaiTtsVoice');
+  const ttsSourceSelect = panel.querySelector('#ttsSource');
 
   providerSelect.value = settings.translationProvider;
   apiKeyInput.value = settings.openaiApiKey;
   modelSelect.value = settings.openaiModel;
+  ttsSourceSelect.value = settings.ttsSource || 'edge';
 
   // Populate voice options from EDGE_TTS_VOICES (exposed by reader.js)
   const EDGE_TTS_VOICES = window.EDGE_TTS_VOICES || [];
@@ -126,6 +134,7 @@ export function createSettingsPanel() {
         openaiModel: modelSelect.value,
         edgeTtsVoice: voiceSelect.value,
         openaiTtsVoice: openaiVoiceSelect.value,
+        ttsSource: ttsSourceSelect.value,
         speechRate: Number(speechRateInput.value),
       });
       if (window.invalidateSettings) window.invalidateSettings();

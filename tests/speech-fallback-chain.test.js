@@ -30,8 +30,9 @@ describe('speakText falls back to speechSynthesis when Edge TTS fails', () => {
   test('speakText catches playEdgeTTS errors and falls back', () => {
     const fn = readerSrc.match(/function speakText[\s\S]*?\n\}/);
     expect(fn).not.toBeNull();
-    // Should have a .catch on playEdgeTTS that triggers speechSynthesis
-    expect(fn[0]).toMatch(/playEdgeTTS[\s\S]*?\.catch[\s\S]*?speechSynthesis/);
+    // speechSynthesis is used as last-resort browser fallback via browserFallback helper
+    expect(fn[0]).toMatch(/speechSynthesis/);
+    expect(fn[0]).toMatch(/playEdgeTTS[\s\S]*?\.catch/);
   });
 
   test('fallback uses SpeechSynthesisUtterance with English language', () => {

@@ -65,6 +65,8 @@ let state = {
   speechRate: 0,
   // OpenAI TTS voice selection
   openaiTtsVoice: 'alloy',
+  // Active TTS source: 'edge' (free Read Aloud) or 'openai' (Voice Persona, API key required)
+  ttsSource: 'edge',
 };
 
 // Expose state for testing (only in dev/test)
@@ -307,6 +309,7 @@ function loadSettings() {
   state.edgeTtsVoice = s.edgeTtsVoice || EDGE_TTS_DEFAULT_VOICE;
   state.speechRate = Number(s.speechRate) || 0;
   state.openaiTtsVoice = s.openaiTtsVoice || 'alloy';
+  state.ttsSource = s.ttsSource || 'edge';
   state._settingsLoaded = true;
 }
 
@@ -1814,6 +1817,7 @@ async function ensureSettings() {
     state.edgeTtsVoice = s.edgeTtsVoice || EDGE_TTS_DEFAULT_VOICE;
     state.speechRate = Number(s.speechRate) || 0;
     state.openaiTtsVoice = s.openaiTtsVoice || 'alloy';
+    state.ttsSource = s.ttsSource || 'edge';
     state._settingsLoaded = true;
     _apiKeyAlertShown = false;
   }
@@ -2356,17 +2360,29 @@ async function playEdgeTTS(text) {
 
 function speakText(text) {
   ensureSettings().then(() => {
-    // Prefer Edge TTS (Microsoft, free), fall back to OpenAI TTS, then browser speech
-    playEdgeTTS(text).catch(() => {
-      if (state.apiKey) {
-        playTTS(text).catch(err => console.error('TTS error:', err));
-      } else if (window.speechSynthesis) {
+    const browserFallback = () => {
+      if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-US';
         window.speechSynthesis.speak(utterance);
       }
-    });
+    };
+    if (state.ttsSource === 'openai' && state.apiKey) {
+      // OpenAI TTS Voice Persona first, fall back to Edge TTS, then browser speech
+      playTTS(text).catch(() => {
+        playEdgeTTS(text).catch(browserFallback);
+      });
+    } else {
+      // Edge TTS Read Aloud first (free), fall back to OpenAI TTS, then browser speech
+      playEdgeTTS(text).catch(() => {
+        if (state.apiKey) {
+          playTTS(text).catch(err => console.error('TTS error:', err));
+        } else {
+          browserFallback();
+        }
+      });
+    }
   });
 }
 

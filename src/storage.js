@@ -11,6 +11,7 @@ const KEYS = {
   edgeTtsVoice: 'reader-edge-tts-voice',
   speechRate: 'reader-speech-rate',
   openaiTtsVoice: 'reader-openai-tts-voice',
+  ttsSource: 'reader-tts-source',
 };
 
 // API key uses sessionStorage for reduced exposure — not persisted across sessions
@@ -25,6 +26,7 @@ const DEFAULTS = {
   edgeTtsVoice: 'en-US-AriaNeural',
   speechRate: 0,
   openaiTtsVoice: 'alloy',
+  ttsSource: 'edge',
 };
 
 let _cache = null;
