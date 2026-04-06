@@ -46,20 +46,30 @@ export function createSettingsPanel() {
         <option value="openai">OpenAI TTS Voice Persona (API key required)</option>
       </select>
 
-      <label for="edgeTtsVoice" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Read Aloud Voice (free, no API key needed)</label>
-      <select id="edgeTtsVoice" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:12px;">
-      </select>
+      <div style="border-top:1px solid #e0e0e0;margin:12px 0 8px;padding-top:10px;">
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;">English Voice</label>
+        <select id="edgeTtsVoice" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:8px;">
+        </select>
+        <label for="speechRate" style="display:block;font-size:12px;color:#888;margin-bottom:4px;">English Speech Rate</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="font-size:12px;color:#888;">Slow</span>
+          <input type="range" id="speechRate" min="-50" max="100" step="5" value="0" style="flex:1;">
+          <span style="font-size:12px;color:#888;">Fast</span>
+          <span id="speechRateLabel" style="font-size:12px;font-weight:600;min-width:36px;text-align:center;">Normal</span>
+        </div>
+      </div>
 
-      <label for="settingsTranslatedVoice" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Translated Audio Voice</label>
-      <select id="settingsTranslatedVoice" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:12px;">
-      </select>
-
-      <label for="speechRate" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Speech Rate</label>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-        <span style="font-size:12px;color:#888;">Slow</span>
-        <input type="range" id="speechRate" min="-50" max="100" step="5" value="0" style="flex:1;">
-        <span style="font-size:12px;color:#888;">Fast</span>
-        <span id="speechRateLabel" style="font-size:12px;font-weight:600;min-width:36px;text-align:center;">Normal</span>
+      <div style="border-top:1px solid #e0e0e0;margin:4px 0 8px;padding-top:10px;">
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;">Chinese Voice</label>
+        <select id="settingsTranslatedVoice" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:8px;">
+        </select>
+        <label for="chineseSpeechRate" style="display:block;font-size:12px;color:#888;margin-bottom:4px;">Chinese Speech Rate</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="font-size:12px;color:#888;">Slow</span>
+          <input type="range" id="chineseSpeechRate" min="-50" max="100" step="5" value="0" style="flex:1;">
+          <span style="font-size:12px;color:#888;">Fast</span>
+          <span id="chineseSpeechRateLabel" style="font-size:12px;font-weight:600;min-width:36px;text-align:center;">Normal</span>
+        </div>
       </div>
 
       <div style="border-top:1px solid #e0e0e0;margin:16px 0 12px;padding-top:12px;">
@@ -133,12 +143,19 @@ export function createSettingsPanel() {
   const savedRate = Number(settings.speechRate) || 0;
   speechRateInput.value = savedRate;
 
-  function updateRateLabel(val) {
+  const cnSpeechRateInput = panel.querySelector('#chineseSpeechRate');
+  const cnSpeechRateLabel = panel.querySelector('#chineseSpeechRateLabel');
+  const savedCnRate = Number(settings.chineseSpeechRate) || 0;
+  cnSpeechRateInput.value = savedCnRate;
+
+  function updateRateLabel(val, labelEl) {
     const n = Number(val);
-    speechRateLabel.textContent = n === 0 ? 'Normal' : (n > 0 ? '+' : '') + n + '%';
+    labelEl.textContent = n === 0 ? 'Normal' : (n > 0 ? '+' : '') + n + '%';
   }
-  updateRateLabel(savedRate);
-  speechRateInput.addEventListener('input', () => updateRateLabel(speechRateInput.value));
+  updateRateLabel(savedRate, speechRateLabel);
+  updateRateLabel(savedCnRate, cnSpeechRateLabel);
+  speechRateInput.addEventListener('input', () => updateRateLabel(speechRateInput.value, speechRateLabel));
+  cnSpeechRateInput.addEventListener('input', () => updateRateLabel(cnSpeechRateInput.value, cnSpeechRateLabel));
 
   function updateChatgptVisibility() {
     chatgptDiv.classList.toggle('hidden', providerSelect.value !== 'chatgpt');
@@ -165,6 +182,7 @@ export function createSettingsPanel() {
         translatedTtsVoice: translatedVoiceSelect.value,
         ttsSource: ttsSourceSelect.value,
         speechRate: Number(speechRateInput.value),
+        chineseSpeechRate: Number(cnSpeechRateInput.value),
         ollamaUrl: ollamaUrlInput.value.trim() || 'http://localhost:11434',
         ollamaModel: ollamaModelInput.value.trim() || 'llama3',
       });

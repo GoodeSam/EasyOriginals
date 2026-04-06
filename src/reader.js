@@ -111,6 +111,8 @@ let state = {
   ttsSource: 'edge',
   // Translated audio voice (Chinese default)
   translatedTtsVoice: 'zh-CN-XiaoxiaoNeural',
+  // Chinese speech rate (independent from English)
+  chineseSpeechRate: 0,
   // Ollama settings for local AI translation
   ollamaUrl: 'http://localhost:11434',
   ollamaModel: 'llama3',
@@ -359,6 +361,7 @@ function loadSettings() {
   state.openaiTtsVoice = s.openaiTtsVoice || 'alloy';
   state.ttsSource = s.ttsSource || 'edge';
   state.translatedTtsVoice = s.translatedTtsVoice || 'zh-CN-XiaoxiaoNeural';
+  state.chineseSpeechRate = Number(s.chineseSpeechRate) || 0;
   state.ollamaUrl = s.ollamaUrl || 'http://localhost:11434';
   state.ollamaModel = s.ollamaModel || 'llama3';
   state._settingsLoaded = true;
@@ -2610,6 +2613,7 @@ function setupBookGeneration() {
         const result = await generateBookAudio(state.paragraphs, {
           voice: autoVoice,
           speechRate: state.speechRate,
+          chineseSpeechRate: state.chineseSpeechRate,
           onProgress(current, total) {
             const pct = Math.round((current / total) * 100);
             audiobookProgressBar.style.width = pct + '%';
@@ -2713,6 +2717,7 @@ function setupBookGeneration() {
         const result = await generateBookAudio(translatedParagraphs, {
           voice: translatedVoice,
           speechRate: state.speechRate,
+          chineseSpeechRate: state.chineseSpeechRate,
           onProgress(current, total) {
             const pct = Math.round((current / total) * 100);
             audiobookProgressBar.style.width = pct + '%';

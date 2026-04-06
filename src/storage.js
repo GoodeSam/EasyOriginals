@@ -13,6 +13,7 @@ const KEYS = {
   openaiTtsVoice: 'reader-openai-tts-voice',
   ttsSource: 'reader-tts-source',
   translatedTtsVoice: 'reader-translated-tts-voice',
+  chineseSpeechRate: 'reader-chinese-speech-rate',
   ollamaUrl: 'reader-ollama-url',
   ollamaModel: 'reader-ollama-model',
 };
@@ -31,6 +32,7 @@ const DEFAULTS = {
   openaiTtsVoice: 'alloy',
   ttsSource: 'edge',
   translatedTtsVoice: 'zh-CN-XiaoxiaoNeural',
+  chineseSpeechRate: 0,
   ollamaUrl: 'http://localhost:11434',
   ollamaModel: 'llama3',
 };

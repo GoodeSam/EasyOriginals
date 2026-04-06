@@ -203,6 +203,7 @@ export function voiceForLanguage(lang, currentVoice) {
 export async function generateBookAudio(paragraphs, options = {}) {
   _cancelled = false;
   const { voice, speechRate, onProgress } = options;
+  const chineseSpeechRate = options.chineseSpeechRate != null ? options.chineseSpeechRate : speechRate;
   const englishVoice = options.englishVoice || voiceForLanguage('en', voice);
   const chineseVoice = options.chineseVoice || voiceForLanguage('zh', voice);
 
@@ -230,13 +231,15 @@ export async function generateBookAudio(paragraphs, options = {}) {
       continue;
     }
 
-    // Auto-select voice based on paragraph content language
-    const paraVoice = detectChinese(text) ? chineseVoice : englishVoice;
+    // Auto-select voice and rate based on paragraph content language
+    const isChinese = detectChinese(text);
+    const paraVoice = isChinese ? chineseVoice : englishVoice;
+    const paraRate = isChinese ? chineseSpeechRate : speechRate;
 
     let blob;
     for (let attempt = 0; attempt <= SYNTH_MAX_RETRIES; attempt++) {
       try {
-        blob = await synthesizeParagraph(text, { voice: paraVoice, speechRate });
+        blob = await synthesizeParagraph(text, { voice: paraVoice, speechRate: paraRate });
         break;
       } catch (err) {
         if (attempt === SYNTH_MAX_RETRIES || _cancelled) throw err;
