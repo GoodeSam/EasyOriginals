@@ -14,8 +14,9 @@ const DEFAULT_OLLAMA_URL = 'http://localhost:11434/api/generate';
 const DEFAULT_MODEL = 'llama3';
 const OLLAMA_TIMEOUT_BASE_MS = 60000;
 const OLLAMA_TIMEOUT_PER_CHAR_MS = 30;
-const OLLAMA_MAX_RETRIES = 2;
-const OLLAMA_RETRY_DELAY_MS = 2000;
+const OLLAMA_MAX_RETRIES = 3;
+const OLLAMA_RETRY_BASE_DELAY_MS = 5000;
+const OLLAMA_COOLDOWN_MS = 500;
 
 let _cancelled = false;
 let _abortController = null;
@@ -50,13 +51,15 @@ export async function translateWithOllama(text, options = {}) {
   }
 
   const timeoutMs = OLLAMA_TIMEOUT_BASE_MS + text.length * OLLAMA_TIMEOUT_PER_CHAR_MS;
-  const timeoutCtrl = new AbortController();
-  const timer = setTimeout(() => timeoutCtrl.abort(), timeoutMs);
+  const reqCtrl = new AbortController();
+  const timer = setTimeout(() => reqCtrl.abort(), timeoutMs);
 
+  let onExternalAbort;
   if (externalSignal) {
-    externalSignal.addEventListener('abort', () => timeoutCtrl.abort(), { once: true });
+    onExternalAbort = () => reqCtrl.abort();
+    externalSignal.addEventListener('abort', onExternalAbort);
   }
-  const signal = timeoutCtrl.signal;
+  const signal = reqCtrl.signal;
 
   let res;
   try {
@@ -68,6 +71,7 @@ export async function translateWithOllama(text, options = {}) {
     });
   } catch (err) {
     clearTimeout(timer);
+    if (onExternalAbort) externalSignal.removeEventListener('abort', onExternalAbort);
     if (externalSignal && externalSignal.aborted) {
       const abortErr = new Error('Ollama translation cancelled');
       abortErr.name = 'AbortError';
@@ -77,6 +81,7 @@ export async function translateWithOllama(text, options = {}) {
     throw new Error('Ollama fetch failed: ' + err.message);
   }
   clearTimeout(timer);
+  if (onExternalAbort) externalSignal.removeEventListener('abort', onExternalAbort);
 
   if (!res.ok) {
     let body = '';
@@ -143,16 +148,22 @@ export async function translateBookWithOllama(paragraphs, options = {}) {
       } catch (err) {
         if (err.name === 'AbortError' || _cancelled) throw err;
         if (attempt < OLLAMA_MAX_RETRIES && isRetryable(err, err.status)) {
-          await new Promise(r => setTimeout(r, OLLAMA_RETRY_DELAY_MS * (attempt + 1)));
+          const delay = OLLAMA_RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
+          await new Promise(r => setTimeout(r, delay));
           continue;
         }
-        throw new Error('Paragraph ' + (textIndex + 1) + '/' + total + ' failed: ' + err.message);
+        throw new Error('Paragraph ' + (textIndex + 1) + '/' + total + ' failed after ' + (attempt + 1) + ' attempts: ' + err.message);
       }
     }
     translatedParagraphs.push({ sentences: [translated] });
     textIndex++;
 
     if (onProgress) onProgress(textIndex, total);
+
+    // Cooldown between paragraphs to prevent Ollama overload
+    if (OLLAMA_COOLDOWN_MS > 0 && i < paragraphs.length - 1) {
+      await new Promise(r => setTimeout(r, OLLAMA_COOLDOWN_MS));
+    }
   }
 
   return translatedParagraphs;
