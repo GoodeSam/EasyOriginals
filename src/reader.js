@@ -57,13 +57,18 @@ function showMessage(text) {
   closeBtn.onclick = close;
   modal.onclick = (e) => { if (e.target === modal) close(); };
   copyBtn.onclick = () => {
-    navigator.clipboard.writeText(text).then(() => {
-      copyBtn.textContent = '\u2714 Copied';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        copyBtn.textContent = '\u2714 Copied';
+        setTimeout(() => { copyBtn.textContent = '\ud83d\udccb Copy'; }, 1500);
+      }).catch(() => {
+        copyBtn.textContent = 'Failed';
+        setTimeout(() => { copyBtn.textContent = '\ud83d\udccb Copy'; }, 1500);
+      });
+    } else {
+      copyBtn.textContent = 'Not supported';
       setTimeout(() => { copyBtn.textContent = '\ud83d\udccb Copy'; }, 1500);
-    }).catch(() => {
-      copyBtn.textContent = 'Failed';
-      setTimeout(() => { copyBtn.textContent = '\ud83d\udccb Copy'; }, 1500);
-    });
+    }
   };
 }
 
@@ -1364,6 +1369,7 @@ window.parseTXT = parseTXT;
 
 function stripInlineMarkdown(text) {
   return text
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
     .replace(/\*\*(.+?)\*\*/g, '$1')
     .replace(/__(.+?)__/g, '$1')
     .replace(/\*(.+?)\*/g, '$1')
@@ -1436,6 +1442,13 @@ async function parseMarkdown(file) {
       flushBuffer();
       const text = stripInlineMarkdown(trimmed.replace(/^[-*+]\s+/, '').replace(/^\d+\.\s+/, ''));
       if (text) paragraphs.push({ type: 'text', mdType: 'li', text, sentences: splitIntoSentences(text) });
+      continue;
+    }
+
+    const imgMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)/);
+    if (imgMatch) {
+      flushBuffer();
+      paragraphs.push({ type: 'image', src: imgMatch[2], alt: imgMatch[1] });
       continue;
     }
 
@@ -2584,6 +2597,8 @@ function setupBookGeneration() {
   if (generateAudiobookBtn) {
     generateAudiobookBtn.addEventListener('click', async () => {
       if (!state.paragraphs || state.paragraphs.length === 0) return;
+      if (generateAudiobookBtn.disabled) return;
+      generateAudiobookBtn.disabled = true;
       await ensureSettings();
       const contentLang = detectContentLanguage(state.paragraphs);
       const autoVoice = voiceForLanguage(contentLang, state.edgeTtsVoice);
@@ -2611,6 +2626,7 @@ function setupBookGeneration() {
         }
       } finally {
         audiobookProgress.style.display = 'none';
+        generateAudiobookBtn.disabled = false;
       }
     });
   }
@@ -2622,8 +2638,11 @@ function setupBookGeneration() {
   if (translateBookBtn) {
     translateBookBtn.addEventListener('click', async () => {
       if (!state.paragraphs || state.paragraphs.length === 0) return;
+      if (translateBookBtn.disabled) return;
+      translateBookBtn.disabled = true;
       await ensureSettings();
       if (state.translationProvider === 'offline') {
+        translateBookBtn.disabled = false;
         alert('Book translation is not available in offline mode. Please select a translation provider in Settings.');
         return;
       }
@@ -2651,6 +2670,7 @@ function setupBookGeneration() {
         }
       } finally {
         translationProgress.style.display = 'none';
+        translateBookBtn.disabled = false;
       }
     });
   }
@@ -2662,6 +2682,8 @@ function setupBookGeneration() {
   if (generateTranslatedAudioBtn) {
     generateTranslatedAudioBtn.addEventListener('click', async () => {
       if (!translatedParagraphs || translatedParagraphs.length === 0) return;
+      if (generateTranslatedAudioBtn.disabled) return;
+      generateTranslatedAudioBtn.disabled = true;
       await ensureSettings();
       const transLang = detectContentLanguage(translatedParagraphs);
       const translatedVoice = voiceForLanguage(transLang, state.translatedTtsVoice);
@@ -2689,6 +2711,7 @@ function setupBookGeneration() {
         }
       } finally {
         audiobookProgress.style.display = 'none';
+        generateTranslatedAudioBtn.disabled = false;
       }
     });
   }
@@ -3312,7 +3335,7 @@ async function saveFile(filename, blob) {
   a.href = url;
   a.download = filename;
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
   return 'Downloads/' + filename;
 }
 

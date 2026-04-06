@@ -226,7 +226,9 @@ export async function generateBookAudio(paragraphs, options = {}) {
     );
   }
   const audioBlobs = [];
-  const total = textParagraphs.length;
+  const nonBlankParas = textParagraphs.filter(p => p.sentences.join(' ').trim());
+  const total = nonBlankParas.length;
+  let progressIndex = 0;
 
   for (let i = 0; i < textParagraphs.length; i++) {
     if (_cancelled) throw new Error('Audio generation cancelled');
@@ -245,8 +247,9 @@ export async function generateBookAudio(paragraphs, options = {}) {
       }
     }
     audioBlobs.push(blob);
+    progressIndex++;
 
-    if (onProgress) onProgress(i + 1, total);
+    if (onProgress) onProgress(progressIndex, total);
   }
 
   const blob = await concatenateAudioBlobs(audioBlobs);
@@ -278,5 +281,5 @@ export function downloadAudio(blob, filename = 'audiobook.mp3') {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }

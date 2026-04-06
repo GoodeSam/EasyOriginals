@@ -43,17 +43,20 @@ export async function translateWithOllama(text, options = {}) {
 
   const prompt = `Translate the following text from ${fromLang} to ${toLang}. Return only the translation, no explanations.\n\n${text}`;
 
+  if (externalSignal && externalSignal.aborted) {
+    const err = new Error('Ollama translation cancelled');
+    err.name = 'AbortError';
+    throw err;
+  }
+
   const timeoutMs = OLLAMA_TIMEOUT_BASE_MS + text.length * OLLAMA_TIMEOUT_PER_CHAR_MS;
   const timeoutCtrl = new AbortController();
   const timer = setTimeout(() => timeoutCtrl.abort(), timeoutMs);
 
-  // Combine external cancel signal with per-request timeout
-  const signal = externalSignal
-    ? (externalSignal.aborted ? timeoutCtrl.signal : (() => {
-        externalSignal.addEventListener('abort', () => timeoutCtrl.abort(), { once: true });
-        return timeoutCtrl.signal;
-      })())
-    : timeoutCtrl.signal;
+  if (externalSignal) {
+    externalSignal.addEventListener('abort', () => timeoutCtrl.abort(), { once: true });
+  }
+  const signal = timeoutCtrl.signal;
 
   let res;
   try {
@@ -202,7 +205,10 @@ export function exportAsMarkdown(originalParagraphs, translatedParagraphs, title
     const orig = originalParagraphs[i];
     const trans = translatedParagraphs[i];
 
-    if (orig.type === 'image') continue;
+    if (orig.type === 'image') {
+      lines.push(`![${orig.alt || ''}](${orig.src || ''})\n`);
+      continue;
+    }
 
     const originalText = orig.sentences.join(' ');
     const translatedText = trans ? trans.sentences.join(' ') : '';
@@ -228,7 +234,10 @@ export function exportTranslationMarkdown(translatedParagraphs, title = 'Transla
   const lines = [`# ${title}\n`];
 
   for (const para of translatedParagraphs) {
-    if (para.type === 'image') continue;
+    if (para.type === 'image') {
+      lines.push(`![${para.alt || ''}](${para.src || ''})\n`);
+      continue;
+    }
     const text = para.sentences.join(' ');
     if (text.trim()) lines.push(text + '\n');
   }
@@ -251,5 +260,5 @@ export function downloadMarkdown(content, filename = 'translated-book.md') {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
