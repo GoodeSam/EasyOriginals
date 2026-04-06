@@ -2536,46 +2536,54 @@ function setupBookGeneration() {
     ollamaTranslateBtn.addEventListener('click', async () => {
       if (!state.paragraphs || state.paragraphs.length === 0) return;
       await ensureSettings();
-      const ollamaBaseUrl = state.ollamaUrl || 'http://localhost:11434';
 
+      const ollamaBaseUrl = state.ollamaUrl || 'http://localhost:11434';
+      const header = $('#ollamaTranslationHeader');
       ollamaTranslationProgress.style.display = '';
       ollamaTranslationStatus.textContent = 'Checking Ollama connection...';
       ollamaTranslationProgressBar.style.width = '0%';
 
       const check = await checkOllamaConnection(ollamaBaseUrl);
-      if (!check.ok) {
+      const useOllama = check.ok;
+
+      if (!useOllama && state.translationProvider === 'offline') {
         ollamaTranslationProgress.style.display = 'none';
-        alert(
-          'Cannot connect to Ollama at ' + ollamaBaseUrl + '.\n\n' +
-          'To use this feature:\n' +
-          '1. Install Ollama: https://ollama.com\n' +
-          '2. Run: ollama serve\n' +
-          '3. Pull a model: ollama pull ' + (state.ollamaModel || 'llama3') + '\n' +
-          '4. Allow CORS: OLLAMA_ORIGINS="' + location.origin + '" ollama serve\n\n' +
-          'You can change the Ollama URL in Settings.\n\n' +
-          'Error: ' + check.error
-        );
+        alert('Ollama is not reachable and the translation provider is set to offline.\nPlease select Google or Microsoft in Settings, or set up Ollama locally.');
         return;
       }
 
+      const providerLabel = useOllama ? 'Ollama (' + (state.ollamaModel || 'llama3') + ')' : state.translationProvider;
+      if (header) header.textContent = useOllama ? 'Translating with Ollama...' : 'Translating with ' + providerLabel + '...';
       ollamaTranslationStatus.textContent = 'Preparing...';
+
       try {
-        const ollamaResult = await translateBookWithOllama(state.paragraphs, {
-          ollamaUrl: ollamaBaseUrl + '/api/generate',
-          model: state.ollamaModel,
-          onProgress(current, total) {
-            const pct = Math.round((current / total) * 100);
-            ollamaTranslationProgressBar.style.width = pct + '%';
-            ollamaTranslationStatus.textContent = `Paragraph ${current} of ${total}`;
-          }
-        });
+        let result;
+        const onProgress = (current, total) => {
+          const pct = Math.round((current / total) * 100);
+          ollamaTranslationProgressBar.style.width = pct + '%';
+          ollamaTranslationStatus.textContent = `${providerLabel}: paragraph ${current} of ${total}`;
+        };
+
+        if (useOllama) {
+          result = await translateBookWithOllama(state.paragraphs, {
+            ollamaUrl: ollamaBaseUrl + '/api/generate',
+            model: state.ollamaModel,
+            onProgress,
+          });
+        } else {
+          result = await translateBook(state.paragraphs, {
+            translateFn: translateText,
+            onProgress,
+          });
+        }
+
         const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'book';
         const title = state.fileName || 'Translated Book';
-        const md = exportAsMarkdown(state.paragraphs, ollamaResult, title);
+        const md = exportAsMarkdown(state.paragraphs, result, title);
         downloadMarkdown(baseName + '-translated.md', md);
       } catch (err) {
-        if (err.message !== 'Ollama translation cancelled' && err.name !== 'AbortError') {
-          alert('Ollama translation failed: ' + err.message);
+        if (err.message !== 'Ollama translation cancelled' && err.message !== 'Translation cancelled' && err.name !== 'AbortError') {
+          alert('Translation failed: ' + err.message);
         }
       } finally {
         ollamaTranslationProgress.style.display = 'none';
@@ -2584,7 +2592,10 @@ function setupBookGeneration() {
   }
 
   if (cancelOllamaTranslationBtn) {
-    cancelOllamaTranslationBtn.addEventListener('click', () => cancelOllamaTranslation());
+    cancelOllamaTranslationBtn.addEventListener('click', () => {
+      cancelOllamaTranslation();
+      cancelTranslation();
+    });
   }
 }
 
@@ -3712,12 +3723,12 @@ const FEATURE_REGISTRY = [
     usage_cn: '\u70b9\u51fb\u5de5\u5177\u680f\u4e2d\u7684\u5730\u7403\u56fe\u6807\u3002\u8fdb\u5ea6\u6761\u8ddf\u8e2a\u9010\u6bb5\u843d\u7ffb\u8bd1\u8fdb\u5ea6\u3002\u5b8c\u6210\u540e\u4f7f\u7528\u9ea6\u514b\u98ce\u56fe\u6807\u751f\u6210\u7ffb\u8bd1\u97f3\u9891\u3002'
   },
   {
-    name: 'Translate with Ollama',
+    name: 'Translate & Export Markdown',
     icon: '\ud83e\udd16',
-    description: 'Translate the entire book using a free local Ollama AI model (e.g. llama3). The result is exported as a bilingual Markdown file with original and translated text side by side, saved to your Downloads folder.',
-    usage: 'Click the robot icon in the toolbar. Requires Ollama running locally at localhost:11434. A progress bar tracks translation. The bilingual .md file downloads automatically when complete.',
-    name_cn: '\u4f7f\u7528 Ollama \u7ffb\u8bd1',
-    description_cn: '\u4f7f\u7528\u514d\u8d39\u7684\u672c\u5730 Ollama AI \u6a21\u578b\uff08\u5982 llama3\uff09\u7ffb\u8bd1\u6574\u672c\u4e66\u3002\u7ed3\u679c\u5bfc\u51fa\u4e3a\u53cc\u8bed Markdown \u6587\u4ef6\uff0c\u539f\u6587\u548c\u8bd1\u6587\u5e76\u6392\u663e\u793a\uff0c\u4fdd\u5b58\u5230\u4e0b\u8f7d\u6587\u4ef6\u5939\u3002',
+    description: 'Translate the entire book and export as a bilingual Markdown file with original and translated text side by side, saved to your Downloads folder. Uses Ollama (local AI) if available, otherwise falls back to the configured translation provider (Google/Microsoft) automatically — no setup required.',
+    usage: 'Click the robot icon in the toolbar. It tries Ollama first; if unavailable, it uses your configured provider. A progress bar tracks translation. The bilingual .md file downloads automatically when complete.',
+    name_cn: '\u7ffb\u8bd1\u5e76\u5bfc\u51fa Markdown',
+    description_cn: '\u7ffb\u8bd1\u6574\u672c\u4e66\u5e76\u5bfc\u51fa\u4e3a\u53cc\u8bed Markdown \u6587\u4ef6\uff0c\u539f\u6587\u548c\u8bd1\u6587\u5e76\u6392\u663e\u793a\uff0c\u4fdd\u5b58\u5230\u4e0b\u8f7d\u6587\u4ef6\u5939\u3002\u4f18\u5148\u4f7f\u7528 Ollama\uff08\u672c\u5730 AI\uff09\uff0c\u4e0d\u53ef\u7528\u65f6\u81ea\u52a8\u56de\u9000\u5230\u914d\u7f6e\u7684\u7ffb\u8bd1\u63d0\u4f9b\u5546\uff08\u8c37\u6b4c/\u5fae\u8f6f\uff09\u2014\u2014\u65e0\u9700\u4efb\u4f55\u8bbe\u7f6e\u3002',
     usage_cn: '\u70b9\u51fb\u5de5\u5177\u680f\u4e2d\u7684\u673a\u5668\u4eba\u56fe\u6807\u3002\u9700\u8981 Ollama \u5728\u672c\u5730\u8fd0\u884c\uff08localhost:11434\uff09\u3002\u8fdb\u5ea6\u6761\u8ddf\u8e2a\u7ffb\u8bd1\u8fdb\u5ea6\u3002\u5b8c\u6210\u540e\u53cc\u8bed .md \u6587\u4ef6\u81ea\u52a8\u4e0b\u8f7d\u3002'
   },
   {
