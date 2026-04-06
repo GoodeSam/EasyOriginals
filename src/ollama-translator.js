@@ -14,18 +14,20 @@ const OLLAMA_URL = 'http://localhost:11434/api/generate';
 const DEFAULT_MODEL = 'llama3';
 
 let _cancelled = false;
+let _abortController = null;
 
 /**
  * Translate a single text using the local Ollama API.
  *
  * @param {string} text - The text to translate.
- * @param {object} [options] - Options: model, fromLang, toLang.
+ * @param {object} [options] - Options: model, fromLang, toLang, signal.
  * @returns {Promise<string>} Translated text.
  */
 export async function translateWithOllama(text, options = {}) {
   const model = options.model || DEFAULT_MODEL;
   const fromLang = options.fromLang || 'English';
   const toLang = options.toLang || 'Chinese';
+  const signal = options.signal;
 
   const prompt = `Translate the following text from ${fromLang} to ${toLang}. Return only the translation, no explanations.\n\n${text}`;
 
@@ -33,11 +35,15 @@ export async function translateWithOllama(text, options = {}) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model, prompt, stream: false }),
+    signal,
   });
 
   if (!res.ok) throw new Error(`Ollama request failed: ${res.status}`);
 
   const data = await res.json();
+  if (typeof data.response !== 'string') {
+    throw new Error(`Unexpected Ollama response: ${JSON.stringify(data).slice(0, 200)}`);
+  }
   return data.response.trim();
 }
 
@@ -50,6 +56,7 @@ export async function translateWithOllama(text, options = {}) {
  */
 export async function translateBookWithOllama(paragraphs, options = {}) {
   _cancelled = false;
+  _abortController = new AbortController();
   const { model, fromLang, toLang, onProgress } = options;
   const translatedParagraphs = [];
   const textParagraphs = paragraphs.filter(p => p.type !== 'image');
@@ -74,7 +81,7 @@ export async function translateBookWithOllama(paragraphs, options = {}) {
       continue;
     }
 
-    const translated = await translateWithOllama(text, { model, fromLang, toLang });
+    const translated = await translateWithOllama(text, { model, fromLang, toLang, signal: _abortController.signal });
     translatedParagraphs.push({ sentences: [translated] });
     textIndex++;
 
@@ -89,6 +96,7 @@ export async function translateBookWithOllama(paragraphs, options = {}) {
  */
 export function cancelOllamaTranslation() {
   _cancelled = true;
+  if (_abortController) _abortController.abort();
 }
 
 /**

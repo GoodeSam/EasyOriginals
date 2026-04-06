@@ -1600,6 +1600,9 @@ window.handleFile = handleFile;
 function renderAllContent(paragraphs) {
   state.paragraphs = paragraphs;
   readerContent.innerHTML = '';
+  translatedParagraphs = null;
+  const transAudioBtn = $('#generateTranslatedAudioBtn');
+  if (transAudioBtn) transAudioBtn.style.display = 'none';
 
   for (const para of state.paragraphs) {
     const pEl = document.createElement('div');
@@ -2462,6 +2465,10 @@ function setupBookGeneration() {
   if (translateBookBtn) {
     translateBookBtn.addEventListener('click', async () => {
       if (!state.paragraphs || state.paragraphs.length === 0) return;
+      if (state.translationProvider === 'offline') {
+        alert('Book translation is not available in offline mode. Please select a translation provider in Settings.');
+        return;
+      }
       translationProgress.style.display = '';
       translationStatus.textContent = 'Preparing...';
       translationProgressBar.style.width = '0%';
@@ -2496,8 +2503,9 @@ function setupBookGeneration() {
       audiobookStatus.textContent = 'Preparing translated audio...';
       audiobookProgressBar.style.width = '0%';
       try {
+        const translatedVoice = state.translatedTtsVoice || 'zh-CN-XiaoxiaoNeural';
         const result = await generateBookAudio(translatedParagraphs, {
-          voice: state.edgeTtsVoice,
+          voice: translatedVoice,
           speechRate: state.speechRate,
           onProgress(current, total) {
             const pct = Math.round((current / total) * 100);
@@ -2536,7 +2544,7 @@ function setupBookGeneration() {
         const md = exportAsMarkdown(state.paragraphs, ollamaResult, title);
         downloadMarkdown(baseName + '-translated.md', md);
       } catch (err) {
-        if (err.message !== 'Ollama translation cancelled') {
+        if (err.message !== 'Ollama translation cancelled' && err.name !== 'AbortError') {
           alert('Ollama translation failed: ' + err.message);
         }
       } finally {
@@ -3514,11 +3522,11 @@ const FEATURE_REGISTRY = [
   {
     name: 'Text-to-Speech',
     icon: '\ud83d\udd0a',
-    description: 'Listen to any sentence read aloud with natural pronunciation.',
-    usage: 'Open a sentence panel and click "Listen" to hear the sentence spoken aloud.',
+    description: 'Listen to any sentence or word read aloud. Supports free Edge Read Aloud voices and premium OpenAI voices.',
+    usage: 'Open a sentence panel and click "Listen", or click "Speak" in the word popup. Choose your TTS source in Settings.',
     name_cn: '\u6587\u5b57\u8f6c\u8bed\u97f3',
-    description_cn: '\u4ee5\u81ea\u7136\u53d1\u97f3\u6717\u8bfb\u4efb\u610f\u53e5\u5b50\u3002',
-    usage_cn: '\u6253\u5f00\u53e5\u5b50\u9762\u677f\uff0c\u70b9\u51fb\u201c\u6536\u542c\u201d\u6309\u94ae\u5373\u53ef\u6717\u8bfb\u3002'
+    description_cn: '\u6717\u8bfb\u4efb\u610f\u53e5\u5b50\u6216\u5355\u8bcd\u3002\u652f\u6301\u514d\u8d39\u7684 Edge \u6717\u8bfb\u548c\u4ed8\u8d39\u7684 OpenAI \u8bed\u97f3\u3002',
+    usage_cn: '\u6253\u5f00\u53e5\u5b50\u9762\u677f\u70b9\u51fb\u201c\u6536\u542c\u201d\uff0c\u6216\u5728\u5355\u8bcd\u5f39\u7a97\u4e2d\u70b9\u51fb\u201c\u6717\u8bfb\u201d\u3002\u5728\u8bbe\u7f6e\u4e2d\u9009\u62e9 TTS \u8bed\u97f3\u6e90\u3002'
   },
   {
     name: 'Search',
@@ -3627,6 +3635,69 @@ const FEATURE_REGISTRY = [
     name_cn: '\u56fe\u7247\u6587\u5b57\u8bc6\u522b',
     description_cn: '\u4e0a\u4f20\u56fe\u7247\u6587\u4ef6\uff0c\u4f7f\u7528 AI \u9a71\u52a8\u7684 OCR \u63d0\u53d6\u6587\u5b57\u3002',
     usage_cn: '\u62d6\u653e\u6216\u6d4f\u89c8\u9009\u62e9 .png\u3001.jpg\u3001.jpeg \u6216 .webp \u56fe\u7247\u6587\u4ef6\u3002\u901a\u8fc7 OpenAI Vision API \u81ea\u52a8\u63d0\u53d6\u6587\u5b57\u3002'
+  },
+  {
+    name: 'Auto-Play Audio',
+    icon: '\ud83d\udd0a',
+    description: 'Automatically read aloud sentences and words as you interact with the text.',
+    usage: 'Click the speaker icon in the toolbar to toggle auto-play on/off. When active, the icon turns green. Clicking any word or sentence will automatically play its audio.',
+    name_cn: '\u81ea\u52a8\u64ad\u653e\u97f3\u9891',
+    description_cn: '\u4e0e\u6587\u672c\u4ea4\u4e92\u65f6\u81ea\u52a8\u6717\u8bfb\u53e5\u5b50\u548c\u5355\u8bcd\u3002',
+    usage_cn: '\u70b9\u51fb\u5de5\u5177\u680f\u4e2d\u7684\u559c\u53ed\u56fe\u6807\u5f00\u542f/\u5173\u95ed\u81ea\u52a8\u64ad\u653e\u3002\u6fc0\u6d3b\u65f6\u56fe\u6807\u53d8\u7eff\u3002\u70b9\u51fb\u4efb\u610f\u5355\u8bcd\u6216\u53e5\u5b50\u5c06\u81ea\u52a8\u64ad\u653e\u97f3\u9891\u3002'
+  },
+  {
+    name: 'Gesture Mode',
+    icon: '\u26a1',
+    description: 'Switch between "direct" mode (one-tap translates immediately) and "menu" mode (one-tap opens the sentence panel with options).',
+    usage: 'Click the lightning bolt icon in the toolbar to toggle between modes. Direct mode is faster for quick translations; menu mode gives access to translate, grammar, listen, and copy.',
+    name_cn: '\u624b\u52bf\u6a21\u5f0f',
+    description_cn: '\u5728\u201c\u76f4\u63a5\u201d\u6a21\u5f0f\uff08\u5355\u51fb\u7acb\u5373\u7ffb\u8bd1\uff09\u548c\u201c\u83dc\u5355\u201d\u6a21\u5f0f\uff08\u5355\u51fb\u6253\u5f00\u53e5\u5b50\u9762\u677f\uff09\u4e4b\u95f4\u5207\u6362\u3002',
+    usage_cn: '\u70b9\u51fb\u5de5\u5177\u680f\u4e2d\u7684\u95ea\u7535\u56fe\u6807\u5207\u6362\u6a21\u5f0f\u3002\u76f4\u63a5\u6a21\u5f0f\u66f4\u5feb\uff1b\u83dc\u5355\u6a21\u5f0f\u63d0\u4f9b\u7ffb\u8bd1\u3001\u8bed\u6cd5\u3001\u6536\u542c\u548c\u590d\u5236\u7b49\u9009\u9879\u3002'
+  },
+  {
+    name: 'TTS Source',
+    icon: '\ud83c\udfb6',
+    description: 'Choose between free Edge Read Aloud and premium OpenAI voices for text-to-speech.',
+    usage: 'Open Settings and select a TTS source. Edge Read Aloud is free with many voice options. OpenAI offers high-quality voices (requires API key).',
+    name_cn: 'TTS \u8bed\u97f3\u6e90',
+    description_cn: '\u5728\u514d\u8d39\u7684 Edge \u6717\u8bfb\u548c\u4ed8\u8d39\u7684 OpenAI \u8bed\u97f3\u4e4b\u95f4\u9009\u62e9\u3002',
+    usage_cn: '\u6253\u5f00\u8bbe\u7f6e\u9009\u62e9 TTS \u8bed\u97f3\u6e90\u3002Edge \u6717\u8bfb\u514d\u8d39\u4e14\u63d0\u4f9b\u591a\u79cd\u8bed\u97f3\u3002OpenAI \u63d0\u4f9b\u9ad8\u54c1\u8d28\u8bed\u97f3\uff08\u9700 API \u5bc6\u94a5\uff09\u3002'
+  },
+  {
+    name: 'Generate Audiobook',
+    icon: '\ud83c\udfa7',
+    description: 'Generate a full audiobook MP3 from the entire book using Edge Read Aloud (free). The file is saved to your Downloads folder.',
+    usage: 'Click the headphones icon in the toolbar. A progress bar shows paragraph-by-paragraph progress. The MP3 is downloaded automatically when complete. You can cancel at any time.',
+    name_cn: '\u751f\u6210\u6709\u58f0\u4e66',
+    description_cn: '\u4f7f\u7528 Edge \u6717\u8bfb\uff08\u514d\u8d39\uff09\u5c06\u6574\u672c\u4e66\u751f\u6210\u4e3a MP3 \u6709\u58f0\u4e66\u3002\u6587\u4ef6\u4fdd\u5b58\u5230\u4e0b\u8f7d\u6587\u4ef6\u5939\u3002',
+    usage_cn: '\u70b9\u51fb\u5de5\u5177\u680f\u4e2d\u7684\u8033\u673a\u56fe\u6807\u3002\u8fdb\u5ea6\u6761\u663e\u793a\u9010\u6bb5\u843d\u8fdb\u5ea6\u3002\u5b8c\u6210\u540e MP3 \u81ea\u52a8\u4e0b\u8f7d\u3002\u53ef\u968f\u65f6\u53d6\u6d88\u3002'
+  },
+  {
+    name: 'Translate Book',
+    icon: '\ud83c\udf10',
+    description: 'Translate the entire book using the configured translation provider (Google, Microsoft, or ChatGPT). After translation, the "Generate Translated Audio" button becomes available.',
+    usage: 'Click the globe icon in the toolbar. A progress bar tracks paragraph-by-paragraph translation. Once done, use the microphone icon to generate audio from the translated text.',
+    name_cn: '\u7ffb\u8bd1\u5168\u4e66',
+    description_cn: '\u4f7f\u7528\u914d\u7f6e\u7684\u7ffb\u8bd1\u63d0\u4f9b\u5546\uff08\u8c37\u6b4c\u3001\u5fae\u8f6f\u6216 ChatGPT\uff09\u7ffb\u8bd1\u6574\u672c\u4e66\u3002\u7ffb\u8bd1\u5b8c\u6210\u540e\u53ef\u751f\u6210\u7ffb\u8bd1\u97f3\u9891\u3002',
+    usage_cn: '\u70b9\u51fb\u5de5\u5177\u680f\u4e2d\u7684\u5730\u7403\u56fe\u6807\u3002\u8fdb\u5ea6\u6761\u8ddf\u8e2a\u9010\u6bb5\u843d\u7ffb\u8bd1\u8fdb\u5ea6\u3002\u5b8c\u6210\u540e\u4f7f\u7528\u9ea6\u514b\u98ce\u56fe\u6807\u751f\u6210\u7ffb\u8bd1\u97f3\u9891\u3002'
+  },
+  {
+    name: 'Translate with Ollama',
+    icon: '\ud83e\udd16',
+    description: 'Translate the entire book using a free local Ollama AI model (e.g. llama3). The result is exported as a bilingual Markdown file with original and translated text side by side, saved to your Downloads folder.',
+    usage: 'Click the robot icon in the toolbar. Requires Ollama running locally at localhost:11434. A progress bar tracks translation. The bilingual .md file downloads automatically when complete.',
+    name_cn: '\u4f7f\u7528 Ollama \u7ffb\u8bd1',
+    description_cn: '\u4f7f\u7528\u514d\u8d39\u7684\u672c\u5730 Ollama AI \u6a21\u578b\uff08\u5982 llama3\uff09\u7ffb\u8bd1\u6574\u672c\u4e66\u3002\u7ed3\u679c\u5bfc\u51fa\u4e3a\u53cc\u8bed Markdown \u6587\u4ef6\uff0c\u539f\u6587\u548c\u8bd1\u6587\u5e76\u6392\u663e\u793a\uff0c\u4fdd\u5b58\u5230\u4e0b\u8f7d\u6587\u4ef6\u5939\u3002',
+    usage_cn: '\u70b9\u51fb\u5de5\u5177\u680f\u4e2d\u7684\u673a\u5668\u4eba\u56fe\u6807\u3002\u9700\u8981 Ollama \u5728\u672c\u5730\u8fd0\u884c\uff08localhost:11434\uff09\u3002\u8fdb\u5ea6\u6761\u8ddf\u8e2a\u7ffb\u8bd1\u8fdb\u5ea6\u3002\u5b8c\u6210\u540e\u53cc\u8bed .md \u6587\u4ef6\u81ea\u52a8\u4e0b\u8f7d\u3002'
+  },
+  {
+    name: 'Generate Translated Audio',
+    icon: '\ud83c\udfa4',
+    description: 'Generate an MP3 audiobook from the translated text using a Chinese TTS voice. The file is saved to your Downloads folder. Available after completing a full-book translation.',
+    usage: 'After translating the book, this button appears in the toolbar. Click it to generate audio from the translated paragraphs. The MP3 downloads automatically.',
+    name_cn: '\u751f\u6210\u7ffb\u8bd1\u97f3\u9891',
+    description_cn: '\u4f7f\u7528\u4e2d\u6587 TTS \u8bed\u97f3\u4ece\u7ffb\u8bd1\u6587\u672c\u751f\u6210 MP3 \u6709\u58f0\u4e66\u3002\u6587\u4ef6\u4fdd\u5b58\u5230\u4e0b\u8f7d\u6587\u4ef6\u5939\u3002\u5b8c\u6210\u5168\u4e66\u7ffb\u8bd1\u540e\u53ef\u7528\u3002',
+    usage_cn: '\u7ffb\u8bd1\u5b8c\u6210\u540e\uff0c\u6b64\u6309\u94ae\u51fa\u73b0\u5728\u5de5\u5177\u680f\u4e2d\u3002\u70b9\u51fb\u5373\u53ef\u4ece\u7ffb\u8bd1\u6bb5\u843d\u751f\u6210\u97f3\u9891\u3002MP3 \u81ea\u52a8\u4e0b\u8f7d\u3002'
   },
 ];
 

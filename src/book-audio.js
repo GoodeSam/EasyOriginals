@@ -14,7 +14,10 @@ const EDGE_TTS_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
 const EDGE_TTS_DEFAULT_VOICE = 'en-US-AriaNeural';
 const SEC_MS_GEC_VERSION = '1-130.0.2849.68';
 
+const SYNTH_TIMEOUT_MS = 30000;
+
 let _cancelled = false;
+let _activeWebSocket = null;
 
 async function generateSecMsGec() {
   let ticks = Math.floor(Date.now() / 1000);
@@ -48,8 +51,13 @@ export async function synthesizeParagraph(text, options = {}) {
     const ws = new WebSocket(
       `${EDGE_TTS_URL}?TrustedClientToken=${EDGE_TTS_TOKEN}&ConnectionId=${connId}&Sec-MS-GEC=${gecToken}&Sec-MS-GEC-Version=${SEC_MS_GEC_VERSION}`
     );
+    _activeWebSocket = ws;
     ws.binaryType = 'arraybuffer';
     const audioChunks = [];
+    const timeout = setTimeout(() => {
+      ws.close();
+      reject(new Error('Edge TTS request timed out'));
+    }, SYNTH_TIMEOUT_MS);
 
     ws.onopen = () => {
       ws.send(
@@ -76,6 +84,8 @@ export async function synthesizeParagraph(text, options = {}) {
     ws.onmessage = (event) => {
       if (typeof event.data === 'string') {
         if (event.data.includes('Path:turn.end')) {
+          clearTimeout(timeout);
+          _activeWebSocket = null;
           ws.close();
           const blob = new Blob(audioChunks, { type: 'audio/mpeg' });
           resolve(blob);
@@ -90,7 +100,7 @@ export async function synthesizeParagraph(text, options = {}) {
       }
     };
 
-    ws.onerror = () => reject(new Error('Edge TTS connection failed'));
+    ws.onerror = () => { clearTimeout(timeout); _activeWebSocket = null; reject(new Error('Edge TTS connection failed')); };
 
     let settled = false;
     const originalResolve = resolve;
@@ -99,7 +109,11 @@ export async function synthesizeParagraph(text, options = {}) {
     reject = (e) => { settled = true; originalReject(e); };
 
     ws.onclose = () => {
-      if (!settled) reject(new Error('Edge TTS connection closed unexpectedly'));
+      clearTimeout(timeout);
+      _activeWebSocket = null;
+      if (!settled) {
+        reject(new Error(_cancelled ? 'Audio generation cancelled' : 'Edge TTS connection closed unexpectedly'));
+      }
     };
   });
 }
@@ -112,12 +126,8 @@ export async function synthesizeParagraph(text, options = {}) {
  * @param {Blob[]} blobs - Array of MP3 audio blobs.
  * @returns {Promise<Blob>} Single concatenated MP3 blob.
  */
-export async function concatenateAudioBlobs(blobs) {
-  const parts = [];
-  for (const blob of blobs) {
-    parts.push(await blob.arrayBuffer());
-  }
-  return new Blob(parts, { type: 'audio/mpeg' });
+export function concatenateAudioBlobs(blobs) {
+  return new Blob(blobs, { type: 'audio/mpeg' });
 }
 
 /**
@@ -156,6 +166,10 @@ export async function generateBookAudio(paragraphs, options = {}) {
  */
 export function cancelBookAudio() {
   _cancelled = true;
+  if (_activeWebSocket) {
+    _activeWebSocket.close();
+    _activeWebSocket = null;
+  }
 }
 
 /**

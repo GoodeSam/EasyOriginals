@@ -2233,7 +2233,29 @@ Full suite: 558 tests passing.
 
 Pushed to GitHub. Commit aca44e5 is now on origin/main.
 
-\>> 优化toolbar的排列。 Optimize toolbar arrangement.
+\>> 优化toolbar的排列。 Optimize toolbar arrangement.    Pushed e4d8fe2 to origin/main.
+
+\>> 在 [https\://github.com/GoodeSam/EasyOriginals/actions](https://github.com/GoodeSam/EasyOriginals/actions) 上，#85和#86 失败了，怎么处理。 Investigate and fix the failed GitHub Actions runs #85 and #86 at [https\://github.com/GoodeSam/EasyOriginals/actions](https://github.com/GoodeSam/EasyOriginals/actions).      
+
+```javascript
+ Pushed b356c09.                     
+                                                                   
+  Root cause: downloadMarkdown was imported from                   
+  ollama-translator.js but reader.js already had a local
+  downloadMarkdown function (used for notes/word list export). The 
+  Vite bundler (rolldown) caught the duplicate declaration at build
+   time, even though Vitest's static source analysis tests didn't.
+                                                                   
+  Fix: Removed the import (the local function does the same thing) 
+  and swapped the argument order at the call site to match the
+  local signature (filename, content).
+```
+
+在 **Feature Guide 里面写明，全书翻译，全书转TTS音频否内容会保存在哪里。以及现在最新版的所有功能（包括新增加的，变化的）   Update the Feature Guide to document: where full-book translation and full-book TTS audio content is saved, and list all current features including newly added and recently changed ones.**
+
+
+
+
 
 
 

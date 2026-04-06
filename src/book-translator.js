@@ -11,6 +11,7 @@
  */
 
 let _cancelled = false;
+let _abortController = null;
 
 /**
  * Translate a single paragraph of text.
@@ -34,6 +35,7 @@ export async function translateParagraph(text, translateFn, fromLang = 'en', toL
  */
 export async function translateBook(paragraphs, options = {}) {
   _cancelled = false;
+  _abortController = new AbortController();
   const { translateFn, fromLang = 'en', toLang = 'zh', onProgress } = options;
   const translatedParagraphs = [];
   const textParagraphs = paragraphs.filter(p => p.type !== 'image');
@@ -58,7 +60,10 @@ export async function translateBook(paragraphs, options = {}) {
       continue;
     }
 
-    const translated = await translateParagraph(text, translateFn, fromLang, toLang);
+    const abortPromise = new Promise((_, reject) => {
+      _abortController.signal.addEventListener('abort', () => reject(new Error('Translation cancelled')), { once: true });
+    });
+    const translated = await Promise.race([translateParagraph(text, translateFn, fromLang, toLang), abortPromise]);
     translatedParagraphs.push({ sentences: [translated] });
     textIndex++;
 
@@ -73,4 +78,5 @@ export async function translateBook(paragraphs, options = {}) {
  */
 export function cancelTranslation() {
   _cancelled = true;
+  if (_abortController) _abortController.abort();
 }
