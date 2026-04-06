@@ -38,6 +38,10 @@ export async function translateBook(paragraphs, options = {}) {
   _abortController = new AbortController();
   const { translateFn, fromLang = 'en', toLang = 'zh', onProgress, onParagraphComplete, startIndex = 0, existingResults = [] } = options;
   const translatedParagraphs = existingResults.length > 0 ? [...existingResults] : [];
+  // Fill any gaps in existing results to prevent undefined entries
+  for (let j = 0; j < translatedParagraphs.length; j++) {
+    if (!translatedParagraphs[j]) translatedParagraphs[j] = { sentences: [''] };
+  }
   const textParagraphs = paragraphs.filter(p => p.type !== 'image');
   const total = textParagraphs.length;
   let textIndex = 0;

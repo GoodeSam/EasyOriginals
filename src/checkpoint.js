@@ -6,6 +6,7 @@
  */
 
 const PREFIX = 'eo-ckpt:';
+export const RESUME_OVERLAP = 3;
 
 /**
  * Build a deterministic checkpoint key.

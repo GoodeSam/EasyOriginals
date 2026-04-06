@@ -6,7 +6,7 @@ import { parseEnglishDefinition } from './definition-utils.js';
 import { generateBookAudio, cancelBookAudio, downloadAudio, detectContentLanguage, voiceForLanguage } from './book-audio.js';
 import { translateBook, cancelTranslation } from './book-translator.js';
 import { translateBookWithOllama, cancelOllamaTranslation, exportAsMarkdown, exportTranslationMarkdown, checkOllamaConnection } from './ollama-translator.js';
-import { saveTranslationCheckpoint, loadTranslationCheckpoint, clearTranslationCheckpoint, getCheckpointInfo } from './checkpoint.js';
+import { saveTranslationCheckpoint, loadTranslationCheckpoint, clearTranslationCheckpoint, getCheckpointInfo, RESUME_OVERLAP } from './checkpoint.js';
 const TTS_MODEL = 'tts-1';
 const OPENAI_TTS_VOICES = [
   { value: 'alloy', label: 'Alloy', persona: 'Neutral and balanced' },
@@ -2658,13 +2658,16 @@ function setupBookGeneration() {
         const resume = confirm('Previous progress found (paragraph ' + ckptInfo.completedIndex + ' of ' + ckptInfo.totalParagraphs + '). Resume?');
         if (resume) {
           const ckpt = loadTranslationCheckpoint(state.fileName, 'translate');
-          if (ckpt) { resumeStart = ckpt.completedIndex; resumeResults = ckpt.translatedParagraphs; }
+          if (ckpt && ckpt.translatedParagraphs) {
+            resumeStart = Math.max(0, ckpt.completedIndex - RESUME_OVERLAP);
+            resumeResults = ckpt.translatedParagraphs;
+          }
         } else {
           clearTranslationCheckpoint(state.fileName, 'translate');
         }
       }
       translationProgress.style.display = '';
-      translationStatus.textContent = resumeStart > 0 ? 'Resuming from paragraph ' + resumeStart + '...' : 'Preparing...';
+      translationStatus.textContent = resumeStart > 0 ? 'Resuming from paragraph ' + resumeStart + ' (re-verifying last ' + RESUME_OVERLAP + ')...' : 'Preparing...';
       translationProgressBar.style.width = '0%';
       try {
         translatedParagraphs = await translateBook(state.paragraphs, {
@@ -2780,12 +2783,15 @@ function setupBookGeneration() {
         const resume = confirm('Previous Ollama progress found (paragraph ' + oCkptInfo.completedIndex + ' of ' + oCkptInfo.totalParagraphs + '). Resume?');
         if (resume) {
           const ckpt = loadTranslationCheckpoint(state.fileName, 'ollama-translate');
-          if (ckpt) { oResumeStart = ckpt.completedIndex; oResumeResults = ckpt.translatedParagraphs; }
+          if (ckpt && ckpt.translatedParagraphs) {
+            oResumeStart = Math.max(0, ckpt.completedIndex - RESUME_OVERLAP);
+            oResumeResults = ckpt.translatedParagraphs;
+          }
         } else {
           clearTranslationCheckpoint(state.fileName, 'ollama-translate');
         }
       }
-      ollamaTranslationStatus.textContent = oResumeStart > 0 ? 'Resuming from paragraph ' + oResumeStart + '...' : 'Preparing...';
+      ollamaTranslationStatus.textContent = oResumeStart > 0 ? 'Resuming from paragraph ' + oResumeStart + ' (re-verifying last ' + RESUME_OVERLAP + ')...' : 'Preparing...';
 
       try {
         translatedParagraphs = await translateBookWithOllama(state.paragraphs, {

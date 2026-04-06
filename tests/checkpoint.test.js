@@ -158,6 +158,40 @@ describe('generateBookAudio resume support', () => {
   });
 });
 
+// ─── Resume overlap ─────────────────────────────────────────────────
+
+describe('resume overlap', () => {
+  test('checkpoint.js exports RESUME_OVERLAP constant', () => {
+    expect(checkpointSrc).toMatch(/export\s+const\s+RESUME_OVERLAP/);
+  });
+
+  test('RESUME_OVERLAP is a positive number', () => {
+    const m = checkpointSrc.match(/RESUME_OVERLAP\s*=\s*(\d+)/);
+    expect(m).not.toBeNull();
+    expect(Number(m[1])).toBeGreaterThan(0);
+  });
+
+  test('reader.js imports RESUME_OVERLAP', () => {
+    expect(readerSrc).toMatch(/RESUME_OVERLAP/);
+  });
+
+  test('reader.js subtracts RESUME_OVERLAP from startIndex when resuming', () => {
+    expect(readerSrc).toMatch(/completedIndex\s*-\s*RESUME_OVERLAP/);
+  });
+
+  test('translateBook fills gaps in existingResults', () => {
+    const body = bookTranslatorSrc.match(/function translateBook[\s\S]*?\n\}/);
+    expect(body).not.toBeNull();
+    expect(body[0]).toMatch(/!translatedParagraphs\[j\]/);
+  });
+
+  test('translateBookWithOllama fills gaps in existingResults', () => {
+    const body = ollamaSrc.match(/function translateBookWithOllama[\s\S]*?\n\}/);
+    expect(body).not.toBeNull();
+    expect(body[0]).toMatch(/!translatedParagraphs\[j\]/);
+  });
+});
+
 // ─── Reader.js checkpoint integration ───────────────────────────────
 
 describe('reader.js checkpoint integration', () => {
