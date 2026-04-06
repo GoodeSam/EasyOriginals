@@ -5,7 +5,7 @@ import { setItem as syncSetItem, removeItem as syncRemoveItem } from './sync-sto
 import { parseEnglishDefinition } from './definition-utils.js';
 import { generateBookAudio, cancelBookAudio, downloadAudio } from './book-audio.js';
 import { translateBook, cancelTranslation } from './book-translator.js';
-import { translateBookWithOllama, cancelOllamaTranslation, exportAsMarkdown, downloadMarkdown } from './ollama-translator.js';
+import { translateBookWithOllama, cancelOllamaTranslation, exportAsMarkdown } from './ollama-translator.js';
 const TTS_MODEL = 'tts-1';
 const OPENAI_TTS_VOICES = [
   { value: 'alloy', label: 'Alloy', persona: 'Neutral and balanced' },
@@ -2534,7 +2534,7 @@ function setupBookGeneration() {
         const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'book';
         const title = state.fileName || 'Translated Book';
         const md = exportAsMarkdown(state.paragraphs, ollamaResult, title);
-        downloadMarkdown(md, baseName + '-translated.md');
+        downloadMarkdown(baseName + '-translated.md', md);
       } catch (err) {
         if (err.message !== 'Ollama translation cancelled') {
           alert('Ollama translation failed: ' + err.message);
