@@ -2556,7 +2556,10 @@ function setupBookGeneration() {
           }
         });
         const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'audiobook';
-        downloadAudio(result.blob, baseName + '.mp3');
+        const filename = baseName + '.mp3';
+        await pickOutputDirectory();
+        const savedPath = await saveFile(filename, result.blob);
+        alert('Audiobook saved:\n\n  \u2022 ' + savedPath);
       } catch (err) {
         if (err.message !== 'Audio generation cancelled') {
           alert('Audiobook generation failed: ' + err.message);
@@ -2629,7 +2632,10 @@ function setupBookGeneration() {
           }
         });
         const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'audiobook';
-        downloadAudio(result.blob, baseName + '-translated.mp3');
+        const filename = baseName + '-translated.mp3';
+        await pickOutputDirectory();
+        const savedPath = await saveFile(filename, result.blob);
+        alert('Translated audiobook saved:\n\n  \u2022 ' + savedPath);
       } catch (err) {
         if (err.message !== 'Audio generation cancelled') {
           alert('Translated audio generation failed: ' + err.message);
@@ -3218,14 +3224,48 @@ function renderNotes() {
   });
 }
 
-function downloadMarkdown(filename, content) {
-  const blob = new Blob([content], { type: 'text/markdown' });
+let _outputDirHandle = null;
+
+async function pickOutputDirectory() {
+  if (typeof window.showDirectoryPicker !== 'function') return null;
+  try {
+    _outputDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    return _outputDirHandle;
+  } catch (err) {
+    if (err.name !== 'AbortError') console.warn('Directory picker failed:', err);
+    return null;
+  }
+}
+
+async function saveToDirectory(dirHandle, filename, blob) {
+  const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(blob);
+  await writable.close();
+}
+
+async function saveFile(filename, blob) {
+  if (_outputDirHandle) {
+    try {
+      await saveToDirectory(_outputDirHandle, filename, blob);
+      return _outputDirHandle.name + '/' + filename;
+    } catch (err) {
+      console.warn('Directory write failed, falling back to download:', err);
+      _outputDirHandle = null;
+    }
+  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+  return 'Downloads/' + filename;
+}
+
+function downloadMarkdown(filename, content) {
+  const blob = new Blob([content], { type: 'text/markdown' });
+  return saveFile(filename, blob);
 }
 
 function escapeXml(text) {
@@ -3250,26 +3290,22 @@ function buildDocxBlob(paragraphTexts) {
 }
 
 function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+  return saveFile(filename, blob);
 }
 
 async function downloadTranslationFiles(originalParagraphs, translatedParagraphs, baseName, title) {
+  // Prompt for output directory (File System Access API)
+  await pickOutputDirectory();
+
   const files = [];
 
   // 1. Full translation markdown
   const fullMd = exportTranslationMarkdown(translatedParagraphs, title);
-  downloadMarkdown(baseName + '-translated.md', fullMd);
-  files.push(baseName + '-translated.md');
+  files.push(await downloadMarkdown(baseName + '-translated.md', fullMd));
 
   // 2. Bilingual markdown
   const bilingualMd = exportAsMarkdown(originalParagraphs, translatedParagraphs, title);
-  downloadMarkdown(baseName + '-bilingual.md', bilingualMd);
-  files.push(baseName + '-bilingual.md');
+  files.push(await downloadMarkdown(baseName + '-bilingual.md', bilingualMd));
 
   // 3. Full translation DOCX
   const transTexts = [];
@@ -3280,8 +3316,7 @@ async function downloadTranslationFiles(originalParagraphs, translatedParagraphs
   }
   const transDocx = await buildDocxBlob(transTexts);
   if (transDocx) {
-    downloadBlob(transDocx, baseName + '-translated.docx');
-    files.push(baseName + '-translated.docx');
+    files.push(await downloadBlob(transDocx, baseName + '-translated.docx'));
   }
 
   // 4. Bilingual DOCX
@@ -3299,8 +3334,7 @@ async function downloadTranslationFiles(originalParagraphs, translatedParagraphs
   }
   const biDocx = await buildDocxBlob(biTexts);
   if (biDocx) {
-    downloadBlob(biDocx, baseName + '-bilingual.docx');
-    files.push(baseName + '-bilingual.docx');
+    files.push(await downloadBlob(biDocx, baseName + '-bilingual.docx'));
   }
 
   return files;
@@ -3371,12 +3405,9 @@ async function exportToDocx() {
 
   const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
   const baseName = state.fileName.replace(/\.[^.]+$/, '');
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${baseName}.docx`;
-  a.click();
-  URL.revokeObjectURL(url);
+  await pickOutputDirectory();
+  const savedPath = await saveFile(`${baseName}.docx`, blob);
+  alert('Exported:\n\n  \u2022 ' + savedPath);
   } catch (err) {
     console.error('Export to DOCX failed:', err);
     alert('Export failed. Please try again.');
