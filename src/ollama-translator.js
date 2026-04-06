@@ -32,18 +32,32 @@ export async function translateWithOllama(text, options = {}) {
 
   const prompt = `Translate the following text from ${fromLang} to ${toLang}. Return only the translation, no explanations.\n\n${text}`;
 
-  const res = await fetch(ollamaUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model, prompt, stream: false }),
-    signal,
-  });
+  let res;
+  try {
+    res = await fetch(ollamaUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model, prompt, stream: false }),
+      signal,
+    });
+  } catch (err) {
+    if (err.name === 'AbortError') throw err;
+    throw new Error(
+      'Cannot reach Ollama at ' + ollamaUrl + '.\n' +
+      'Ensure Ollama is running (ollama serve) and CORS is configured:\n' +
+      '  OLLAMA_ORIGINS="' + (typeof location !== 'undefined' ? location.origin : '*') + '" ollama serve'
+    );
+  }
 
-  if (!res.ok) throw new Error(`Ollama request failed: ${res.status}`);
+  if (!res.ok) {
+    let body = '';
+    try { body = (await res.text()).slice(0, 200); } catch (_) { /* ignore */ }
+    throw new Error('Ollama returned ' + res.status + (body ? ': ' + body : ''));
+  }
 
   const data = await res.json();
   if (typeof data.response !== 'string') {
-    throw new Error(`Unexpected Ollama response: ${JSON.stringify(data).slice(0, 200)}`);
+    throw new Error('Unexpected Ollama response: ' + JSON.stringify(data).slice(0, 200));
   }
   return data.response.trim();
 }
