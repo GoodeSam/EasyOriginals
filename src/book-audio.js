@@ -14,7 +14,9 @@ const EDGE_TTS_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
 const EDGE_TTS_DEFAULT_VOICE = 'en-US-AriaNeural';
 const SEC_MS_GEC_VERSION = '1-130.0.2849.68';
 
-const SYNTH_TIMEOUT_MS = 30000;
+const SYNTH_TIMEOUT_BASE_MS = 30000;
+const SYNTH_TIMEOUT_PER_CHAR_MS = 15;
+const SYNTH_MAX_RETRIES = 2;
 
 let _cancelled = false;
 let _activeWebSocket = null;
@@ -54,10 +56,11 @@ export async function synthesizeParagraph(text, options = {}) {
     _activeWebSocket = ws;
     ws.binaryType = 'arraybuffer';
     const audioChunks = [];
+    const timeoutMs = SYNTH_TIMEOUT_BASE_MS + text.length * SYNTH_TIMEOUT_PER_CHAR_MS;
     const timeout = setTimeout(() => {
       ws.close();
       reject(new Error('Edge TTS request timed out'));
-    }, SYNTH_TIMEOUT_MS);
+    }, timeoutMs);
 
     ws.onopen = () => {
       ws.send(
@@ -151,7 +154,15 @@ export async function generateBookAudio(paragraphs, options = {}) {
     const text = para.sentences.join(' ');
     if (!text.trim()) continue;
 
-    const blob = await synthesizeParagraph(text, { voice, speechRate });
+    let blob;
+    for (let attempt = 0; attempt <= SYNTH_MAX_RETRIES; attempt++) {
+      try {
+        blob = await synthesizeParagraph(text, { voice, speechRate });
+        break;
+      } catch (err) {
+        if (attempt === SYNTH_MAX_RETRIES || _cancelled) throw err;
+      }
+    }
     audioBlobs.push(blob);
 
     if (onProgress) onProgress(i + 1, total);
