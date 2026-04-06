@@ -108,14 +108,15 @@ export function createSettingsPanel() {
   });
   voiceSelect.value = settings.edgeTtsVoice || 'en-US-AriaNeural';
 
-  // Populate translated audio voice options (same voice list)
-  EDGE_TTS_VOICES.forEach(v => {
+  // Populate translated audio voice options (Chinese voices only)
+  EDGE_TTS_VOICES.filter(v => v.value.startsWith('zh-')).forEach(v => {
     const opt = document.createElement('option');
     opt.value = v.value;
     opt.textContent = v.label;
     translatedVoiceSelect.appendChild(opt);
   });
-  translatedVoiceSelect.value = settings.translatedTtsVoice || 'zh-CN-XiaoxiaoNeural';
+  const savedTransVoice = settings.translatedTtsVoice || '';
+  translatedVoiceSelect.value = savedTransVoice.startsWith('zh-') ? savedTransVoice : 'zh-CN-XiaoxiaoNeural';
 
   // Populate OpenAI TTS voice options
   const OPENAI_TTS_VOICES = window.OPENAI_TTS_VOICES || [];

@@ -2480,6 +2480,10 @@ async function playEdgeTTS(text) {
       if (typeof event.data === 'string') {
         if (event.data.includes('Path:turn.end')) {
           ws.close();
+          if (audioChunks.length === 0) {
+            reject(new Error('No audio received. The voice language may not match the text.'));
+            return;
+          }
           const blob = new Blob(audioChunks, { type: 'audio/mpeg' });
           const url = URL.createObjectURL(blob);
           const audio = new Audio(url);
@@ -2580,6 +2584,7 @@ function setupBookGeneration() {
   if (generateAudiobookBtn) {
     generateAudiobookBtn.addEventListener('click', async () => {
       if (!state.paragraphs || state.paragraphs.length === 0) return;
+      await ensureSettings();
       audiobookProgress.style.display = '';
       audiobookStatus.textContent = 'Preparing...';
       audiobookProgressBar.style.width = '0%';
@@ -2655,6 +2660,7 @@ function setupBookGeneration() {
   if (generateTranslatedAudioBtn) {
     generateTranslatedAudioBtn.addEventListener('click', async () => {
       if (!translatedParagraphs || translatedParagraphs.length === 0) return;
+      await ensureSettings();
       audiobookProgress.style.display = '';
       audiobookStatus.textContent = 'Preparing translated audio...';
       audiobookProgressBar.style.width = '0%';

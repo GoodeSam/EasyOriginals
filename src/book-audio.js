@@ -156,7 +156,7 @@ export function concatenateAudioBlobs(blobs) {
  * @returns {Promise<{blob: Blob, paragraphCount: number}>}
  */
 function detectChinese(text) {
-  return /[\u4e00-\u9fff]/.test(text);
+  return /[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/.test(text);
 }
 
 export async function generateBookAudio(paragraphs, options = {}) {
@@ -164,29 +164,31 @@ export async function generateBookAudio(paragraphs, options = {}) {
   const { voice, speechRate, onProgress } = options;
   const voiceLang = langFromVoice(voice || EDGE_TTS_DEFAULT_VOICE);
 
-  // Check for language mismatch on first non-empty paragraph
-  const textParas = paragraphs.filter(p => p.type !== 'image');
-  for (const p of textParas) {
+  // Scan all text paragraphs to detect language mismatch
+  const textParagraphs = paragraphs.filter(p => p.type !== 'image');
+  let hasChinese = false;
+  let hasNonChinese = false;
+  for (const p of textParagraphs) {
     const sample = p.sentences.join(' ').trim();
     if (!sample) continue;
-    const isChinese = detectChinese(sample);
-    if (isChinese && !voiceLang.startsWith('zh')) {
-      throw new Error(
-        'Chinese text detected but the selected voice is ' + (voice || EDGE_TTS_DEFAULT_VOICE) + ' (' + voiceLang + ').\n' +
-        'Edge TTS cannot speak Chinese with an English voice.\n' +
-        'Please select a Chinese voice (e.g. zh-CN-XiaoxiaoNeural) in Settings.'
-      );
-    }
-    if (!isChinese && voiceLang.startsWith('zh')) {
-      throw new Error(
-        'English text detected but the selected voice is ' + (voice || EDGE_TTS_DEFAULT_VOICE) + ' (' + voiceLang + ').\n' +
-        'Please select an English voice in Settings for English content.'
-      );
-    }
-    break;
+    if (detectChinese(sample)) hasChinese = true;
+    else hasNonChinese = true;
+    if (hasChinese && hasNonChinese) break;
+  }
+  if (hasChinese && !voiceLang.startsWith('zh')) {
+    throw new Error(
+      'Chinese text detected but the selected voice is ' + (voice || EDGE_TTS_DEFAULT_VOICE) + ' (' + voiceLang + ').\n' +
+      'Edge TTS cannot speak Chinese with an English voice.\n' +
+      'Please select a Chinese voice (e.g. zh-CN-XiaoxiaoNeural) in Settings.'
+    );
+  }
+  if (!hasChinese && hasNonChinese && voiceLang.startsWith('zh')) {
+    throw new Error(
+      'English text detected but the selected voice is ' + (voice || EDGE_TTS_DEFAULT_VOICE) + ' (' + voiceLang + ').\n' +
+      'Please select an English voice in Settings for English content.'
+    );
   }
   const audioBlobs = [];
-  const textParagraphs = paragraphs.filter(p => p.type !== 'image');
   const total = textParagraphs.length;
 
   for (let i = 0; i < textParagraphs.length; i++) {
