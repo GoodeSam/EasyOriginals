@@ -3,7 +3,7 @@ import { loadSettings as loadStorageSettings, DEFAULT_MODEL } from './storage.js
 import { createSettingsPanel } from './settings-ui.js';
 import { setItem as syncSetItem, removeItem as syncRemoveItem } from './sync-storage.js';
 import { parseEnglishDefinition } from './definition-utils.js';
-import { generateBookAudio, cancelBookAudio, downloadAudio } from './book-audio.js';
+import { generateBookAudio, cancelBookAudio, downloadAudio, detectContentLanguage, voiceForLanguage } from './book-audio.js';
 import { translateBook, cancelTranslation } from './book-translator.js';
 import { translateBookWithOllama, cancelOllamaTranslation, exportAsMarkdown, exportTranslationMarkdown, checkOllamaConnection } from './ollama-translator.js';
 const TTS_MODEL = 'tts-1';
@@ -2585,12 +2585,14 @@ function setupBookGeneration() {
     generateAudiobookBtn.addEventListener('click', async () => {
       if (!state.paragraphs || state.paragraphs.length === 0) return;
       await ensureSettings();
+      const contentLang = detectContentLanguage(state.paragraphs);
+      const autoVoice = voiceForLanguage(contentLang, state.edgeTtsVoice);
       audiobookProgress.style.display = '';
-      audiobookStatus.textContent = 'Preparing...';
+      audiobookStatus.textContent = 'Preparing... (' + autoVoice + ')';
       audiobookProgressBar.style.width = '0%';
       try {
         const result = await generateBookAudio(state.paragraphs, {
-          voice: state.edgeTtsVoice,
+          voice: autoVoice,
           speechRate: state.speechRate,
           onProgress(current, total) {
             const pct = Math.round((current / total) * 100);
@@ -2661,11 +2663,12 @@ function setupBookGeneration() {
     generateTranslatedAudioBtn.addEventListener('click', async () => {
       if (!translatedParagraphs || translatedParagraphs.length === 0) return;
       await ensureSettings();
+      const transLang = detectContentLanguage(translatedParagraphs);
+      const translatedVoice = voiceForLanguage(transLang, state.translatedTtsVoice);
       audiobookProgress.style.display = '';
-      audiobookStatus.textContent = 'Preparing translated audio...';
+      audiobookStatus.textContent = 'Preparing translated audio... (' + translatedVoice + ')';
       audiobookProgressBar.style.width = '0%';
       try {
-        const translatedVoice = state.translatedTtsVoice || 'zh-CN-XiaoxiaoNeural';
         const result = await generateBookAudio(translatedParagraphs, {
           voice: translatedVoice,
           speechRate: state.speechRate,

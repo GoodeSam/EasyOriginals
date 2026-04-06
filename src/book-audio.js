@@ -159,6 +159,43 @@ function detectChinese(text) {
   return /[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/.test(text);
 }
 
+/**
+ * Detect the dominant language of content by sampling paragraphs.
+ * @param {Array} paragraphs - Paragraph objects with sentences arrays.
+ * @returns {'zh'|'en'} Detected language code.
+ */
+export function detectContentLanguage(paragraphs) {
+  let chineseChars = 0;
+  let totalChars = 0;
+  for (const p of paragraphs) {
+    if (p.type === 'image') continue;
+    const text = p.sentences.join(' ');
+    for (const ch of text) {
+      if (/\s/.test(ch)) continue;
+      totalChars++;
+      if (detectChinese(ch)) chineseChars++;
+    }
+    if (totalChars >= 500) break;
+  }
+  return chineseChars > totalChars * 0.3 ? 'zh' : 'en';
+}
+
+/**
+ * Return the best default voice for a detected language.
+ * Prefers the user's configured voice if it matches, otherwise falls back to a default.
+ * @param {'zh'|'en'} lang - Detected language.
+ * @param {string} [currentVoice] - User's currently configured voice.
+ * @returns {string} Voice name matching the language.
+ */
+export function voiceForLanguage(lang, currentVoice) {
+  if (currentVoice) {
+    const voiceLang = langFromVoice(currentVoice);
+    if (lang === 'zh' && voiceLang.startsWith('zh')) return currentVoice;
+    if (lang === 'en' && voiceLang.startsWith('en')) return currentVoice;
+  }
+  return lang === 'zh' ? 'zh-CN-XiaoxiaoNeural' : 'en-US-AriaNeural';
+}
+
 export async function generateBookAudio(paragraphs, options = {}) {
   _cancelled = false;
   const { voice, speechRate, onProgress } = options;
