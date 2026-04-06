@@ -148,26 +148,28 @@ describe('toolbar order: grouped by function', () => {
 
   test('all toolbar buttons are present', () => {
     const ids = [
-      'searchToggle', 'bookmarkBtn', 'autoPlayBtn',
-      'wordListToggle', 'historyToggle', 'notesToggle',
+      'searchToggle', 'bookmarkBtn', 'autoPlayBtn', 'gestureModeBtn',
+      'wordListToggle', 'notesToggle', 'historyToggle',
       'fontDecrease', 'fontIncrease', 'widthDecrease', 'widthIncrease',
-      'gestureModeBtn', 'exportDocxBtn', 'settingsToggle', 'helpBtn',
-      'pageInfo',
+      'translateBookBtn', 'ollamaTranslateBtn', 'generateAudiobookBtn',
+      'generateTranslatedAudioBtn', 'exportDocxBtn',
+      'settingsToggle', 'helpBtn', 'pageInfo',
     ];
     for (const id of ids) {
       expect(actions).toMatch(new RegExp(`id="${id}"`));
     }
   });
 
-  // Group 1 — Reading actions: search, bookmark, autoPlay
-  test('reading actions group: search → bookmark → autoPlay', () => {
+  // Group 1 — Reading: search, bookmark, autoPlay, gestureMode
+  test('reading group: search → bookmark → autoPlay → gesture', () => {
     expect(pos('searchToggle')).toBeLessThan(pos('bookmarkBtn'));
     expect(pos('bookmarkBtn')).toBeLessThan(pos('autoPlayBtn'));
+    expect(pos('autoPlayBtn')).toBeLessThan(pos('gestureModeBtn'));
   });
 
   // Group 2 — Content panels: wordList, notes, history
-  test('content panels group: wordList → notes → history, after reading actions', () => {
-    expect(pos('autoPlayBtn')).toBeLessThan(pos('wordListToggle'));
+  test('content panels group: wordList → notes → history, after reading', () => {
+    expect(pos('gestureModeBtn')).toBeLessThan(pos('wordListToggle'));
     expect(pos('wordListToggle')).toBeLessThan(pos('notesToggle'));
     expect(pos('notesToggle')).toBeLessThan(pos('historyToggle'));
   });
@@ -194,19 +196,32 @@ describe('toolbar order: grouped by function', () => {
     expect(readerSrc).not.toMatch(/notesToggle\.classList\.(add|remove)\(['"]visible['"]\)/);
   });
 
-  // Group 3 — Display: font, width, theme (then gestureMode)
-  test('display group: font → width → theme → gesture, after panels', () => {
+  // Group 3 — Display: font, width, theme
+  test('display group: font → width → theme, after panels', () => {
     expect(pos('historyToggle')).toBeLessThan(pos('fontDecrease'));
     expect(pos('fontIncrease')).toBeLessThan(pos('widthDecrease'));
-    expect(pos('widthIncrease')).toBeLessThan(pos('gestureModeBtn'));
   });
 
-  // Group 4 — Utility: export, settings, help, page info (rightmost)
-  test('utility group: export → settings → help → page, at end', () => {
-    expect(pos('gestureModeBtn')).toBeLessThan(pos('exportDocxBtn'));
+  // Group 4 — Actions: translate, ollama, audiobook, translated audio, export
+  test('actions group: translate → ollama → audiobook → translatedAudio → export, after display', () => {
+    expect(pos('widthIncrease')).toBeLessThan(pos('translateBookBtn'));
+    expect(pos('translateBookBtn')).toBeLessThan(pos('ollamaTranslateBtn'));
+    expect(pos('ollamaTranslateBtn')).toBeLessThan(pos('generateAudiobookBtn'));
+    expect(pos('generateAudiobookBtn')).toBeLessThan(pos('generateTranslatedAudioBtn'));
+    expect(pos('generateTranslatedAudioBtn')).toBeLessThan(pos('exportDocxBtn'));
+  });
+
+  // Group 5 — System: settings, help, page info (rightmost)
+  test('system group: settings → help → page, at end', () => {
     expect(pos('exportDocxBtn')).toBeLessThan(pos('settingsToggle'));
     expect(pos('settingsToggle')).toBeLessThan(pos('helpBtn'));
     expect(pos('helpBtn')).toBeLessThan(pos('pageInfo'));
+  });
+
+  // Groups are separated by toolbar-divider elements
+  test('toolbar groups are separated by dividers', () => {
+    const dividerCount = (actions.match(/toolbar-divider/g) || []).length;
+    expect(dividerCount).toBeGreaterThanOrEqual(4);
   });
 });
 

@@ -2196,5 +2196,44 @@ ushed to GitHub: 285cecd on main.
 
 \>> 使用TDD实现：借鉴 [https\://github.com/GoodeSam/tepub](https://github.com/GoodeSam/tepub) 可以将上传的书籍，全书使用Edge的TTS免费生成原文的音频版，全文的翻译，译文的音频版。 Implement using TDD the ability to upload books and generate audio versions of the original text and translations using Edge's free TTS, referencing [https\://github.com/GoodeSam/tepub](https://github.com/GoodeSam/tepub) for guidance on processing full-book content and generating translated versions.
 
-\>> 使用TDD实现：借鉴 [https\://github.com/GoodeSam/tepub   可以将上传的书籍，利用免费的Ollama模型，提供可以下载的全文翻译的markdown格式。在toolbar上有相应的图标](https://github.com/GoodeSam/tepub)
+\>> 使用TDD实现：借鉴 [https\://github.com/GoodeSam/tepub   可以将上传的书籍，利用免费的Ollama模型，提供可以下载的全文翻译的markdown格式。在toolbar上有相应的图标。   ](https://github.com/GoodeSam/tepub)All done. Here's what was implemented:
+
+New module: src/ollama-translator.js
+
+- translateWithOllama(text, options) — calls local Ollama at  
+  [http\://localhost:11434/api/generate](http://localhost:11434/api/generate) with configurable model  
+  (default: llama3)
+- translateBookWithOllama(paragraphs, options) — translates all  
+  paragraphs with progress tracking and cancellation
+- cancelOllamaTranslation() — stops in-progress translation
+- exportAsMarkdown(original, translated, title) — generates  
+  bilingual markdown with original/translated pairs
+- downloadMarkdown(content, filename) — triggers .md file  
+  download
+
+UI additions (index.html)
+
+- Robot icon button (ollamaTranslateBtn) in the toolbar next to  
+  the existing Translate Book button
+- Progress modal with bar, status text, and cancel button
+- CSP updated to allow [http\://localhost:11434](http://localhost:11434) connections
+
+Integration (reader.js)
+
+- Imports and window-exposes the new module
+- Click handler: translates the book via Ollama, then  
+  auto-downloads the bilingual markdown
+
+Tests: 35 new tests in tests/ollama-translator.test.js covering
+exports, API details, book translation logic, markdown export,  
+download helper, UI elements, CSP, and reader.js integration.
+Full suite: 558 tests passing.
+
+
+
+Pushed to GitHub. Commit aca44e5 is now on origin/main.
+
+\>> 优化toolbar的排列。 Optimize toolbar arrangement.
+
+
 

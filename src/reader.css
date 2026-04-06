@@ -132,6 +132,7 @@ body {
   text-overflow: ellipsis;
 }
 .top-bar-actions { display: flex; align-items: center; gap: 4px; }
+.toolbar-divider { width: 1px; height: 20px; background: currentColor; opacity: 0.2; margin: 0 4px; flex-shrink: 0; }
 /* ===== Theme Picker ===== */
 .theme-picker {
   display: flex;
