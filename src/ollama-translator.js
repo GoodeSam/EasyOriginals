@@ -121,8 +121,9 @@ export function cancelOllamaTranslation() {
  * @returns {Promise<{ok: boolean, error?: string}>}
  */
 export async function checkOllamaConnection(baseUrl = 'http://localhost:11434') {
+  const apiUrl = baseUrl.replace(/\/+$/, '') + '/api/tags';
   try {
-    const res = await fetch(baseUrl, { method: 'GET' });
+    const res = await fetch(apiUrl, { method: 'GET' });
     if (res.ok) return { ok: true };
     if (res.status === 403) {
       return { ok: false, error: 'CORS blocked (403). Run: OLLAMA_ORIGINS="' + location.origin + '" ollama serve' };
@@ -130,8 +131,8 @@ export async function checkOllamaConnection(baseUrl = 'http://localhost:11434') 
     return { ok: false, error: `Server returned ${res.status}` };
   } catch (err) {
     const msg = err.message || String(err);
-    if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
-      return { ok: false, error: 'Cannot reach Ollama. Either it is not running, or CORS is blocking the request.' };
+    if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('CORS')) {
+      return { ok: false, error: 'Cannot reach Ollama. Either it is not running, or CORS is blocking the request.\nFix: OLLAMA_ORIGINS="' + location.origin + '" ollama serve' };
     }
     return { ok: false, error: msg };
   }
