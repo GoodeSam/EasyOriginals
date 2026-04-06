@@ -12,25 +12,48 @@
 
 const DEFAULT_OLLAMA_URL = 'http://localhost:11434/api/generate';
 const DEFAULT_MODEL = 'llama3';
+const OLLAMA_TIMEOUT_BASE_MS = 60000;
+const OLLAMA_TIMEOUT_PER_CHAR_MS = 30;
+const OLLAMA_MAX_RETRIES = 2;
+const OLLAMA_RETRY_DELAY_MS = 2000;
 
 let _cancelled = false;
 let _abortController = null;
+
+function isRetryable(err, status) {
+  if (err && (err.name === 'AbortError')) return false;
+  if (status && [408, 429, 500, 502, 503, 504].includes(status)) return true;
+  if (err && (err.name === 'TypeError' || err.name === 'SyntaxError')) return true;
+  return false;
+}
 
 /**
  * Translate a single text using the local Ollama API.
  *
  * @param {string} text - The text to translate.
- * @param {object} [options] - Options: model, fromLang, toLang, signal.
+ * @param {object} [options] - Options: model, fromLang, toLang, signal, ollamaUrl.
  * @returns {Promise<string>} Translated text.
  */
 export async function translateWithOllama(text, options = {}) {
   const model = options.model || DEFAULT_MODEL;
   const fromLang = options.fromLang || 'English';
   const toLang = options.toLang || 'Chinese';
-  const signal = options.signal;
+  const externalSignal = options.signal;
   const ollamaUrl = options.ollamaUrl || DEFAULT_OLLAMA_URL;
 
   const prompt = `Translate the following text from ${fromLang} to ${toLang}. Return only the translation, no explanations.\n\n${text}`;
+
+  const timeoutMs = OLLAMA_TIMEOUT_BASE_MS + text.length * OLLAMA_TIMEOUT_PER_CHAR_MS;
+  const timeoutCtrl = new AbortController();
+  const timer = setTimeout(() => timeoutCtrl.abort(), timeoutMs);
+
+  // Combine external cancel signal with per-request timeout
+  const signal = externalSignal
+    ? (externalSignal.aborted ? timeoutCtrl.signal : (() => {
+        externalSignal.addEventListener('abort', () => timeoutCtrl.abort(), { once: true });
+        return timeoutCtrl.signal;
+      })())
+    : timeoutCtrl.signal;
 
   let res;
   try {
@@ -41,21 +64,33 @@ export async function translateWithOllama(text, options = {}) {
       signal,
     });
   } catch (err) {
-    if (err.name === 'AbortError') throw err;
-    throw new Error(
-      'Cannot reach Ollama at ' + ollamaUrl + '.\n' +
-      'Ensure Ollama is running (ollama serve) and CORS is configured:\n' +
-      '  OLLAMA_ORIGINS="' + (typeof location !== 'undefined' ? location.origin : '*') + '" ollama serve'
-    );
+    clearTimeout(timer);
+    if (externalSignal && externalSignal.aborted) {
+      const abortErr = new Error('Ollama translation cancelled');
+      abortErr.name = 'AbortError';
+      throw abortErr;
+    }
+    if (err.name === 'AbortError') throw new Error('Ollama request timed out after ' + Math.round(timeoutMs / 1000) + 's');
+    throw new Error('Ollama fetch failed: ' + err.message);
   }
+  clearTimeout(timer);
 
   if (!res.ok) {
     let body = '';
     try { body = (await res.text()).slice(0, 200); } catch (_) { /* ignore */ }
-    throw new Error('Ollama returned ' + res.status + (body ? ': ' + body : ''));
+    const httpErr = new Error('Ollama returned ' + res.status + (body ? ': ' + body : ''));
+    httpErr.status = res.status;
+    throw httpErr;
   }
 
-  const data = await res.json();
+  let data;
+  try {
+    data = await res.json();
+  } catch (parseErr) {
+    const synErr = new Error('Ollama returned invalid JSON');
+    synErr.name = 'SyntaxError';
+    throw synErr;
+  }
   if (typeof data.response !== 'string') {
     throw new Error('Unexpected Ollama response: ' + JSON.stringify(data).slice(0, 200));
   }
@@ -63,10 +98,10 @@ export async function translateWithOllama(text, options = {}) {
 }
 
 /**
- * Translate all paragraphs in a book using Ollama.
+ * Translate all paragraphs in a book using Ollama with retry logic.
  *
  * @param {Array} paragraphs - Array of paragraph objects from state.paragraphs.
- * @param {object} options - Options: model, fromLang, toLang, onProgress(current, total).
+ * @param {object} options - Options: model, fromLang, toLang, ollamaUrl, onProgress(current, total).
  * @returns {Promise<Array>} Array of translated paragraph objects.
  */
 export async function translateBookWithOllama(paragraphs, options = {}) {
@@ -96,7 +131,21 @@ export async function translateBookWithOllama(paragraphs, options = {}) {
       continue;
     }
 
-    const translated = await translateWithOllama(text, { model, fromLang, toLang, ollamaUrl, signal: _abortController.signal });
+    let translated;
+    for (let attempt = 0; attempt <= OLLAMA_MAX_RETRIES; attempt++) {
+      if (_cancelled) throw new Error('Ollama translation cancelled');
+      try {
+        translated = await translateWithOllama(text, { model, fromLang, toLang, ollamaUrl, signal: _abortController.signal });
+        break;
+      } catch (err) {
+        if (err.name === 'AbortError' || _cancelled) throw err;
+        if (attempt < OLLAMA_MAX_RETRIES && isRetryable(err, err.status)) {
+          await new Promise(r => setTimeout(r, OLLAMA_RETRY_DELAY_MS * (attempt + 1)));
+          continue;
+        }
+        throw new Error('Paragraph ' + (textIndex + 1) + '/' + total + ' failed: ' + err.message);
+      }
+    }
     translatedParagraphs.push({ sentences: [translated] });
     textIndex++;
 

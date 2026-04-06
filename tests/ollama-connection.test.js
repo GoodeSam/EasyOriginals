@@ -54,7 +54,7 @@ describe('translateWithOllama error handling', () => {
     const fn = ollamaSrc.match(/function translateWithOllama[\s\S]*?\n\}/);
     expect(fn).not.toBeNull();
     expect(fn[0]).toMatch(/catch/);
-    expect(fn[0]).toMatch(/OLLAMA_ORIGINS/);
+    expect(fn[0]).toMatch(/fetch failed|timed out/);
   });
 
   test('includes the Ollama URL in error message', () => {

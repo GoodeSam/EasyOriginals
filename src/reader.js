@@ -2696,6 +2696,8 @@ function setupBookGeneration() {
   if (ollamaTranslateBtn) {
     ollamaTranslateBtn.addEventListener('click', async () => {
       if (!state.paragraphs || state.paragraphs.length === 0) return;
+      if (ollamaTranslateBtn.disabled) return;
+      ollamaTranslateBtn.disabled = true;
       await ensureSettings();
 
       const ollamaBaseUrl = state.ollamaUrl || 'http://localhost:11434';
@@ -2706,8 +2708,10 @@ function setupBookGeneration() {
       const check = await checkOllamaConnection(ollamaBaseUrl);
       if (!check.ok) {
         ollamaTranslationProgress.style.display = 'none';
+        ollamaTranslateBtn.disabled = false;
         showMessage(
           'Cannot connect to Ollama at ' + ollamaBaseUrl + '.\n\n' +
+          (check.error ? 'Error: ' + check.error + '\n\n' : '') +
           'To use Ollama translation:\n' +
           '1. Install Ollama: https://ollama.com\n' +
           '2. Run: ollama serve\n' +
@@ -2746,6 +2750,7 @@ function setupBookGeneration() {
         }
       } finally {
         ollamaTranslationProgress.style.display = 'none';
+        ollamaTranslateBtn.disabled = false;
       }
     });
   }
