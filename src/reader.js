@@ -2716,7 +2716,7 @@ function setupBookGeneration() {
       ollamaTranslationStatus.textContent = 'Preparing...';
 
       try {
-        const result = await translateBookWithOllama(state.paragraphs, {
+        translatedParagraphs = await translateBookWithOllama(state.paragraphs, {
           ollamaUrl: ollamaBaseUrl + '/api/generate',
           model: state.ollamaModel,
           onProgress(current, total) {
@@ -2725,10 +2725,11 @@ function setupBookGeneration() {
             ollamaTranslationStatus.textContent = `Ollama (${modelLabel}): paragraph ${current} of ${total}`;
           },
         });
+        generateTranslatedAudioBtn.style.display = '';
         const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'book';
         const title = state.fileName || 'Translated Book';
         ollamaTranslationStatus.textContent = 'Exporting files...';
-        const files = await downloadTranslationFiles(state.paragraphs, result, baseName, title);
+        const files = await downloadTranslationFiles(state.paragraphs, translatedParagraphs, baseName, title);
         showMessage('Ollama translation complete! Files saved to Downloads:\n\n' + files.map(f => '  \u2022 ' + f).join('\n'));
       } catch (err) {
         if (err.message !== 'Ollama translation cancelled' && err.name !== 'AbortError') {

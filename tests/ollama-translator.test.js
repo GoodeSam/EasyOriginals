@@ -249,6 +249,31 @@ describe('reader.js integrates ollama-translator', () => {
   });
 });
 
+// ─── Translated audio integration ───────────────────────────────────
+
+describe('translation stores result for audio generation', () => {
+  test('globe icon handler stores result in translatedParagraphs', () => {
+    // The translateBookBtn handler must assign to translatedParagraphs
+    expect(readerSrc).toMatch(/translatedParagraphs\s*=\s*await\s+translateBook\s*\(/);
+  });
+
+  test('robot icon handler stores result in translatedParagraphs', () => {
+    // The ollamaTranslateBtn handler must assign to translatedParagraphs
+    expect(readerSrc).toMatch(/translatedParagraphs\s*=\s*await\s+translateBookWithOllama\s*\(/);
+  });
+
+  test('both handlers show generateTranslatedAudioBtn after translation', () => {
+    // Count occurrences of showing the button
+    const matches = readerSrc.match(/generateTranslatedAudioBtn\.style\.display\s*=\s*['"]{2}/g);
+    expect(matches).not.toBeNull();
+    expect(matches.length).toBeGreaterThanOrEqual(2);
+  });
+
+  test('translated audio uses Chinese voice by default', () => {
+    expect(readerSrc).toMatch(/translatedTtsVoice.*zh-CN|zh-CN.*translatedTtsVoice/);
+  });
+});
+
 // ─── UI elements ────────────────────────────────────────────────────
 
 describe('Ollama translation UI', () => {
