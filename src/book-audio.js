@@ -96,6 +96,15 @@ export async function synthesizeParagraph(text, options = {}) {
           clearTimeout(timeout);
           _activeWebSocket = null;
           ws.close();
+          if (audioChunks.length === 0) {
+            reject(new Error(
+              'Edge TTS returned no audio for voice "' + voice + '".\n' +
+              'This usually means the text language does not match the voice language.\n' +
+              'Voice language: ' + langFromVoice(voice) + '\n' +
+              'Try selecting a voice that matches the text language in Settings.'
+            ));
+            return;
+          }
           const blob = new Blob(audioChunks, { type: 'audio/mpeg' });
           resolve(blob);
         }
@@ -146,9 +155,36 @@ export function concatenateAudioBlobs(blobs) {
  * @param {object} options - Options: voice, speechRate, onProgress(current, total).
  * @returns {Promise<{blob: Blob, paragraphCount: number}>}
  */
+function detectChinese(text) {
+  return /[\u4e00-\u9fff]/.test(text);
+}
+
 export async function generateBookAudio(paragraphs, options = {}) {
   _cancelled = false;
   const { voice, speechRate, onProgress } = options;
+  const voiceLang = langFromVoice(voice || EDGE_TTS_DEFAULT_VOICE);
+
+  // Check for language mismatch on first non-empty paragraph
+  const textParas = paragraphs.filter(p => p.type !== 'image');
+  for (const p of textParas) {
+    const sample = p.sentences.join(' ').trim();
+    if (!sample) continue;
+    const isChinese = detectChinese(sample);
+    if (isChinese && !voiceLang.startsWith('zh')) {
+      throw new Error(
+        'Chinese text detected but the selected voice is ' + (voice || EDGE_TTS_DEFAULT_VOICE) + ' (' + voiceLang + ').\n' +
+        'Edge TTS cannot speak Chinese with an English voice.\n' +
+        'Please select a Chinese voice (e.g. zh-CN-XiaoxiaoNeural) in Settings.'
+      );
+    }
+    if (!isChinese && voiceLang.startsWith('zh')) {
+      throw new Error(
+        'English text detected but the selected voice is ' + (voice || EDGE_TTS_DEFAULT_VOICE) + ' (' + voiceLang + ').\n' +
+        'Please select an English voice in Settings for English content.'
+      );
+    }
+    break;
+  }
   const audioBlobs = [];
   const textParagraphs = paragraphs.filter(p => p.type !== 'image');
   const total = textParagraphs.length;

@@ -136,6 +136,51 @@ describe('generateBookAudio', () => {
   });
 });
 
+// ─── Empty audio detection ─────────────────────────────────────────
+
+describe('empty audio detection', () => {
+  test('synthesizeParagraph rejects when no audio chunks received', () => {
+    const fn = bookAudioSrc.match(/function synthesizeParagraph[\s\S]*?\n\}/);
+    expect(fn).not.toBeNull();
+    expect(fn[0]).toMatch(/audioChunks\.length\s*===\s*0/);
+  });
+
+  test('error message mentions voice and language mismatch', () => {
+    const fn = bookAudioSrc.match(/function synthesizeParagraph[\s\S]*?\n\}/);
+    expect(fn).not.toBeNull();
+    expect(fn[0]).toMatch(/language.*match|match.*language/i);
+  });
+});
+
+// ─── Language mismatch detection ───────────────────────────────────
+
+describe('language mismatch detection', () => {
+  test('generateBookAudio detects Chinese text', () => {
+    const fn = bookAudioSrc.match(/function generateBookAudio[\s\S]*?\n\}/);
+    expect(fn).not.toBeNull();
+    expect(fn[0]).toMatch(/detectChinese|[\u4e00-\u9fff]/);
+  });
+
+  test('throws when Chinese text is used with English voice', () => {
+    const fn = bookAudioSrc.match(/function generateBookAudio[\s\S]*?\n\}/);
+    expect(fn).not.toBeNull();
+    expect(fn[0]).toMatch(/Chinese text detected/);
+  });
+
+  test('throws when English text is used with Chinese voice', () => {
+    const fn = bookAudioSrc.match(/function generateBookAudio[\s\S]*?\n\}/);
+    expect(fn).not.toBeNull();
+    expect(fn[0]).toMatch(/English text detected/);
+  });
+
+  test('detectChinese helper checks for CJK characters', () => {
+    expect(bookAudioSrc).toMatch(/function detectChinese/);
+    const fn = bookAudioSrc.match(/function detectChinese[\s\S]*?\n\}/);
+    expect(fn).not.toBeNull();
+    expect(fn[0]).toMatch(/\\u4e00/);
+  });
+});
+
 // ─── concatenateAudioBlobs ──────────────────────────────────────────
 
 describe('concatenateAudioBlobs', () => {
