@@ -117,7 +117,7 @@ export async function checkOllamaConnection(baseUrl = 'http://localhost:11434') 
 }
 
 /**
- * Export original and translated paragraphs as a bilingual markdown string.
+ * Export as bilingual markdown (original + translated interleaved).
  *
  * @param {Array} originalParagraphs - Original paragraph objects.
  * @param {Array} translatedParagraphs - Translated paragraph objects.
@@ -141,6 +141,25 @@ export function exportAsMarkdown(originalParagraphs, translatedParagraphs, title
     lines.push(`**Original:** ${originalText}\n`);
     lines.push(`**Translated:** ${translatedText}\n`);
     lines.push('---\n');
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Export as translation-only markdown.
+ *
+ * @param {Array} translatedParagraphs - Translated paragraph objects.
+ * @param {string} [title] - Book title for the heading.
+ * @returns {string} Markdown content.
+ */
+export function exportTranslationMarkdown(translatedParagraphs, title = 'Translated Book') {
+  const lines = [`# ${title}\n`];
+
+  for (const para of translatedParagraphs) {
+    if (para.type === 'image') continue;
+    const text = para.sentences.join(' ');
+    if (text.trim()) lines.push(text + '\n');
   }
 
   return lines.join('\n');

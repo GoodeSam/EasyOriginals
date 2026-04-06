@@ -48,6 +48,10 @@ describe('ollama-translator module exports', () => {
   test('exports downloadMarkdown function', () => {
     expect(ollamaSrc).toMatch(/export\s+function\s+downloadMarkdown\s*\(/);
   });
+
+  test('exports exportTranslationMarkdown function', () => {
+    expect(ollamaSrc).toMatch(/export\s+function\s+exportTranslationMarkdown\s*\(/);
+  });
 });
 
 // ─── translateWithOllama ────────────────────────────────────────────
@@ -183,6 +187,34 @@ describe('exportAsMarkdown', () => {
 
   test('returns a string of markdown content', () => {
     const fn = ollamaSrc.match(/function exportAsMarkdown[\s\S]*?\n\}/);
+    expect(fn).not.toBeNull();
+    expect(fn[0]).toMatch(/return/);
+  });
+});
+
+// ─── exportTranslationMarkdown ──────────────────────────────────────
+
+describe('exportTranslationMarkdown', () => {
+  test('accepts translated paragraphs and title', () => {
+    const fn = ollamaSrc.match(/function exportTranslationMarkdown\s*\(([^)]*)\)/);
+    expect(fn).not.toBeNull();
+    expect(fn[1]).toMatch(/translated/i);
+  });
+
+  test('produces markdown with a title heading', () => {
+    const fn = ollamaSrc.match(/function exportTranslationMarkdown[\s\S]*?\n\}/);
+    expect(fn).not.toBeNull();
+    expect(fn[0]).toMatch(/#/);
+  });
+
+  test('includes only translated text without original labels', () => {
+    const fn = ollamaSrc.match(/function exportTranslationMarkdown[\s\S]*?\n\}/);
+    expect(fn).not.toBeNull();
+    expect(fn[0]).not.toMatch(/Original/);
+  });
+
+  test('returns a string', () => {
+    const fn = ollamaSrc.match(/function exportTranslationMarkdown[\s\S]*?\n\}/);
     expect(fn).not.toBeNull();
     expect(fn[0]).toMatch(/return/);
   });

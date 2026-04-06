@@ -5,7 +5,7 @@ import { setItem as syncSetItem, removeItem as syncRemoveItem } from './sync-sto
 import { parseEnglishDefinition } from './definition-utils.js';
 import { generateBookAudio, cancelBookAudio, downloadAudio } from './book-audio.js';
 import { translateBook, cancelTranslation } from './book-translator.js';
-import { translateBookWithOllama, cancelOllamaTranslation, exportAsMarkdown, checkOllamaConnection } from './ollama-translator.js';
+import { translateBookWithOllama, cancelOllamaTranslation, exportAsMarkdown, exportTranslationMarkdown, checkOllamaConnection } from './ollama-translator.js';
 const TTS_MODEL = 'tts-1';
 const OPENAI_TTS_VOICES = [
   { value: 'alloy', label: 'Alloy', persona: 'Neutral and balanced' },
@@ -2472,6 +2472,7 @@ function setupBookGeneration() {
   if (translateBookBtn) {
     translateBookBtn.addEventListener('click', async () => {
       if (!state.paragraphs || state.paragraphs.length === 0) return;
+      await ensureSettings();
       if (state.translationProvider === 'offline') {
         alert('Book translation is not available in offline mode. Please select a translation provider in Settings.');
         return;
@@ -2489,6 +2490,11 @@ function setupBookGeneration() {
           }
         });
         generateTranslatedAudioBtn.style.display = '';
+        const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'book';
+        const title = state.fileName || 'Translated Book';
+        translationStatus.textContent = 'Exporting files...';
+        const files = await downloadTranslationFiles(state.paragraphs, translatedParagraphs, baseName, title);
+        alert('Translation complete! Files saved to Downloads:\n\n' + files.map(f => '  \u2022 ' + f).join('\n'));
       } catch (err) {
         if (err.message !== 'Translation cancelled') {
           alert('Translation failed: ' + err.message);
@@ -2538,52 +2544,49 @@ function setupBookGeneration() {
       await ensureSettings();
 
       const ollamaBaseUrl = state.ollamaUrl || 'http://localhost:11434';
-      const header = $('#ollamaTranslationHeader');
       ollamaTranslationProgress.style.display = '';
       ollamaTranslationStatus.textContent = 'Checking Ollama connection...';
       ollamaTranslationProgressBar.style.width = '0%';
 
       const check = await checkOllamaConnection(ollamaBaseUrl);
-      const useOllama = check.ok;
-
-      if (!useOllama && state.translationProvider === 'offline') {
+      if (!check.ok) {
         ollamaTranslationProgress.style.display = 'none';
-        alert('Ollama is not reachable and the translation provider is set to offline.\nPlease select Google or Microsoft in Settings, or set up Ollama locally.');
+        alert(
+          'Cannot connect to Ollama at ' + ollamaBaseUrl + '.\n\n' +
+          'To use Ollama translation:\n' +
+          '1. Install Ollama: https://ollama.com\n' +
+          '2. Run: ollama serve\n' +
+          '3. Pull a model: ollama pull ' + (state.ollamaModel || 'llama3') + '\n' +
+          '4. Allow CORS: OLLAMA_ORIGINS="' + location.origin + '" ollama serve\n\n' +
+          'You can change the Ollama URL in Settings.\n' +
+          'Or use the globe icon to translate with Google/Microsoft instead.'
+        );
         return;
       }
 
-      const providerLabel = useOllama ? 'Ollama (' + (state.ollamaModel || 'llama3') + ')' : state.translationProvider;
-      if (header) header.textContent = useOllama ? 'Translating with Ollama...' : 'Translating with ' + providerLabel + '...';
+      const header = $('#ollamaTranslationHeader');
+      const modelLabel = state.ollamaModel || 'llama3';
+      if (header) header.textContent = 'Translating with Ollama (' + modelLabel + ')...';
       ollamaTranslationStatus.textContent = 'Preparing...';
 
       try {
-        let result;
-        const onProgress = (current, total) => {
-          const pct = Math.round((current / total) * 100);
-          ollamaTranslationProgressBar.style.width = pct + '%';
-          ollamaTranslationStatus.textContent = `${providerLabel}: paragraph ${current} of ${total}`;
-        };
-
-        if (useOllama) {
-          result = await translateBookWithOllama(state.paragraphs, {
-            ollamaUrl: ollamaBaseUrl + '/api/generate',
-            model: state.ollamaModel,
-            onProgress,
-          });
-        } else {
-          result = await translateBook(state.paragraphs, {
-            translateFn: translateText,
-            onProgress,
-          });
-        }
-
+        const result = await translateBookWithOllama(state.paragraphs, {
+          ollamaUrl: ollamaBaseUrl + '/api/generate',
+          model: state.ollamaModel,
+          onProgress(current, total) {
+            const pct = Math.round((current / total) * 100);
+            ollamaTranslationProgressBar.style.width = pct + '%';
+            ollamaTranslationStatus.textContent = `Ollama (${modelLabel}): paragraph ${current} of ${total}`;
+          },
+        });
         const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'book';
         const title = state.fileName || 'Translated Book';
-        const md = exportAsMarkdown(state.paragraphs, result, title);
-        downloadMarkdown(baseName + '-translated.md', md);
+        ollamaTranslationStatus.textContent = 'Exporting files...';
+        const files = await downloadTranslationFiles(state.paragraphs, result, baseName, title);
+        alert('Ollama translation complete! Files saved to Downloads:\n\n' + files.map(f => '  \u2022 ' + f).join('\n'));
       } catch (err) {
-        if (err.message !== 'Ollama translation cancelled' && err.message !== 'Translation cancelled' && err.name !== 'AbortError') {
-          alert('Translation failed: ' + err.message);
+        if (err.message !== 'Ollama translation cancelled' && err.name !== 'AbortError') {
+          alert('Ollama translation failed: ' + err.message);
         }
       } finally {
         ollamaTranslationProgress.style.display = 'none';
@@ -2592,10 +2595,7 @@ function setupBookGeneration() {
   }
 
   if (cancelOllamaTranslationBtn) {
-    cancelOllamaTranslationBtn.addEventListener('click', () => {
-      cancelOllamaTranslation();
-      cancelTranslation();
-    });
+    cancelOllamaTranslationBtn.addEventListener('click', () => cancelOllamaTranslation());
   }
 }
 
@@ -3124,6 +3124,84 @@ function downloadMarkdown(filename, content) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function escapeXml(text) {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function buildDocxBlob(paragraphTexts) {
+  const _JSZip = (typeof JSZip !== 'undefined') ? JSZip : window.JSZip;
+  if (!_JSZip) return null;
+  const zip = new _JSZip();
+  const pXmls = paragraphTexts.map(t => `<w:p><w:r><w:t>${escapeXml(t)}</w:t></w:r></w:p>`);
+  const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+            xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>${pXmls.join('')}</w:body>
+</w:document>`;
+  zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`);
+  zip.file('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`);
+  zip.file('word/document.xml', docXml);
+  zip.file('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`);
+  return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function downloadTranslationFiles(originalParagraphs, translatedParagraphs, baseName, title) {
+  const files = [];
+
+  // 1. Full translation markdown
+  const fullMd = exportTranslationMarkdown(translatedParagraphs, title);
+  downloadMarkdown(baseName + '-translated.md', fullMd);
+  files.push(baseName + '-translated.md');
+
+  // 2. Bilingual markdown
+  const bilingualMd = exportAsMarkdown(originalParagraphs, translatedParagraphs, title);
+  downloadMarkdown(baseName + '-bilingual.md', bilingualMd);
+  files.push(baseName + '-bilingual.md');
+
+  // 3. Full translation DOCX
+  const transTexts = [];
+  for (const para of translatedParagraphs) {
+    if (para.type === 'image') continue;
+    const t = para.sentences.join(' ');
+    if (t.trim()) transTexts.push(t);
+  }
+  const transDocx = await buildDocxBlob(transTexts);
+  if (transDocx) {
+    downloadBlob(transDocx, baseName + '-translated.docx');
+    files.push(baseName + '-translated.docx');
+  }
+
+  // 4. Bilingual DOCX
+  const biTexts = [];
+  for (let i = 0; i < originalParagraphs.length; i++) {
+    const orig = originalParagraphs[i];
+    const trans = translatedParagraphs[i];
+    if (orig.type === 'image') continue;
+    const origText = orig.sentences.join(' ');
+    const transText = trans ? trans.sentences.join(' ') : '';
+    if (!origText.trim() && !transText.trim()) continue;
+    biTexts.push('[Original] ' + origText);
+    biTexts.push('[Translated] ' + transText);
+    biTexts.push('');
+  }
+  const biDocx = await buildDocxBlob(biTexts);
+  if (biDocx) {
+    downloadBlob(biDocx, baseName + '-bilingual.docx');
+    files.push(baseName + '-bilingual.docx');
+  }
+
+  return files;
 }
 
 async function exportToDocx() {
@@ -3716,20 +3794,20 @@ const FEATURE_REGISTRY = [
   {
     name: 'Translate Book',
     icon: '\ud83c\udf10',
-    description: 'Translate the entire book using the configured translation provider (Google, Microsoft, or ChatGPT). After translation, the "Generate Translated Audio" button becomes available.',
-    usage: 'Click the globe icon in the toolbar. A progress bar tracks paragraph-by-paragraph translation. Once done, use the microphone icon to generate audio from the translated text.',
+    description: 'Translate the entire book using the configured provider (Google, Microsoft, or ChatGPT). Exports 4 files to Downloads: full translation (.md + .docx) and bilingual original+translation (.md + .docx). Also enables the "Generate Translated Audio" button.',
+    usage: 'Click the globe icon. A progress bar tracks translation. On completion, 4 files download automatically and a summary shows the saved file names.',
     name_cn: '\u7ffb\u8bd1\u5168\u4e66',
-    description_cn: '\u4f7f\u7528\u914d\u7f6e\u7684\u7ffb\u8bd1\u63d0\u4f9b\u5546\uff08\u8c37\u6b4c\u3001\u5fae\u8f6f\u6216 ChatGPT\uff09\u7ffb\u8bd1\u6574\u672c\u4e66\u3002\u7ffb\u8bd1\u5b8c\u6210\u540e\u53ef\u751f\u6210\u7ffb\u8bd1\u97f3\u9891\u3002',
-    usage_cn: '\u70b9\u51fb\u5de5\u5177\u680f\u4e2d\u7684\u5730\u7403\u56fe\u6807\u3002\u8fdb\u5ea6\u6761\u8ddf\u8e2a\u9010\u6bb5\u843d\u7ffb\u8bd1\u8fdb\u5ea6\u3002\u5b8c\u6210\u540e\u4f7f\u7528\u9ea6\u514b\u98ce\u56fe\u6807\u751f\u6210\u7ffb\u8bd1\u97f3\u9891\u3002'
+    description_cn: '\u4f7f\u7528\u914d\u7f6e\u7684\u7ffb\u8bd1\u63d0\u4f9b\u5546\uff08\u8c37\u6b4c\u3001\u5fae\u8f6f\u6216 ChatGPT\uff09\u7ffb\u8bd1\u6574\u672c\u4e66\u3002\u5bfc\u51fa 4 \u4e2a\u6587\u4ef6\u5230\u4e0b\u8f7d\u6587\u4ef6\u5939\uff1a\u7eaf\u8bd1\u6587\uff08.md + .docx\uff09\u548c\u53cc\u8bed\u539f\u6587+\u8bd1\u6587\uff08.md + .docx\uff09\u3002\u540c\u65f6\u542f\u7528\u201c\u751f\u6210\u7ffb\u8bd1\u97f3\u9891\u201d\u6309\u94ae\u3002',
+    usage_cn: '\u70b9\u51fb\u5730\u7403\u56fe\u6807\u3002\u8fdb\u5ea6\u6761\u8ddf\u8e2a\u7ffb\u8bd1\u8fdb\u5ea6\u3002\u5b8c\u6210\u540e 4 \u4e2a\u6587\u4ef6\u81ea\u52a8\u4e0b\u8f7d\uff0c\u5e76\u663e\u793a\u4fdd\u5b58\u6587\u4ef6\u540d\u6458\u8981\u3002'
   },
   {
-    name: 'Translate & Export Markdown',
+    name: 'Translate with Ollama',
     icon: '\ud83e\udd16',
-    description: 'Translate the entire book and export as a bilingual Markdown file with original and translated text side by side, saved to your Downloads folder. Uses Ollama (local AI) if available, otherwise falls back to the configured translation provider (Google/Microsoft) automatically — no setup required.',
-    usage: 'Click the robot icon in the toolbar. It tries Ollama first; if unavailable, it uses your configured provider. A progress bar tracks translation. The bilingual .md file downloads automatically when complete.',
-    name_cn: '\u7ffb\u8bd1\u5e76\u5bfc\u51fa Markdown',
-    description_cn: '\u7ffb\u8bd1\u6574\u672c\u4e66\u5e76\u5bfc\u51fa\u4e3a\u53cc\u8bed Markdown \u6587\u4ef6\uff0c\u539f\u6587\u548c\u8bd1\u6587\u5e76\u6392\u663e\u793a\uff0c\u4fdd\u5b58\u5230\u4e0b\u8f7d\u6587\u4ef6\u5939\u3002\u4f18\u5148\u4f7f\u7528 Ollama\uff08\u672c\u5730 AI\uff09\uff0c\u4e0d\u53ef\u7528\u65f6\u81ea\u52a8\u56de\u9000\u5230\u914d\u7f6e\u7684\u7ffb\u8bd1\u63d0\u4f9b\u5546\uff08\u8c37\u6b4c/\u5fae\u8f6f\uff09\u2014\u2014\u65e0\u9700\u4efb\u4f55\u8bbe\u7f6e\u3002',
-    usage_cn: '\u70b9\u51fb\u5de5\u5177\u680f\u4e2d\u7684\u673a\u5668\u4eba\u56fe\u6807\u3002\u9700\u8981 Ollama \u5728\u672c\u5730\u8fd0\u884c\uff08localhost:11434\uff09\u3002\u8fdb\u5ea6\u6761\u8ddf\u8e2a\u7ffb\u8bd1\u8fdb\u5ea6\u3002\u5b8c\u6210\u540e\u53cc\u8bed .md \u6587\u4ef6\u81ea\u52a8\u4e0b\u8f7d\u3002'
+    description: 'Translate the entire book using a local Ollama AI model (e.g. llama3). Exports 4 files to Downloads: full translation (.md + .docx) and bilingual original+translation (.md + .docx). Requires Ollama running locally.',
+    usage: 'Click the robot icon. Requires Ollama at localhost:11434. A progress bar tracks translation. On completion, 4 files download automatically and a summary shows the saved file names.',
+    name_cn: '\u4f7f\u7528 Ollama \u7ffb\u8bd1',
+    description_cn: '\u4f7f\u7528\u672c\u5730 Ollama AI \u6a21\u578b\uff08\u5982 llama3\uff09\u7ffb\u8bd1\u6574\u672c\u4e66\u3002\u5bfc\u51fa 4 \u4e2a\u6587\u4ef6\u5230\u4e0b\u8f7d\u6587\u4ef6\u5939\uff1a\u7eaf\u8bd1\u6587\uff08.md + .docx\uff09\u548c\u53cc\u8bed\u539f\u6587+\u8bd1\u6587\uff08.md + .docx\uff09\u3002\u9700\u8981\u672c\u5730\u8fd0\u884c Ollama\u3002',
+    usage_cn: '\u70b9\u51fb\u673a\u5668\u4eba\u56fe\u6807\u3002\u9700\u8981 Ollama \u5728 localhost:11434 \u8fd0\u884c\u3002\u8fdb\u5ea6\u6761\u8ddf\u8e2a\u7ffb\u8bd1\u8fdb\u5ea6\u3002\u5b8c\u6210\u540e 4 \u4e2a\u6587\u4ef6\u81ea\u52a8\u4e0b\u8f7d\uff0c\u5e76\u663e\u793a\u4fdd\u5b58\u6587\u4ef6\u540d\u6458\u8981\u3002'
   },
   {
     name: 'Generate Translated Audio',
