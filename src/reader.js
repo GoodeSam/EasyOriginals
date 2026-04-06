@@ -44,6 +44,29 @@ function langFromVoice(voice) {
   return m ? m[1] : 'en-US';
 }
 
+// ===== Message Modal =====
+function showMessage(text) {
+  const modal = document.getElementById('messageModal');
+  const textEl = document.getElementById('messageModalText');
+  const copyBtn = document.getElementById('messageModalCopy');
+  const closeBtn = document.getElementById('messageModalClose');
+  if (!modal || !textEl) { alert(text); return; }
+  textEl.textContent = text;
+  modal.classList.add('active');
+  const close = () => modal.classList.remove('active');
+  closeBtn.onclick = close;
+  modal.onclick = (e) => { if (e.target === modal) close(); };
+  copyBtn.onclick = () => {
+    navigator.clipboard.writeText(text).then(() => {
+      copyBtn.textContent = '\u2714 Copied';
+      setTimeout(() => { copyBtn.textContent = '\ud83d\udccb Copy'; }, 1500);
+    }).catch(() => {
+      copyBtn.textContent = 'Failed';
+      setTimeout(() => { copyBtn.textContent = '\ud83d\udccb Copy'; }, 1500);
+    });
+  };
+}
+
 // ===== State =====
 let state = {
   paragraphs: [],   // Flat array of paragraphs, each paragraph has sentences array
@@ -851,7 +874,7 @@ async function handleFile(file) {
     startAutoHideTimer();
   } catch (err) {
     console.error(err);
-    alert('Failed to parse file: ' + err.message);
+    showMessage('Failed to parse file: ' + err.message);
   }
 }
 
@@ -2574,10 +2597,10 @@ function setupBookGeneration() {
         const filename = baseName + '.mp3';
         await pickOutputDirectory();
         const savedPath = await saveFile(filename, result.blob);
-        alert('Audiobook saved:\n\n  \u2022 ' + savedPath);
+        showMessage('Audiobook saved:\n\n  \u2022 ' + savedPath);
       } catch (err) {
         if (err.message !== 'Audio generation cancelled') {
-          alert('Audiobook generation failed: ' + err.message);
+          showMessage('Audiobook generation failed: ' + err.message);
         }
       } finally {
         audiobookProgress.style.display = 'none';
@@ -2614,10 +2637,10 @@ function setupBookGeneration() {
         const title = state.fileName || 'Translated Book';
         translationStatus.textContent = 'Exporting files...';
         const files = await downloadTranslationFiles(state.paragraphs, translatedParagraphs, baseName, title);
-        alert('Translation complete! Files saved to Downloads:\n\n' + files.map(f => '  \u2022 ' + f).join('\n'));
+        showMessage('Translation complete! Files saved to Downloads:\n\n' + files.map(f => '  \u2022 ' + f).join('\n'));
       } catch (err) {
         if (err.message !== 'Translation cancelled') {
-          alert('Translation failed: ' + err.message);
+          showMessage('Translation failed: ' + err.message);
         }
       } finally {
         translationProgress.style.display = 'none';
@@ -2650,10 +2673,10 @@ function setupBookGeneration() {
         const filename = baseName + '-translated.mp3';
         await pickOutputDirectory();
         const savedPath = await saveFile(filename, result.blob);
-        alert('Translated audiobook saved:\n\n  \u2022 ' + savedPath);
+        showMessage('Translated audiobook saved:\n\n  \u2022 ' + savedPath);
       } catch (err) {
         if (err.message !== 'Audio generation cancelled') {
-          alert('Translated audio generation failed: ' + err.message);
+          showMessage('Translated audio generation failed: ' + err.message);
         }
       } finally {
         audiobookProgress.style.display = 'none';
@@ -2674,7 +2697,7 @@ function setupBookGeneration() {
       const check = await checkOllamaConnection(ollamaBaseUrl);
       if (!check.ok) {
         ollamaTranslationProgress.style.display = 'none';
-        alert(
+        showMessage(
           'Cannot connect to Ollama at ' + ollamaBaseUrl + '.\n\n' +
           'To use Ollama translation:\n' +
           '1. Install Ollama: https://ollama.com\n' +
@@ -2706,10 +2729,10 @@ function setupBookGeneration() {
         const title = state.fileName || 'Translated Book';
         ollamaTranslationStatus.textContent = 'Exporting files...';
         const files = await downloadTranslationFiles(state.paragraphs, result, baseName, title);
-        alert('Ollama translation complete! Files saved to Downloads:\n\n' + files.map(f => '  \u2022 ' + f).join('\n'));
+        showMessage('Ollama translation complete! Files saved to Downloads:\n\n' + files.map(f => '  \u2022 ' + f).join('\n'));
       } catch (err) {
         if (err.message !== 'Ollama translation cancelled' && err.name !== 'AbortError') {
-          alert('Ollama translation failed: ' + err.message);
+          showMessage('Ollama translation failed: ' + err.message);
         }
       } finally {
         ollamaTranslationProgress.style.display = 'none';
@@ -3422,7 +3445,7 @@ async function exportToDocx() {
   const baseName = state.fileName.replace(/\.[^.]+$/, '');
   await pickOutputDirectory();
   const savedPath = await saveFile(`${baseName}.docx`, blob);
-  alert('Exported:\n\n  \u2022 ' + savedPath);
+  showMessage('Exported:\n\n  \u2022 ' + savedPath);
   } catch (err) {
     console.error('Export to DOCX failed:', err);
     alert('Export failed. Please try again.');
