@@ -12,6 +12,11 @@
 const EDGE_TTS_URL = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
 const EDGE_TTS_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
 const EDGE_TTS_DEFAULT_VOICE = 'en-US-AriaNeural';
+
+function langFromVoice(voice) {
+  const m = voice.match(/^([a-z]{2}-[A-Z]{2})/);
+  return m ? m[1] : 'en-US';
+}
 const SEC_MS_GEC_VERSION = '1-130.0.2849.68';
 
 const SYNTH_TIMEOUT_BASE_MS = 30000;
@@ -80,7 +85,8 @@ export async function synthesizeParagraph(text, options = {}) {
       const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const rateVal = Number(speechRate) || 0;
       const rateStr = (rateVal >= 0 ? '+' : '') + rateVal + '%';
-      const ssml = `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-US'><voice name='${voice}'><prosody pitch='+0Hz' rate='${rateStr}' volume='+0%'>${escaped}</prosody></voice></speak>`;
+      const lang = langFromVoice(voice);
+      const ssml = `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='${lang}'><voice name='${voice}'><prosody pitch='+0Hz' rate='${rateStr}' volume='+0%'>${escaped}</prosody></voice></speak>`;
       ws.send(`X-RequestId:${requestId}\r\nContent-Type:application/ssml+xml\r\nPath:ssml\r\n\r\n${ssml}`);
     };
 

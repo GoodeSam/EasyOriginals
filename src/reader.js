@@ -32,7 +32,17 @@ const EDGE_TTS_VOICES = [
   { value: 'en-GB-SoniaNeural', label: 'Sonia (UK, female)' },
   { value: 'en-GB-RyanNeural', label: 'Ryan (UK, male)' },
   { value: 'en-AU-NatashaNeural', label: 'Natasha (AU, female)' },
+  { value: 'zh-CN-XiaoxiaoNeural', label: 'Xiaoxiao (CN, female)' },
+  { value: 'zh-CN-YunjianNeural', label: 'Yunjian (CN, male)' },
+  { value: 'zh-CN-XiaoyiNeural', label: 'Xiaoyi (CN, female)' },
+  { value: 'zh-TW-HsiaoChenNeural', label: 'HsiaoChen (TW, female)' },
+  { value: 'zh-TW-YunJheNeural', label: 'YunJhe (TW, male)' },
 ];
+
+function langFromVoice(voice) {
+  const m = voice.match(/^([a-z]{2}-[A-Z]{2})/);
+  return m ? m[1] : 'en-US';
+}
 
 // ===== State =====
 let state = {
@@ -70,6 +80,8 @@ let state = {
   openaiTtsVoice: 'alloy',
   // Active TTS source: 'edge' (free Read Aloud) or 'openai' (Voice Persona, API key required)
   ttsSource: 'edge',
+  // Translated audio voice (Chinese default)
+  translatedTtsVoice: 'zh-CN-XiaoxiaoNeural',
   // Ollama settings for local AI translation
   ollamaUrl: 'http://localhost:11434',
   ollamaModel: 'llama3',
@@ -317,6 +329,7 @@ function loadSettings() {
   state.speechRate = Number(s.speechRate) || 0;
   state.openaiTtsVoice = s.openaiTtsVoice || 'alloy';
   state.ttsSource = s.ttsSource || 'edge';
+  state.translatedTtsVoice = s.translatedTtsVoice || 'zh-CN-XiaoxiaoNeural';
   state.ollamaUrl = s.ollamaUrl || 'http://localhost:11434';
   state.ollamaModel = s.ollamaModel || 'llama3';
   state._settingsLoaded = true;
@@ -1932,6 +1945,7 @@ async function ensureSettings() {
     state.speechRate = Number(s.speechRate) || 0;
     state.openaiTtsVoice = s.openaiTtsVoice || 'alloy';
     state.ttsSource = s.ttsSource || 'edge';
+    state.translatedTtsVoice = s.translatedTtsVoice || 'zh-CN-XiaoxiaoNeural';
     state.ollamaUrl = s.ollamaUrl || 'http://localhost:11434';
     state.ollamaModel = s.ollamaModel || 'llama3';
     state._settingsLoaded = true;
@@ -2434,7 +2448,8 @@ async function playEdgeTTS(text) {
       const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const rateVal = Number(state.speechRate) || 0;
       const rateStr = (rateVal >= 0 ? '+' : '') + rateVal + '%';
-      const ssml = `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='en-US'><voice name='${voice}'><prosody pitch='+0Hz' rate='${rateStr}' volume='+0%'>${escaped}</prosody></voice></speak>`;
+      const lang = langFromVoice(voice);
+      const ssml = `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='${lang}'><voice name='${voice}'><prosody pitch='+0Hz' rate='${rateStr}' volume='+0%'>${escaped}</prosody></voice></speak>`;
       ws.send(`X-RequestId:${requestId}\r\nContent-Type:application/ssml+xml\r\nPath:ssml\r\n\r\n${ssml}`);
     };
 
@@ -2480,7 +2495,7 @@ function speakText(text) {
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'en-US';
+        utterance.lang = langFromVoice(state.edgeTtsVoice || EDGE_TTS_DEFAULT_VOICE);
         window.speechSynthesis.speak(utterance);
       }
     };

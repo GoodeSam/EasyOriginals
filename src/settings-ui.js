@@ -50,6 +50,10 @@ export function createSettingsPanel() {
       <select id="edgeTtsVoice" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:12px;">
       </select>
 
+      <label for="settingsTranslatedVoice" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Translated Audio Voice</label>
+      <select id="settingsTranslatedVoice" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:12px;">
+      </select>
+
       <label for="speechRate" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">Speech Rate</label>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
         <span style="font-size:12px;color:#888;">Slow</span>
@@ -83,6 +87,7 @@ export function createSettingsPanel() {
   const openaiVoiceSelect = panel.querySelector('#openaiTtsVoice');
   const ttsSourceSelect = panel.querySelector('#ttsSource');
 
+  const translatedVoiceSelect = panel.querySelector('#settingsTranslatedVoice');
   const ollamaUrlInput = panel.querySelector('#settingsOllamaUrl');
   const ollamaModelInput = panel.querySelector('#settingsOllamaModel');
 
@@ -102,6 +107,15 @@ export function createSettingsPanel() {
     voiceSelect.appendChild(opt);
   });
   voiceSelect.value = settings.edgeTtsVoice || 'en-US-AriaNeural';
+
+  // Populate translated audio voice options (same voice list)
+  EDGE_TTS_VOICES.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.value;
+    opt.textContent = v.label;
+    translatedVoiceSelect.appendChild(opt);
+  });
+  translatedVoiceSelect.value = settings.translatedTtsVoice || 'zh-CN-XiaoxiaoNeural';
 
   // Populate OpenAI TTS voice options
   const OPENAI_TTS_VOICES = window.OPENAI_TTS_VOICES || [];
@@ -147,6 +161,7 @@ export function createSettingsPanel() {
         openaiModel: modelSelect.value,
         edgeTtsVoice: voiceSelect.value,
         openaiTtsVoice: openaiVoiceSelect.value,
+        translatedTtsVoice: translatedVoiceSelect.value,
         ttsSource: ttsSourceSelect.value,
         speechRate: Number(speechRateInput.value),
         ollamaUrl: ollamaUrlInput.value.trim() || 'http://localhost:11434',

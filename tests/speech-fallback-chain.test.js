@@ -35,11 +35,11 @@ describe('speakText falls back to speechSynthesis when Edge TTS fails', () => {
     expect(fn[0]).toMatch(/playEdgeTTS[\s\S]*?\.catch/);
   });
 
-  test('fallback uses SpeechSynthesisUtterance with English language', () => {
+  test('fallback uses SpeechSynthesisUtterance with dynamic language', () => {
     const fn = readerSrc.match(/function speakText[\s\S]*?\n\}/);
     expect(fn).not.toBeNull();
     expect(fn[0]).toMatch(/SpeechSynthesisUtterance/);
-    expect(fn[0]).toMatch(/\.lang\s*=\s*['"]en/);
+    expect(fn[0]).toMatch(/\.lang\s*=\s*langFromVoice/);
   });
 
   test('fallback calls speechSynthesis.cancel before speaking', () => {
