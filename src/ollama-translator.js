@@ -78,7 +78,13 @@ export async function translateWithOllama(text, options = {}) {
       throw abortErr;
     }
     if (err.name === 'AbortError') throw new Error('Ollama request timed out after ' + Math.round(timeoutMs / 1000) + 's');
-    throw new Error('Ollama fetch failed: ' + err.message);
+    const fetchErr = new Error(
+      'Ollama connection lost (' + err.message + ').\n' +
+      'Ollama must be running on THIS computer.\n' +
+      'Run: OLLAMA_ORIGINS="' + (typeof location !== 'undefined' ? location.origin : '*') + '" ollama serve'
+    );
+    fetchErr.name = 'TypeError';
+    throw fetchErr;
   }
   clearTimeout(timer);
   if (onExternalAbort) externalSignal.removeEventListener('abort', onExternalAbort);
@@ -195,7 +201,7 @@ export async function checkOllamaConnection(baseUrl = 'http://localhost:11434') 
   } catch (err) {
     const msg = err.message || String(err);
     if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('CORS')) {
-      return { ok: false, error: 'Cannot reach Ollama. Either it is not running, or CORS is blocking the request.\nFix: OLLAMA_ORIGINS="' + location.origin + '" ollama serve' };
+      return { ok: false, error: 'Cannot reach Ollama at ' + baseUrl + '.\nOllama must be installed and running on THIS computer (not a remote server).\nFix: OLLAMA_ORIGINS="' + location.origin + '" ollama serve' };
     }
     return { ok: false, error: msg };
   }

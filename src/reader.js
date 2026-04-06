@@ -2733,15 +2733,14 @@ function setupBookGeneration() {
         ollamaTranslationProgress.style.display = 'none';
         ollamaTranslateBtn.disabled = false;
         showMessage(
-          'Cannot connect to Ollama at ' + ollamaBaseUrl + '.\n\n' +
+          'Cannot connect to Ollama at ' + ollamaBaseUrl + '.\n' +
+          'Ollama must be installed and running on THIS computer.\n\n' +
           (check.error ? 'Error: ' + check.error + '\n\n' : '') +
-          'To use Ollama translation:\n' +
+          'Setup steps:\n' +
           '1. Install Ollama: https://ollama.com\n' +
-          '2. Run: ollama serve\n' +
-          '3. Pull a model: ollama pull ' + (state.ollamaModel || 'llama3') + '\n' +
-          '4. Allow CORS: OLLAMA_ORIGINS="' + location.origin + '" ollama serve\n\n' +
-          'You can change the Ollama URL in Settings.\n' +
-          'Or use the globe icon to translate with Google/Microsoft instead.'
+          '2. Pull a model: ollama pull ' + (state.ollamaModel || 'llama3') + '\n' +
+          '3. Start with CORS: OLLAMA_ORIGINS="' + location.origin + '" ollama serve\n\n' +
+          'Or use the globe icon (\ud83c\udf10) to translate with Google/Microsoft — no setup needed.'
         );
         return;
       }
