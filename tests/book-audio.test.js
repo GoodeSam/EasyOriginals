@@ -161,16 +161,16 @@ describe('language mismatch detection', () => {
     expect(fn[0]).toMatch(/detectChinese|[\u4e00-\u9fff]/);
   });
 
-  test('throws when Chinese text is used with English voice', () => {
+  test('auto-selects Chinese voice for Chinese paragraphs', () => {
     const fn = bookAudioSrc.match(/function generateBookAudio[\s\S]*?\n\}/);
     expect(fn).not.toBeNull();
-    expect(fn[0]).toMatch(/Chinese text detected/);
+    expect(fn[0]).toMatch(/chineseVoice/);
   });
 
-  test('throws when English text is used with Chinese voice', () => {
+  test('auto-selects English voice for English paragraphs', () => {
     const fn = bookAudioSrc.match(/function generateBookAudio[\s\S]*?\n\}/);
     expect(fn).not.toBeNull();
-    expect(fn[0]).toMatch(/English text detected/);
+    expect(fn[0]).toMatch(/englishVoice/);
   });
 
   test('detectChinese helper checks for CJK characters', () => {

@@ -159,6 +159,10 @@ function detectChinese(text) {
   return /[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/.test(text);
 }
 
+function stripTtsLabels(text) {
+  return text.replace(/^\[Original\]\s*/i, '').replace(/^\[Translated\]\s*/i, '').trim();
+}
+
 /**
  * Detect the dominant language of content by sampling paragraphs.
  * @param {Array} paragraphs - Paragraph objects with sentences arrays.
@@ -199,45 +203,26 @@ export function voiceForLanguage(lang, currentVoice) {
 export async function generateBookAudio(paragraphs, options = {}) {
   _cancelled = false;
   const { voice, speechRate, onProgress } = options;
-  const voiceLang = langFromVoice(voice || EDGE_TTS_DEFAULT_VOICE);
+  const englishVoice = options.englishVoice || voiceForLanguage('en', voice);
+  const chineseVoice = options.chineseVoice || voiceForLanguage('zh', voice);
 
-  // Scan all text paragraphs to detect language mismatch
   const textParagraphs = paragraphs.filter(p => p.type !== 'image');
-  let hasChinese = false;
-  let hasNonChinese = false;
-  for (const p of textParagraphs) {
-    const sample = p.sentences.join(' ').trim();
-    if (!sample) continue;
-    if (detectChinese(sample)) hasChinese = true;
-    else hasNonChinese = true;
-    if (hasChinese && hasNonChinese) break;
-  }
-  if (hasChinese && !voiceLang.startsWith('zh')) {
-    throw new Error(
-      'Chinese text detected but the selected voice is ' + (voice || EDGE_TTS_DEFAULT_VOICE) + ' (' + voiceLang + ').\n' +
-      'Edge TTS cannot speak Chinese with an English voice.\n' +
-      'Please select a Chinese voice (e.g. zh-CN-XiaoxiaoNeural) in Settings.'
-    );
-  }
-  if (!hasChinese && hasNonChinese && voiceLang.startsWith('zh')) {
-    throw new Error(
-      'English text detected but the selected voice is ' + (voice || EDGE_TTS_DEFAULT_VOICE) + ' (' + voiceLang + ').\n' +
-      'Please select an English voice in Settings for English content.'
-    );
-  }
   const { startIndex = 0, existingBlobs = [], onParagraphComplete } = options;
   const audioBlobs = existingBlobs.length > 0 ? [...existingBlobs] : [];
-  const nonBlankParas = textParagraphs.filter(p => p.sentences.join(' ').trim());
+  const nonBlankParas = textParagraphs.filter(p => {
+    const t = stripTtsLabels(p.sentences.join(' '));
+    return t.trim().length > 0;
+  });
   const total = nonBlankParas.length;
   let progressIndex = startIndex;
 
-  // Skip already-completed paragraphs when resuming
   let nonBlankIndex = 0;
   for (let i = 0; i < textParagraphs.length; i++) {
     if (_cancelled) throw new Error('Audio generation cancelled');
 
     const para = textParagraphs[i];
-    const text = para.sentences.join(' ');
+    const rawText = para.sentences.join(' ');
+    const text = stripTtsLabels(rawText);
     if (!text.trim()) continue;
 
     if (nonBlankIndex < startIndex) {
@@ -245,10 +230,13 @@ export async function generateBookAudio(paragraphs, options = {}) {
       continue;
     }
 
+    // Auto-select voice based on paragraph content language
+    const paraVoice = detectChinese(text) ? chineseVoice : englishVoice;
+
     let blob;
     for (let attempt = 0; attempt <= SYNTH_MAX_RETRIES; attempt++) {
       try {
-        blob = await synthesizeParagraph(text, { voice, speechRate });
+        blob = await synthesizeParagraph(text, { voice: paraVoice, speechRate });
         break;
       } catch (err) {
         if (attempt === SYNTH_MAX_RETRIES || _cancelled) throw err;
