@@ -14,12 +14,30 @@ const DEFAULT_OLLAMA_URL = 'http://localhost:11434/api/generate';
 const DEFAULT_MODEL = 'llama3';
 const OLLAMA_TIMEOUT_BASE_MS = 60000;
 const OLLAMA_TIMEOUT_PER_CHAR_MS = 30;
-const OLLAMA_MAX_RETRIES = 3;
-const OLLAMA_RETRY_BASE_DELAY_MS = 5000;
-const OLLAMA_COOLDOWN_MS = 500;
+const OLLAMA_MAX_RETRIES = 5;
+const OLLAMA_RETRY_BASE_DELAY_MS = 3000;
+const OLLAMA_COOLDOWN_MS = 300;
+const OLLAMA_REST_EVERY_N = 50;
+const OLLAMA_REST_MS = 3000;
+const OLLAMA_HEALTH_POLL_MS = 2000;
+const OLLAMA_HEALTH_MAX_WAIT_MS = 120000;
 
 let _cancelled = false;
 let _abortController = null;
+
+async function waitForOllamaReady(baseUrl) {
+  const healthUrl = baseUrl.replace(/\/api\/generate$/, '/api/tags');
+  const deadline = Date.now() + OLLAMA_HEALTH_MAX_WAIT_MS;
+  while (Date.now() < deadline) {
+    if (_cancelled) return false;
+    try {
+      const res = await fetch(healthUrl, { method: 'GET' });
+      if (res.ok) return true;
+    } catch (_) { /* still down */ }
+    await new Promise(r => setTimeout(r, OLLAMA_HEALTH_POLL_MS));
+  }
+  return false;
+}
 
 function isRetryable(err, status) {
   if (err && (err.name === 'AbortError')) return false;
@@ -161,8 +179,12 @@ export async function translateBookWithOllama(paragraphs, options = {}) {
       } catch (err) {
         if (err.name === 'AbortError' || _cancelled) throw err;
         if (attempt < OLLAMA_MAX_RETRIES && isRetryable(err, err.status)) {
-          const delay = OLLAMA_RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
-          await new Promise(r => setTimeout(r, delay));
+          // Wait for Ollama to become healthy before retrying
+          const ready = await waitForOllamaReady(ollamaUrl);
+          if (!ready && !_cancelled) {
+            throw new Error('Paragraph ' + (textIndex + 1) + '/' + total + ': Ollama did not recover within ' + (OLLAMA_HEALTH_MAX_WAIT_MS / 1000) + 's');
+          }
+          if (_cancelled) throw new Error('Ollama translation cancelled');
           continue;
         }
         throw new Error('Paragraph ' + (textIndex + 1) + '/' + total + ' failed after ' + (attempt + 1) + ' attempts: ' + err.message);
@@ -175,8 +197,12 @@ export async function translateBookWithOllama(paragraphs, options = {}) {
     if (onProgress) onProgress(textIndex, total);
 
     // Cooldown between paragraphs to prevent Ollama overload
-    if (OLLAMA_COOLDOWN_MS > 0 && i < paragraphs.length - 1) {
+    if (OLLAMA_COOLDOWN_MS > 0) {
       await new Promise(r => setTimeout(r, OLLAMA_COOLDOWN_MS));
+    }
+    // Periodic rest stop to let Ollama breathe on long books
+    if (textIndex > 0 && textIndex % OLLAMA_REST_EVERY_N === 0) {
+      await new Promise(r => setTimeout(r, OLLAMA_REST_MS));
     }
   }
 
