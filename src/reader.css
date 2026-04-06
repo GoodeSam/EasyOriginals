@@ -255,6 +255,16 @@ body {
   margin: 0 auto;
   border-radius: 4px;
 }
+/* ===== Markdown Block Styles ===== */
+.paragraph.md-h1 { text-indent: 0; font-size: 1.6em; font-weight: 700; border-left-width: 0; padding-left: 18px; }
+.paragraph.md-h2 { text-indent: 0; font-size: 1.3em; font-weight: 600; border-left-width: 0; padding-left: 18px; }
+.paragraph.md-h3 { text-indent: 0; font-size: 1.1em; font-weight: 600; border-left-width: 0; padding-left: 18px; }
+.paragraph.md-blockquote { text-indent: 0; border-left: 4px solid #a0a0a0; font-style: italic; opacity: 0.9; }
+.paragraph.md-code { text-indent: 0; font-family: 'Courier New', Courier, monospace; font-size: 0.9em; background: rgba(0,0,0,0.05); border-radius: 6px; border-left-width: 0; white-space: pre-wrap; }
+.paragraph.md-li { text-indent: 0; padding-left: 36px; }
+.paragraph.md-li::before { content: '\2022'; position: absolute; left: 18px; }
+.paragraph.md-li { position: relative; }
+.paragraph.md-hr { text-indent: 0; border-left-width: 0; border-top: 1px solid currentColor; opacity: 0.2; padding: 0; margin: 8px 0; min-height: 0; font-size: 0; line-height: 0; overflow: hidden; }
 .sentence {
   cursor: pointer;
   border-radius: 4px;

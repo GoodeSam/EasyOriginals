@@ -794,6 +794,20 @@ async function handleFile(file) {
       text = await parseEPUB(file);
     } else if (ext === 'txt') {
       text = await parseTXT(file);
+    } else if (ext === 'md') {
+      const mdParagraphs = await parseMarkdown(file);
+      if (mdParagraphs.length === 0) {
+        alert('No readable content found in this file.');
+        return;
+      }
+      bookTitle.textContent = file.name.replace(/\.[^.]+$/, '');
+      uploadScreen.classList.remove('active');
+      readerScreen.classList.add('active');
+      renderAllContent(mdParagraphs);
+      updateBookmarkIcon();
+      restoreBookmark();
+      startAutoHideTimer();
+      return;
     } else if (ext === 'docx') {
       text = await parseDOCX(file);
     } else if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
@@ -802,7 +816,7 @@ async function handleFile(file) {
       alert('Legacy .doc format is not supported. Please convert to .docx first.');
       return;
     } else {
-      alert('Unsupported file format. Please upload a PDF, EPUB, DOCX, TXT, or image file.');
+      alert('Unsupported file format. Please upload a PDF, EPUB, DOCX, TXT, MD, or image file.');
       return;
     }
 
@@ -1312,6 +1326,93 @@ async function parseTXT(file) {
 
 window.parseTXT = parseTXT;
 
+function stripInlineMarkdown(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/_(.+?)_/g, '$1')
+    .replace(/`(.+?)`/g, '$1')
+    .replace(/~~(.+?)~~/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+}
+
+async function parseMarkdown(file) {
+  const raw = await file.text();
+  const lines = raw.split('\n');
+  const paragraphs = [];
+  let inCodeBlock = false;
+  let codeLines = [];
+  let buffer = [];
+
+  function flushBuffer() {
+    const text = stripInlineMarkdown(buffer.join(' ').trim());
+    if (text) {
+      paragraphs.push({ type: 'text', mdType: 'p', text, sentences: splitIntoSentences(text) });
+    }
+    buffer = [];
+  }
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith('```')) {
+      if (inCodeBlock) {
+        const text = codeLines.join('\n');
+        if (text.trim()) {
+          paragraphs.push({ type: 'text', mdType: 'code', text, sentences: [text] });
+        }
+        codeLines = [];
+        inCodeBlock = false;
+      } else {
+        flushBuffer();
+        inCodeBlock = true;
+      }
+      continue;
+    }
+    if (inCodeBlock) { codeLines.push(line); continue; }
+
+    if (!trimmed) { flushBuffer(); continue; }
+
+    if (/^---+$|^\*\*\*+$|^___+$/.test(trimmed)) {
+      flushBuffer();
+      paragraphs.push({ type: 'text', mdType: 'hr', text: '---', sentences: ['---'] });
+      continue;
+    }
+
+    const headingMatch = trimmed.match(/^(#{1,3})\s+(.+)/);
+    if (headingMatch) {
+      flushBuffer();
+      const level = headingMatch[1].length;
+      const text = stripInlineMarkdown(headingMatch[2].replace(/\s*#+\s*$/, ''));
+      paragraphs.push({ type: 'text', mdType: 'h' + level, text, sentences: splitIntoSentences(text) });
+      continue;
+    }
+
+    if (/^>\s/.test(trimmed)) {
+      flushBuffer();
+      const text = stripInlineMarkdown(trimmed.replace(/^>\s*/, ''));
+      if (text) paragraphs.push({ type: 'text', mdType: 'blockquote', text, sentences: splitIntoSentences(text) });
+      continue;
+    }
+
+    if (/^[-*+]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed)) {
+      flushBuffer();
+      const text = stripInlineMarkdown(trimmed.replace(/^[-*+]\s+/, '').replace(/^\d+\.\s+/, ''));
+      if (text) paragraphs.push({ type: 'text', mdType: 'li', text, sentences: splitIntoSentences(text) });
+      continue;
+    }
+
+    buffer.push(trimmed);
+  }
+  flushBuffer();
+  if (inCodeBlock && codeLines.length) {
+    paragraphs.push({ type: 'text', mdType: 'code', text: codeLines.join('\n'), sentences: [codeLines.join('\n')] });
+  }
+
+  return paragraphs;
+}
+
 async function parseDOCX(file) {
   const arrayBuffer = await file.arrayBuffer();
   const _JSZip = (typeof JSZip !== 'undefined') ? JSZip : window.JSZip;
@@ -1612,6 +1713,7 @@ function renderAllContent(paragraphs) {
   for (const para of state.paragraphs) {
     const pEl = document.createElement('div');
     pEl.className = 'paragraph';
+    if (para.mdType) pEl.classList.add('md-' + para.mdType);
 
     if (para.type === 'image') {
       pEl.classList.add('image-paragraph');
