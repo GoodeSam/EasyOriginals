@@ -10,7 +10,7 @@
  * non-streaming response, configurable model, and retry resilience.
  */
 
-const OLLAMA_URL = 'http://localhost:11434/api/generate';
+const DEFAULT_OLLAMA_URL = 'http://localhost:11434/api/generate';
 const DEFAULT_MODEL = 'llama3';
 
 let _cancelled = false;
@@ -28,10 +28,11 @@ export async function translateWithOllama(text, options = {}) {
   const fromLang = options.fromLang || 'English';
   const toLang = options.toLang || 'Chinese';
   const signal = options.signal;
+  const ollamaUrl = options.ollamaUrl || DEFAULT_OLLAMA_URL;
 
   const prompt = `Translate the following text from ${fromLang} to ${toLang}. Return only the translation, no explanations.\n\n${text}`;
 
-  const res = await fetch(OLLAMA_URL, {
+  const res = await fetch(ollamaUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model, prompt, stream: false }),
@@ -57,7 +58,7 @@ export async function translateWithOllama(text, options = {}) {
 export async function translateBookWithOllama(paragraphs, options = {}) {
   _cancelled = false;
   _abortController = new AbortController();
-  const { model, fromLang, toLang, onProgress } = options;
+  const { model, fromLang, toLang, onProgress, ollamaUrl } = options;
   const translatedParagraphs = [];
   const textParagraphs = paragraphs.filter(p => p.type !== 'image');
   const total = textParagraphs.length;
@@ -81,7 +82,7 @@ export async function translateBookWithOllama(paragraphs, options = {}) {
       continue;
     }
 
-    const translated = await translateWithOllama(text, { model, fromLang, toLang, signal: _abortController.signal });
+    const translated = await translateWithOllama(text, { model, fromLang, toLang, ollamaUrl, signal: _abortController.signal });
     translatedParagraphs.push({ sentences: [translated] });
     textIndex++;
 
@@ -97,6 +98,22 @@ export async function translateBookWithOllama(paragraphs, options = {}) {
 export function cancelOllamaTranslation() {
   _cancelled = true;
   if (_abortController) _abortController.abort();
+}
+
+/**
+ * Check if Ollama is reachable at the given base URL.
+ *
+ * @param {string} [baseUrl] - Ollama base URL (e.g. http://localhost:11434).
+ * @returns {Promise<{ok: boolean, error?: string}>}
+ */
+export async function checkOllamaConnection(baseUrl = 'http://localhost:11434') {
+  try {
+    const res = await fetch(baseUrl, { method: 'GET' });
+    if (res.ok) return { ok: true };
+    return { ok: false, error: `Server returned ${res.status}` };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
 }
 
 /**

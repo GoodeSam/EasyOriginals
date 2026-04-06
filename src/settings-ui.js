@@ -58,6 +58,14 @@ export function createSettingsPanel() {
         <span id="speechRateLabel" style="font-size:12px;font-weight:600;min-width:36px;text-align:center;">Normal</span>
       </div>
 
+      <div style="border-top:1px solid #e0e0e0;margin:16px 0 12px;padding-top:12px;">
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;">Ollama (Local AI Translation)</label>
+        <label for="settingsOllamaUrl" style="display:block;font-size:12px;color:#888;margin-bottom:4px;">Ollama Server URL</label>
+        <input type="url" id="settingsOllamaUrl" placeholder="http://localhost:11434" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:8px;">
+        <label for="settingsOllamaModel" style="display:block;font-size:12px;color:#888;margin-bottom:4px;">Model</label>
+        <input type="text" id="settingsOllamaModel" placeholder="llama3" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:12px;">
+      </div>
+
       <button class="btn btn-primary" id="settingsSaveBtn" style="display:block;width:100%;padding:10px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;background:#4f46e5;color:#fff;">Save Settings</button>
       <div id="settingsStatus" style="font-size:12px;text-align:center;margin-top:8px;display:none;"></div>
     </div>
@@ -75,10 +83,15 @@ export function createSettingsPanel() {
   const openaiVoiceSelect = panel.querySelector('#openaiTtsVoice');
   const ttsSourceSelect = panel.querySelector('#ttsSource');
 
+  const ollamaUrlInput = panel.querySelector('#settingsOllamaUrl');
+  const ollamaModelInput = panel.querySelector('#settingsOllamaModel');
+
   providerSelect.value = settings.translationProvider;
   apiKeyInput.value = settings.openaiApiKey;
   modelSelect.value = settings.openaiModel;
   ttsSourceSelect.value = settings.ttsSource || 'edge';
+  ollamaUrlInput.value = settings.ollamaUrl || 'http://localhost:11434';
+  ollamaModelInput.value = settings.ollamaModel || 'llama3';
 
   // Populate voice options from EDGE_TTS_VOICES (exposed by reader.js)
   const EDGE_TTS_VOICES = window.EDGE_TTS_VOICES || [];
@@ -136,6 +149,8 @@ export function createSettingsPanel() {
         openaiTtsVoice: openaiVoiceSelect.value,
         ttsSource: ttsSourceSelect.value,
         speechRate: Number(speechRateInput.value),
+        ollamaUrl: ollamaUrlInput.value.trim() || 'http://localhost:11434',
+        ollamaModel: ollamaModelInput.value.trim() || 'llama3',
       });
       if (window.invalidateSettings) window.invalidateSettings();
       status.textContent = allSaved ? 'Settings saved!' : 'Settings applied (some may not persist)';

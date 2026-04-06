@@ -5,7 +5,7 @@ import { setItem as syncSetItem, removeItem as syncRemoveItem } from './sync-sto
 import { parseEnglishDefinition } from './definition-utils.js';
 import { generateBookAudio, cancelBookAudio, downloadAudio } from './book-audio.js';
 import { translateBook, cancelTranslation } from './book-translator.js';
-import { translateBookWithOllama, cancelOllamaTranslation, exportAsMarkdown } from './ollama-translator.js';
+import { translateBookWithOllama, cancelOllamaTranslation, exportAsMarkdown, checkOllamaConnection } from './ollama-translator.js';
 const TTS_MODEL = 'tts-1';
 const OPENAI_TTS_VOICES = [
   { value: 'alloy', label: 'Alloy', persona: 'Neutral and balanced' },
@@ -70,6 +70,9 @@ let state = {
   openaiTtsVoice: 'alloy',
   // Active TTS source: 'edge' (free Read Aloud) or 'openai' (Voice Persona, API key required)
   ttsSource: 'edge',
+  // Ollama settings for local AI translation
+  ollamaUrl: 'http://localhost:11434',
+  ollamaModel: 'llama3',
 };
 
 // Expose state for testing (only in dev/test)
@@ -314,6 +317,8 @@ function loadSettings() {
   state.speechRate = Number(s.speechRate) || 0;
   state.openaiTtsVoice = s.openaiTtsVoice || 'alloy';
   state.ttsSource = s.ttsSource || 'edge';
+  state.ollamaUrl = s.ollamaUrl || 'http://localhost:11434';
+  state.ollamaModel = s.ollamaModel || 'llama3';
   state._settingsLoaded = true;
 }
 
@@ -1825,6 +1830,8 @@ async function ensureSettings() {
     state.speechRate = Number(s.speechRate) || 0;
     state.openaiTtsVoice = s.openaiTtsVoice || 'alloy';
     state.ttsSource = s.ttsSource || 'edge';
+    state.ollamaUrl = s.ollamaUrl || 'http://localhost:11434';
+    state.ollamaModel = s.ollamaModel || 'llama3';
     state._settingsLoaded = true;
     _apiKeyAlertShown = false;
   }
@@ -2528,11 +2535,34 @@ function setupBookGeneration() {
   if (ollamaTranslateBtn) {
     ollamaTranslateBtn.addEventListener('click', async () => {
       if (!state.paragraphs || state.paragraphs.length === 0) return;
+      await ensureSettings();
+      const ollamaBaseUrl = state.ollamaUrl || 'http://localhost:11434';
+
       ollamaTranslationProgress.style.display = '';
-      ollamaTranslationStatus.textContent = 'Preparing...';
+      ollamaTranslationStatus.textContent = 'Checking Ollama connection...';
       ollamaTranslationProgressBar.style.width = '0%';
+
+      const check = await checkOllamaConnection(ollamaBaseUrl);
+      if (!check.ok) {
+        ollamaTranslationProgress.style.display = 'none';
+        alert(
+          'Cannot connect to Ollama at ' + ollamaBaseUrl + '.\n\n' +
+          'To use this feature:\n' +
+          '1. Install Ollama: https://ollama.com\n' +
+          '2. Run: ollama serve\n' +
+          '3. Pull a model: ollama pull ' + (state.ollamaModel || 'llama3') + '\n' +
+          '4. Allow CORS: OLLAMA_ORIGINS="' + location.origin + '" ollama serve\n\n' +
+          'You can change the Ollama URL in Settings.\n\n' +
+          'Error: ' + check.error
+        );
+        return;
+      }
+
+      ollamaTranslationStatus.textContent = 'Preparing...';
       try {
         const ollamaResult = await translateBookWithOllama(state.paragraphs, {
+          ollamaUrl: ollamaBaseUrl + '/api/generate',
+          model: state.ollamaModel,
           onProgress(current, total) {
             const pct = Math.round((current / total) * 100);
             ollamaTranslationProgressBar.style.width = pct + '%';

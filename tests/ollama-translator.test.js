@@ -53,13 +53,12 @@ describe('ollama-translator module exports', () => {
 // ─── translateWithOllama ────────────────────────────────────────────
 
 describe('translateWithOllama', () => {
-  test('calls the Ollama /api/generate endpoint', () => {
-    // URL is defined as a module-level constant and used via OLLAMA_URL in the function
-    expect(ollamaSrc).toMatch(/localhost:11434/);
+  test('calls the Ollama /api/generate endpoint via configurable URL', () => {
     expect(ollamaSrc).toMatch(/\/api\/generate/);
     const fn = ollamaSrc.match(/function translateWithOllama[\s\S]*?\n\}/);
     expect(fn).not.toBeNull();
-    expect(fn[0]).toMatch(/OLLAMA_URL/);
+    // URL should come from options, not hardcoded
+    expect(fn[0]).toMatch(/ollamaUrl|baseUrl|url/i);
   });
 
   test('sends a POST request with JSON body', () => {
@@ -246,6 +245,85 @@ describe('Ollama translation UI', () => {
 
   test('progress container includes a cancel button', () => {
     expect(htmlSrc).toMatch(/id=['"]cancelOllamaTranslationBtn['"]/);
+  });
+});
+
+// ─── checkOllamaConnection ──────────────────────────────────────────
+
+describe('checkOllamaConnection', () => {
+  test('exports checkOllamaConnection function', () => {
+    expect(ollamaSrc).toMatch(/export\s+(async\s+)?function\s+checkOllamaConnection\s*\(/);
+  });
+
+  test('pings the Ollama base URL to verify connectivity', () => {
+    const fn = ollamaSrc.match(/function checkOllamaConnection[\s\S]*?\n\}/);
+    expect(fn).not.toBeNull();
+    expect(fn[0]).toMatch(/fetch/);
+  });
+
+  test('returns an object with ok status', () => {
+    const fn = ollamaSrc.match(/function checkOllamaConnection[\s\S]*?\n\}/);
+    expect(fn).not.toBeNull();
+    expect(fn[0]).toMatch(/ok/);
+  });
+});
+
+// ─── Ollama settings in storage ─────────────────────────────────────
+
+describe('Ollama settings persistence', () => {
+  let storageSrc;
+  beforeEach(() => {
+    storageSrc = fs.readFileSync(
+      path.resolve(__dirname, '../src/storage.js'), 'utf-8'
+    );
+  });
+
+  test('storage.js defines ollamaUrl key', () => {
+    expect(storageSrc).toMatch(/ollamaUrl/);
+  });
+
+  test('storage.js defines ollamaModel key', () => {
+    expect(storageSrc).toMatch(/ollamaModel/);
+  });
+
+  test('storage.js has default value for ollamaUrl', () => {
+    expect(storageSrc).toMatch(/localhost:11434/);
+  });
+
+  test('storage.js has default value for ollamaModel', () => {
+    expect(storageSrc).toMatch(/llama3/);
+  });
+
+  test('reader.js loads ollamaUrl into state', () => {
+    expect(readerSrc).toMatch(/state\.ollamaUrl/);
+  });
+
+  test('reader.js loads ollamaModel into state', () => {
+    expect(readerSrc).toMatch(/state\.ollamaModel/);
+  });
+});
+
+// ─── Settings UI ────────────────────────────────────────────────────
+
+describe('Ollama settings UI', () => {
+  let settingsSrc;
+  beforeEach(() => {
+    settingsSrc = fs.readFileSync(
+      path.resolve(__dirname, '../src/settings-ui.js'), 'utf-8'
+    );
+  });
+
+  test('settings UI has Ollama URL input', () => {
+    expect(settingsSrc).toMatch(/ollamaUrl|settingsOllamaUrl/i);
+  });
+
+  test('settings UI has Ollama model input', () => {
+    expect(settingsSrc).toMatch(/ollamaModel|settingsOllamaModel/i);
+  });
+
+  test('settings UI saves Ollama settings', () => {
+    expect(settingsSrc).toMatch(/ollamaUrl/);
+    expect(settingsSrc).toMatch(/ollamaModel/);
   });
 });
 

@@ -12,6 +12,8 @@ const KEYS = {
   speechRate: 'reader-speech-rate',
   openaiTtsVoice: 'reader-openai-tts-voice',
   ttsSource: 'reader-tts-source',
+  ollamaUrl: 'reader-ollama-url',
+  ollamaModel: 'reader-ollama-model',
 };
 
 // API key uses sessionStorage for reduced exposure — not persisted across sessions
@@ -27,6 +29,8 @@ const DEFAULTS = {
   speechRate: 0,
   openaiTtsVoice: 'alloy',
   ttsSource: 'edge',
+  ollamaUrl: 'http://localhost:11434',
+  ollamaModel: 'llama3',
 };
 
 let _cache = null;

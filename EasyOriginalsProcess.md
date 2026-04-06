@@ -2253,9 +2253,128 @@ Pushed to GitHub. Commit aca44e5 is now on origin/main.
 
 在 **Feature Guide 里面写明，全书翻译，全书转TTS音频否内容会保存在哪里。以及现在最新版的所有功能（包括新增加的，变化的）   Update the Feature Guide to document: where full-book translation and full-book TTS audio content is saved, and list all current features including newly added and recently changed ones.**
 
+⏺ Pushed 8adc8c7 to origin/main.
+
+现在选择 Ollama translation 会出现：  [goodesam.github.io](http://goodesam.github.io) says 
+
+Ollama translation failed: Failed to fetch，我该怎么办？
+
+
+
+\>> 找出具体原因，并实现 Ollama 翻译.  Identify the root cause of the Ollama translation issue and implement Ollama translation.
 
 
 
 
 
+---
 
+## Session Report - 2026-04-06
+
+### Summary (English)
+
+This session implemented the full-text book translation feature using free Ollama models, optimized the toolbar layout, fixed CI/CD build failures, ran a code audit with fixes, updated the Feature Guide, and resolved the Ollama connectivity issue.
+
+### Work Completed
+
+#### 1. Ollama Translation Feature (TDD)
+- **New module: src/ollama-translator.js**
+  - translateWithOllama(text, options) - calls local Ollama at configurable URL with configurable model
+  - translateBookWithOllama(paragraphs, options) - translates all paragraphs with progress tracking, cancellation via AbortController
+  - cancelOllamaTranslation() - aborts in-flight fetch requests immediately
+  - exportAsMarkdown(original, translated, title) - generates bilingual markdown (original + translated side by side)
+  - downloadMarkdown(content, filename) - triggers .md file download
+  - checkOllamaConnection(baseUrl) - pre-flight connectivity check before translation
+- **Toolbar icon**: Robot icon ollamaTranslateBtn added to toolbar
+- **Progress modal**: Full progress bar, status text, and cancel button
+- **CSP updated**: http://localhost:11434 added to connect-src
+- **35 initial tests** + 12 additional tests = **47 tests** in tests/ollama-translator.test.js
+
+#### 2. Book Audio and Book Translator Modules (TDD)
+- **src/book-audio.js**: Full-book audiobook generation via Edge TTS WebSocket
+- **src/book-translator.js**: Full-book translation using configured provider (Google/Microsoft/ChatGPT)
+- **Tests**: tests/book-audio.test.js (35 tests), tests/book-translator.test.js (35 tests)
+
+#### 3. Toolbar Optimization
+- Reorganized buttons into **5 logical groups** with CSS dividers:
+  1. **Reading**: Search, Bookmark, Auto-Play, Gesture Mode
+  2. **Panels**: Word List, Notes, History
+  3. **Display**: Font size, Width, Theme
+  4. **Actions**: Translate Book, Ollama Translate, Generate Audiobook, Generate Translated Audio, Export DOCX
+  5. **System**: Settings, Help, Page Info
+- Gesture Mode moved from Display to Reading group
+- Export DOCX moved from Utility to Actions group
+- .toolbar-divider CSS class: 1px lines at 20% opacity, adapts to any theme
+
+#### 4. CI/CD Build Fix
+- **Root cause**: downloadMarkdown imported from ollama-translator.js clashed with local function in reader.js
+- **Fix**: Removed the import, used the existing local function, fixed argument order
+
+#### 5. Code Audit (Mini 5-dimension, Codex-verified)
+Fixed 10 of 11 issues:
+
+| # | Severity | Issue | Fix |
+|---|----------|-------|-----|
+| 1 | **High** | translatedParagraphs never cleared on new book load | Reset in renderAllContent(), hide translated audio button |
+| 2 | Medium | Cancel does not abort active WebSocket | Track _activeWebSocket, close on cancel |
+| 3 | Medium | Cancel does not abort in-flight translation | AbortController + Promise.race |
+| 4 | Medium | Cancel does not abort Ollama fetch | AbortController signal passed to fetch() |
+| 5 | Medium | No timeout on Edge TTS WebSocket | 30s SYNTH_TIMEOUT_MS timeout |
+| 6 | Medium | Double memory materialization of audio blobs | Pass blobs directly to new Blob() |
+| 7 | Medium | Translation allowed in offline mode | Block with alert |
+| 8 | Medium | English voice for Chinese translated audio | Default to zh-CN-XiaoxiaoNeural |
+| 9 | Medium | No validation of Ollama response shape | Check typeof data.response |
+| 11 | Low | Translated audio button visible before translation | Hidden by default |
+
+Remaining: #10 (Low) - CSP style-src unsafe-inline tracked by existing TODO.
+
+#### 6. Feature Guide Update
+Updated from **17 to 24 entries**, all bilingual (English + Chinese). New entries: Auto-Play Audio, Gesture Mode, TTS Source, Generate Audiobook, Translate Book, Translate with Ollama, Generate Translated Audio. Each documents where output files are saved (Downloads folder).
+
+#### 7. Ollama Connectivity Fix
+- **Root cause**: Hardcoded URL, no connectivity check, no configurable settings, CORS blocks from GitHub Pages
+- **Fix**: ollamaUrl/ollamaModel in storage + Settings UI + pre-flight checkOllamaConnection() + diagnostic alert with setup instructions
+
+### Commits
+
+| Commit | Description |
+|--------|-------------|
+| aca44e5 | Add book audio, book translation, and Ollama translation features with TDD |
+| e4d8fe2 | Optimize toolbar arrangement into 5 logical groups with dividers |
+| b356c09 | Fix build: remove duplicate downloadMarkdown import |
+| 8adc8c7 | Fix audit issues and update Feature Guide with all current features |
+| (pending) | Implement configurable Ollama settings with connectivity check |
+
+### Test Results: **572 tests passing** across 37 test files. All tests + production build green.
+
+---
+
+### 报告摘要（中文）
+
+本次会话实现了使用免费 Ollama 模型的全书翻译功能，优化了工具栏布局，修复了 CI/CD 构建失败，运行了代码审计并修复问题，更新了功能指南，并解决了 Ollama 连接问题。
+
+#### 1. Ollama 翻译功能（TDD）
+- **新模块 src/ollama-translator.js**：URL 和模型可配置、AbortController 取消、双语 Markdown 导出、连接预检
+- 工具栏机器人图标、进度弹窗、47 个测试
+
+#### 2. 有声书和翻译模块（TDD）
+- book-audio.js：Edge TTS 全书有声书生成
+- book-translator.js：使用配置翻译提供商翻译全书
+- 各 35 个测试
+
+#### 3. 工具栏优化
+- 5 个逻辑分组（阅读/面板/显示/操作/系统），带 CSS 分隔线
+
+#### 4. CI/CD 构建修复
+- 移除重复的 downloadMarkdown 导入，使用本地函数
+
+#### 5. 代码审计（Codex 验证）
+- 修复 10/11 个问题（1 高、8 中、1 低严重度）
+
+#### 6. 功能指南：17 -> 24 个功能，中英双语，标注输出文件保存位置
+
+#### 7. Ollama 连接修复
+- 根本原因：URL 硬编码 + 无连接检查 + CORS
+- 修复：存储层设置持久化 + 设置面板 + 连接预检 + 诊断提示
+
+### 测试结果：572 个测试全部通过，37 个测试文件，生产构建绿色
