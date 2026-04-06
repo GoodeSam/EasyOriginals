@@ -3,6 +3,9 @@ import { loadSettings as loadStorageSettings, DEFAULT_MODEL } from './storage.js
 import { createSettingsPanel } from './settings-ui.js';
 import { setItem as syncSetItem, removeItem as syncRemoveItem } from './sync-storage.js';
 import { parseEnglishDefinition } from './definition-utils.js';
+import { generateBookAudio, cancelBookAudio, downloadAudio } from './book-audio.js';
+import { translateBook, cancelTranslation } from './book-translator.js';
+import { translateBookWithOllama, cancelOllamaTranslation, exportAsMarkdown, downloadMarkdown } from './ollama-translator.js';
 const TTS_MODEL = 'tts-1';
 const OPENAI_TTS_VOICES = [
   { value: 'alloy', label: 'Alloy', persona: 'Neutral and balanced' },
@@ -180,6 +183,7 @@ function init() {
   loadTheme();
   loadAutoPlayAudio();
   bindEvents();
+  setupBookGeneration();
 
   if (readerScreen.classList.contains('active')) {
     startAutoHideTimer();
@@ -2398,6 +2402,153 @@ window.EDGE_TTS_VOICES = EDGE_TTS_VOICES;
 window.OPENAI_TTS_VOICES = OPENAI_TTS_VOICES;
 window.translateSentence = translateSentence;
 window.speakSentence = speakSentence;
+window.generateBookAudio = generateBookAudio;
+window.translateBook = translateBook;
+window.translateBookWithOllama = translateBookWithOllama;
+
+// ===== Book Generation (Audiobook & Translation) =====
+let translatedParagraphs = null;
+
+function setupBookGeneration() {
+  const generateAudiobookBtn = $('#generateAudiobookBtn');
+  const cancelAudiobookBtn = $('#cancelAudiobookBtn');
+  const audiobookProgress = $('#audiobookProgress');
+  const audiobookProgressBar = $('#audiobookProgressBar');
+  const audiobookStatus = $('#audiobookStatus');
+  const translateBookBtn = $('#translateBookBtn');
+  const cancelTranslationBtn = $('#cancelTranslationBtn');
+  const translationProgress = $('#translationProgress');
+  const translationProgressBar = $('#translationProgressBar');
+  const translationStatus = $('#translationStatus');
+  const generateTranslatedAudioBtn = $('#generateTranslatedAudioBtn');
+  const ollamaTranslateBtn = $('#ollamaTranslateBtn');
+  const cancelOllamaTranslationBtn = $('#cancelOllamaTranslationBtn');
+  const ollamaTranslationProgress = $('#ollamaTranslationProgress');
+  const ollamaTranslationProgressBar = $('#ollamaTranslationProgressBar');
+  const ollamaTranslationStatus = $('#ollamaTranslationStatus');
+
+  if (generateAudiobookBtn) {
+    generateAudiobookBtn.addEventListener('click', async () => {
+      if (!state.paragraphs || state.paragraphs.length === 0) return;
+      audiobookProgress.style.display = '';
+      audiobookStatus.textContent = 'Preparing...';
+      audiobookProgressBar.style.width = '0%';
+      try {
+        const result = await generateBookAudio(state.paragraphs, {
+          voice: state.edgeTtsVoice,
+          speechRate: state.speechRate,
+          onProgress(current, total) {
+            const pct = Math.round((current / total) * 100);
+            audiobookProgressBar.style.width = pct + '%';
+            audiobookStatus.textContent = `Paragraph ${current} of ${total}`;
+          }
+        });
+        const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'audiobook';
+        downloadAudio(result.blob, baseName + '.mp3');
+      } catch (err) {
+        if (err.message !== 'Audio generation cancelled') {
+          alert('Audiobook generation failed: ' + err.message);
+        }
+      } finally {
+        audiobookProgress.style.display = 'none';
+      }
+    });
+  }
+
+  if (cancelAudiobookBtn) {
+    cancelAudiobookBtn.addEventListener('click', () => cancelBookAudio());
+  }
+
+  if (translateBookBtn) {
+    translateBookBtn.addEventListener('click', async () => {
+      if (!state.paragraphs || state.paragraphs.length === 0) return;
+      translationProgress.style.display = '';
+      translationStatus.textContent = 'Preparing...';
+      translationProgressBar.style.width = '0%';
+      try {
+        translatedParagraphs = await translateBook(state.paragraphs, {
+          translateFn: translateText,
+          onProgress(current, total) {
+            const pct = Math.round((current / total) * 100);
+            translationProgressBar.style.width = pct + '%';
+            translationStatus.textContent = `Paragraph ${current} of ${total}`;
+          }
+        });
+        generateTranslatedAudioBtn.style.display = '';
+      } catch (err) {
+        if (err.message !== 'Translation cancelled') {
+          alert('Translation failed: ' + err.message);
+        }
+      } finally {
+        translationProgress.style.display = 'none';
+      }
+    });
+  }
+
+  if (cancelTranslationBtn) {
+    cancelTranslationBtn.addEventListener('click', () => cancelTranslation());
+  }
+
+  if (generateTranslatedAudioBtn) {
+    generateTranslatedAudioBtn.addEventListener('click', async () => {
+      if (!translatedParagraphs || translatedParagraphs.length === 0) return;
+      audiobookProgress.style.display = '';
+      audiobookStatus.textContent = 'Preparing translated audio...';
+      audiobookProgressBar.style.width = '0%';
+      try {
+        const result = await generateBookAudio(translatedParagraphs, {
+          voice: state.edgeTtsVoice,
+          speechRate: state.speechRate,
+          onProgress(current, total) {
+            const pct = Math.round((current / total) * 100);
+            audiobookProgressBar.style.width = pct + '%';
+            audiobookStatus.textContent = `Paragraph ${current} of ${total}`;
+          }
+        });
+        const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'audiobook';
+        downloadAudio(result.blob, baseName + '-translated.mp3');
+      } catch (err) {
+        if (err.message !== 'Audio generation cancelled') {
+          alert('Translated audio generation failed: ' + err.message);
+        }
+      } finally {
+        audiobookProgress.style.display = 'none';
+      }
+    });
+  }
+
+  if (ollamaTranslateBtn) {
+    ollamaTranslateBtn.addEventListener('click', async () => {
+      if (!state.paragraphs || state.paragraphs.length === 0) return;
+      ollamaTranslationProgress.style.display = '';
+      ollamaTranslationStatus.textContent = 'Preparing...';
+      ollamaTranslationProgressBar.style.width = '0%';
+      try {
+        const ollamaResult = await translateBookWithOllama(state.paragraphs, {
+          onProgress(current, total) {
+            const pct = Math.round((current / total) * 100);
+            ollamaTranslationProgressBar.style.width = pct + '%';
+            ollamaTranslationStatus.textContent = `Paragraph ${current} of ${total}`;
+          }
+        });
+        const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'book';
+        const title = state.fileName || 'Translated Book';
+        const md = exportAsMarkdown(state.paragraphs, ollamaResult, title);
+        downloadMarkdown(md, baseName + '-translated.md');
+      } catch (err) {
+        if (err.message !== 'Ollama translation cancelled') {
+          alert('Ollama translation failed: ' + err.message);
+        }
+      } finally {
+        ollamaTranslationProgress.style.display = 'none';
+      }
+    });
+  }
+
+  if (cancelOllamaTranslationBtn) {
+    cancelOllamaTranslationBtn.addEventListener('click', () => cancelOllamaTranslation());
+  }
+}
 
 // ===== Word Definition =====
 function clearPosTag() {

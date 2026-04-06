@@ -895,6 +895,31 @@ body {
   color: #2e5e2f;
 }
 
+/* ===== Book Generation Progress ===== */
+.generation-progress {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999;
+}
+.generation-progress-inner {
+  background: var(--bg, #fff); color: var(--fg, #333);
+  border-radius: 12px; padding: 28px 32px; min-width: 320px;
+  text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+}
+.generation-progress-header {
+  font-size: 1.15em; font-weight: 600; margin-bottom: 16px;
+}
+.generation-progress-bar-track {
+  background: #e0e0e0; border-radius: 6px; height: 10px; overflow: hidden; margin-bottom: 12px;
+}
+.generation-progress-bar {
+  background: #4a90d9; height: 100%; border-radius: 6px; transition: width 0.3s;
+}
+.generation-progress-status {
+  font-size: 0.9em; color: #888; margin-bottom: 14px;
+}
+
 /* ===== Feature Guide Overlay ===== */
 .feature-guide {
   display: none;

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- CSP: style-src 'unsafe-inline' required for dynamic element.style.* in reader.js and theme swatches.
        TODO: migrate inline styles to CSS classes and use nonces to remove 'unsafe-inline'. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://api.openai.com https://edge.microsoft.com https://api.cognitive.microsofttranslator.com https://translate.googleapis.com https://api.allorigins.win wss://speech.platform.bing.com; media-src 'self' blob:; img-src 'self' data: blob:; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://api.openai.com https://edge.microsoft.com https://api.cognitive.microsofttranslator.com https://translate.googleapis.com https://api.allorigins.win wss://speech.platform.bing.com http://localhost:11434; media-src 'self' blob:; img-src 'self' data: blob:; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none';">
   <title>English Reader</title>
   <link rel="icon" href="/icons/icon48.png">
   <link rel="stylesheet" href="/src/reader.css">
@@ -67,6 +67,11 @@
           <button class="theme-swatch" data-theme="green" title="Green" aria-label="Green theme" style="background:#e8f5e9"></button>
         </div>
         <button class="icon-btn gesture-mode-direct" id="gestureModeBtn" title="Gesture: direct mode" aria-label="Toggle gesture mode">&#9889;</button>
+        <!-- Book generation -->
+        <button class="icon-btn" id="translateBookBtn" title="Translate Book" aria-label="Translate Book">&#127760;</button>
+        <button class="icon-btn" id="ollamaTranslateBtn" title="Translate with Ollama (local AI)" aria-label="Translate with Ollama">&#129302;</button>
+        <button class="icon-btn" id="generateAudiobookBtn" title="Generate Audiobook" aria-label="Generate Audiobook">&#127911;</button>
+        <button class="icon-btn" id="generateTranslatedAudioBtn" title="Generate Translated Audio" aria-label="Generate Translated Audio">&#127908;</button>
         <!-- Utility -->
         <button class="icon-btn" id="exportDocxBtn" title="Export to Word" aria-label="Export to Word">&#128230;</button>
         <button class="icon-btn" id="settingsToggle" title="Settings" aria-label="Settings">&#9881;</button>
@@ -200,6 +205,42 @@
         <button class="btn btn-sm" id="paraNoteBtn">&#128221; Note</button>
       </div>
       <div class="para-popup-translation" id="paraPopupTranslation"></div>
+    </div>
+  </div>
+
+  <!-- Audiobook Generation Progress -->
+  <div class="generation-progress" id="audiobookProgress" style="display:none" role="status" aria-label="Audiobook generation progress">
+    <div class="generation-progress-inner">
+      <div class="generation-progress-header">Generating Audiobook...</div>
+      <div class="generation-progress-bar-track">
+        <div class="generation-progress-bar" id="audiobookProgressBar" style="width:0%"></div>
+      </div>
+      <div class="generation-progress-status" id="audiobookStatus">Preparing...</div>
+      <button class="btn btn-sm" id="cancelAudiobookBtn">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Translation Progress -->
+  <div class="generation-progress" id="translationProgress" style="display:none" role="status" aria-label="Translation progress">
+    <div class="generation-progress-inner">
+      <div class="generation-progress-header">Translating Book...</div>
+      <div class="generation-progress-bar-track">
+        <div class="generation-progress-bar" id="translationProgressBar" style="width:0%"></div>
+      </div>
+      <div class="generation-progress-status" id="translationStatus">Preparing...</div>
+      <button class="btn btn-sm" id="cancelTranslationBtn">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Ollama Translation Progress -->
+  <div class="generation-progress" id="ollamaTranslationProgress" style="display:none" role="status" aria-label="Ollama translation progress">
+    <div class="generation-progress-inner">
+      <div class="generation-progress-header">Translating with Ollama...</div>
+      <div class="generation-progress-bar-track">
+        <div class="generation-progress-bar" id="ollamaTranslationProgressBar" style="width:0%"></div>
+      </div>
+      <div class="generation-progress-status" id="ollamaTranslationStatus">Preparing...</div>
+      <button class="btn btn-sm" id="cancelOllamaTranslationBtn">Cancel</button>
     </div>
   </div>
 

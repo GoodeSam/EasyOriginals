@@ -1,3 +1,6 @@
+Append the final report（English first，then Chinese) to the end of the current document at  
+/Users/victor/projects/EasyOriginals/[EasyOriginalsProcess.md](http://EasyOriginalsProcess.md) (append only, do not overwrite).
+
 \>> 结合[https\://github.com/ZuodaoTech/everyone-can-use-english](https://github.com/ZuodaoTech/everyone-can-use-english) 这里面的内容，分析 [https\://enjoy.bot](https://enjoy.bot) 可以直接在网页版上使用，而不用下载安装APP，这个软件是如何制作的
 
 ```rust
@@ -127,7 +130,7 @@ EasyOriginals/
 ├── index.html              ← Main entry (opens in browser)
 ├── src/
 │   ├── main.js             ← ES module entry
-│   ├── reader.js           ← Core logic (adapted, no chrome.* deps)
+│   ├── reader.js           ← Core logic (adapted, no chrome.\* deps)
 │   ├── reader.css           ← Full styling
 │   ├── storage.js          ← localStorage wrapper (replaces
 chrome.storage)
@@ -231,7 +234,7 @@ src/sync-storage.js — Unified storage layer
 - pullAll() — download all remote data to localStorage on login
 - pushAll() — upload all local data on registration (includes
   bookmarks)
-- SYNC_KEYS — all 9 syncable data keys
+- SYNC\_KEYS — all 9 syncable data keys
 
 src/auth-ui.js — UI binding
 
@@ -325,6 +328,13 @@ How URL loading works:
   top bar
 
   15 new tests, 148 total, all passing.
+
+
+
+
+
+
+
 
 
 
@@ -1092,7 +1102,7 @@ Updated test in tests/fullscreen-reading.test.js:
 Implementation in src/reader.js (line \~3501):
 
 - Removed const atRight = clientX > (window\.innerWidth -  
-  EDGE_TRIGGER_PX)
+  EDGE\_TRIGGER\_PX)
 - Changed if (atTop || atBottom || atRight) to if (atTop || atBottom)
 
 Mouse at the right edge now simply resets the auto-hide timer (same  
@@ -1149,8 +1159,8 @@ API key, so clicking multiple words produced repeated alerts.
 
 Fix (3 lines of logic in src/reader.js):
 
-- Added let _apiKeyAlertShown = false guard flag
-- callOpenAI() now checks !_apiKeyAlertShown before alerting, then
+- Added let \_apiKeyAlertShown = false guard flag
+- callOpenAI() now checks !\_apiKeyAlertShown before alerting, then
   sets it to true
 - ensureSettings() resets the flag to false when settings are
   reloaded, so the alert can fire again if the user changes their
@@ -1265,7 +1275,7 @@ Fix — added generateSecMsGec() which computes the required token:
 1. Gets current Unix timestamp, adds Windows epoch offset
    (11644473600)
 2. Rounds down to nearest 5-minute boundary (% 300)
-3. Converts to 100-nanosecond intervals (* 1e7)
+3. Converts to 100-nanosecond intervals (\* 1e7)
 4. Concatenates with the trusted client token
 5. SHA-256 hashes via crypto.subtle.digest, outputs uppercase hex
 
@@ -1292,8 +1302,8 @@ white and green themes showed mismatched colors.
 Changes:
 
 1. src/reader.css — Added complete theme override blocks for  
-   [data-theme="white"], [data-theme="black"] (search bar), and  
-   [data-theme="green"], covering:  
+   \[data-theme="white"], \[data-theme="black"] (search bar), and  
+   \[data-theme="green"], covering:  
    \- .search-bar background and border  
    \- .search-bar input background, border, and text color
    \- .sentence.hover-active and .sentence.active backgrounds  
@@ -1354,20 +1364,20 @@ Use TDD to fix multiple icons (including reading history) that do not respond wh
 
 Fix text clipping in multi-screen pagination: adjust pagination calculation and rendering logic using TDD to prevent boundaries from splitting text mid-line, ensure paragraphs remain complete and visible, and maintain correct pagination when window or font size changes.
 
-Problem: Screen pagination used scrollTop = index * clientHeight, splitting
+Problem: Screen pagination used scrollTop = index \* clientHeight, splitting
 text mid-line at screen boundaries. Paragraphs were clipped when they
 straddled the boundary between two viewport-height chunks.
 
 Changes:
 
 1. src/reader.js:
-   \- Added screenOffsets: [0] to state — stores the scrollTop value for each
+   \- Added screenOffsets: \[0] to state — stores the scrollTop value for each
    screen
    \- Rewrote recalcScreens() to walk paragraph elements and build screen
    breaks at paragraph boundaries. When a paragraph's bottom would exceed the
    current screen's viewport, a new screen starts at that paragraph's offsetTop
    \- totalScreens is now derived from screenOffsets.length
-   \- goToScreen() uses screenOffsets[index] instead of index * clientHeight
+   \- goToScreen() uses screenOffsets\[index] instead of index \* clientHeight
    \- After recalculation (resize/font change), scrollTop is repositioned to
    the current screen's offset
 2. tests/screen-text-clipping.test.js — 10 TDD tests verifying: screenOffsets
@@ -1716,7 +1726,7 @@ Ask Codex whether this Zustand pattern could cause stale state.
 **Audit type**: Mini (5-dim)
 **Fixer**: Claude
 **Model**: gpt-5.3-codex | **Effort**: high | **Sandbox**: workspace-write
-**Thread ID**: `019d3305-90d1-7830-9eae-046fe7c06404` *(use ******`/continue 019d3305-90d1-7830-9eae-046fe7c06404`****** to iterate further — Codex only)*
+**Thread ID**: `019d3305-90d1-7830-9eae-046fe7c06404` *(use ********************`/continue 019d3305-90d1-7830-9eae-046fe7c06404`******************** to iterate further — Codex only)*
 **Rounds**: 2
 
 ## Result: ACCEPTED
@@ -1815,7 +1825,7 @@ const wordNoteBtn = $('#wordNoteBtn');
 - `paraNoteBtn.click` → extracts `paraPopupText.textContent` → `addNote(text)`
 - `wordNoteBtn.click` → extracts `popupWord.textContent` → `addNote(text)`
 
-**New function — ****`updateNote(index, newText)`****:**
+**New function — ********************************`updateNote(index, newText)`********************************:**
 
 ```javascript
 function updateNote(index, newText) {
@@ -1826,7 +1836,7 @@ function updateNote(index, newText) {
 }
 ```
 
-**Updated ****`renderNotes()`****:**
+**Updated ********************************`renderNotes()`********************************:**
 
 - Each note item now renders a `.note-text` div, a `.note-actions` container with edit (✎) and delete (×) buttons.
 - Clicking the edit button replaces the `.note-text` div with a `<textarea>` for inline editing.
@@ -1899,7 +1909,7 @@ const wordNoteBtn = $('#wordNoteBtn');
 - `paraNoteBtn.click` → 提取 `paraPopupText.textContent` → `addNote(text)`
 - `wordNoteBtn.click` → 提取 `popupWord.textContent` → `addNote(text)`
 
-**新增函数 — ****`updateNote(index, newText)`****：**
+**新增函数 — ********************************`updateNote(index, newText)`********************************：**
 
 ```javascript
 function updateNote(index, newText) {
@@ -1910,7 +1920,7 @@ function updateNote(index, newText) {
 }
 ```
 
-**更新 ****`renderNotes()`****：**
+**更新 ********************************`renderNotes()`********************************：**
 
 - 每个笔记项现在渲染 `.note-text` 文本容器、`.note-actions` 操作容器（含编辑 ✎ 和删除 × 按钮）。
 - 点击编辑按钮将 `.note-text` 替换为 `<textarea>` 进行行内编辑。
@@ -1941,8 +1951,6 @@ function updateNote(index, newText) {
  src/reader.css                    — 编辑按钮及行内编辑样式
 ```
 
-
-
 \>> 使用TDD实现，用户点击 note 后 **“0.3秒内确认成功” + “避免重复操作”，**&#x70B9;击 note 图标后：
 
 - 图标从「未选中」→「已选中」
@@ -1950,9 +1958,6 @@ function updateNote(index, newText) {
 - 或出现 ✔ 标记
 
 Using TDD, implement note button click handling: toggle icon state from unselected to selected (gray to highlight color or display ✔ mark), confirm success within 0.3 seconds, and prevent duplicate operations.
-
-
-
 
 ---
 
@@ -1977,14 +1982,14 @@ Written **before** implementation (TDD red-green cycle). Two new test groups:
   - Calls `addNote(text)` to persist the note
   - Adds `.noted` CSS class for highlight styling
   - All 4 Note button handlers (`btnNote`, `wordNoteBtn`, `paraNoteBtn`, `selNote`) use `noteWithFeedback`
-
 - **Note button feedback CSS** (2 tests):
   - `.noted` class exists in reader.css
   - `.noted` class sets a distinct background or color
 
 ### 2. JavaScript Changes: `src/reader.js`
 
-**New function — `noteWithFeedback(btn, text, originalLabel)`:**
+**New function — ****************************`noteWithFeedback(btn, text, originalLabel)`****************************:**
+
 ```javascript
 function noteWithFeedback(btn, text, originalLabel) {
   if (btn.disabled) return;
@@ -2001,6 +2006,7 @@ function noteWithFeedback(btn, text, originalLabel) {
 ```
 
 **Updated click handlers (4):**
+
 - `btnNote` (sentence panel) → `noteWithFeedback(btnNote, text, '📝 Note')`
 - `wordNoteBtn` (word popup) → `noteWithFeedback(wordNoteBtn, text, '📝 Note')`
 - `paraNoteBtn` (paragraph popup) → `noteWithFeedback(paraNoteBtn, text, '📝 Note')`
@@ -2057,14 +2063,14 @@ All 14 new tests and all 413 existing tests pass.
   - 调用 `addNote(text)` 持久化笔记
   - 添加 `.noted` CSS 类实现高亮样式
   - 全部 4 个笔记按钮（`btnNote`、`wordNoteBtn`、`paraNoteBtn`、`selNote`）均使用 `noteWithFeedback`
-
 - **笔记按钮反馈 CSS**（2 个测试）：
   - `.noted` 类存在于 reader.css 中
   - `.noted` 类设置了明显的背景色或文字颜色
 
 ### 2. JavaScript 变更：`src/reader.js`
 
-**新增函数 — `noteWithFeedback(btn, text, originalLabel)`：**
+**新增函数 — ****************************`noteWithFeedback(btn, text, originalLabel)`****************************：**
+
 ```javascript
 function noteWithFeedback(btn, text, originalLabel) {
   if (btn.disabled) return;        // 防止重复操作
@@ -2081,6 +2087,7 @@ function noteWithFeedback(btn, text, originalLabel) {
 ```
 
 **更新点击处理器（4 个）：**
+
 - `btnNote`（句子面板）→ `noteWithFeedback(btnNote, text, '📝 Note')`
 - `wordNoteBtn`（单词弹窗）→ `noteWithFeedback(wordNoteBtn, text, '📝 Note')`
 - `paraNoteBtn`（段落弹窗）→ `noteWithFeedback(paraNoteBtn, text, '📝 Note')`
@@ -2113,3 +2120,80 @@ function noteWithFeedback(btn, text, originalLabel) {
  src/reader.js                — noteWithFeedback() 函数，4 个处理器更新
  src/reader.css               — .noted 高亮样式类
 ```
+
+⏺ Pushed b504d58 to origin/main.
+
+\>> 在单词查询界面，speak的图标放到note图标的同一行且放在note图标的前面。如果按下了speak的图标，应有明显的变化，提示已经按下了这个图标，避免按下去多次
+
+In the word query popup, place the speak icon on the same line as the note icon, positioned before it. Add visual feedback (disabled state, color change, or spinner) when the speak icon is pressed to prevent duplicate clicks.
+
+Pushed to GitHub as commit b487e1d.
+
+\>> 当浏览器不是全屏最大化的时候，按下阅读界面，不要将浏览器出于全屏最大化
+
+Prevent the reading interface from automatically entering fullscreen mode when the browser is not already fullscreen.
+
+```javascript
+Removed the enterBrowserFullscreen() call from handleReaderClick
+  and deleted the now-unused function. The reader will no longer
+  automatically request browser fullscreen on click — it will only
+  use the CSS-based fullscreen reading mode (auto-hide bars) which
+  doesn't change the browser's fullscreen state.
+```
+
+Pushed as f5797e5.
+
+\>> 在其他有speak的图标的界面，如果按下了speak的图标，应有明显的变化，提示已经按下了这个图标，避免按下去多次
+
+⏺ Pushed as 32174ae.
+
+\>> 使用TDD实现：请统一调整所有单词“英文解释”的显示格式，在词性（part of speech）和释义之间增加“：”和一个空格。
+
+当前问题：
+
+- 目前英文解释的格式为：
+  `Adverb in a manner that is clear, detailed...`
+- 词性和释义之间没有明显分隔，不够清晰
+
+目标效果：
+
+- 将格式统一改为：
+  `Adverb： in a manner that is clear, detailed...`
+- 即：词性后添加一个中文冒号“：”，再加一个空格
+
+Use TDD to implement: Update all English explanation formats in the word popup to add a full-width colon and space between part of speech and definition (e.g., `Adverb： in a manner that...` instead of `Adverb in a manner that...`).
+
+使用TDD实现，在下一次打卡这个网址时，自动载入上一次打开的文件，和打开的进度
+
+\>> 使用TDD实现，在现有基础上增加可以手动选择GPT的API产生的TTS的语音，且可以选择人物以获得不同的发音。 Using TDD, implement manual selection of TTS voices from GPT API and persona choices for different pronunciations.
+
+ushed to GitHub: 285cecd on main.
+
+\>> 现在有**TTS Voice Persona 和 Read Aloud Voice (free, no API key needed) 两种，如何判断到底是这两个角色中哪一个的发音。  Add logic to determine which voice source is active: TTS Voice Persona or Read Aloud Voice (free, no API key needed).**
+
+# 一级标题 **你好**。你好
+
+**加粗变蓝**
+
+## 二级标题
+
+\>> 在toolbar中的Settings中可以选择 ('edge' | 'openai')作为ttsSource setting      Add ttsSource setting selector with options 'edge' and 'openai' to the toolbar Settings panel.
+
+```python
+ The ttsSource selector with 'edge' and 'openai' options is
+  already in the Settings panel (lines 43-47), wired up for loading
+   (line 81) and saving (line 137). This was implemented and pushed
+   in commit 5c50b86.                                              
+                                                                   
+  All 472 tests pass, including the 19 dedicated tests in          
+  tests/tts-source-selection.test.js that verify the selector
+  exists, has both options, defaults to 'edge', persists on save,  
+  and loads saved values.                                   
+
+  Nothing further to do here — it's already in place.
+```
+
+
+
+\>> 使用TDD实现：借鉴 [https\://github.com/GoodeSam/tepub](https://github.com/GoodeSam/tepub) 可以将上传的书籍，全书使用Edge的TTS免费生成原文的音频版，全文的翻译，译文的音频版。 Implement using TDD the ability to upload books and generate audio versions of the original text and translations using Edge's free TTS, referencing [https\://github.com/GoodeSam/tepub](https://github.com/GoodeSam/tepub) for guidance on processing full-book content and generating translated versions.
+
