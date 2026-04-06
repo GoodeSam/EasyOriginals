@@ -6,6 +6,7 @@ import { parseEnglishDefinition } from './definition-utils.js';
 import { generateBookAudio, cancelBookAudio, downloadAudio, detectContentLanguage, voiceForLanguage } from './book-audio.js';
 import { translateBook, cancelTranslation } from './book-translator.js';
 import { translateBookWithOllama, cancelOllamaTranslation, exportAsMarkdown, exportTranslationMarkdown, checkOllamaConnection } from './ollama-translator.js';
+import { saveTranslationCheckpoint, loadTranslationCheckpoint, clearTranslationCheckpoint, getCheckpointInfo } from './checkpoint.js';
 const TTS_MODEL = 'tts-1';
 const OPENAI_TTS_VOICES = [
   { value: 'alloy', label: 'Alloy', persona: 'Neutral and balanced' },
@@ -2646,18 +2647,36 @@ function setupBookGeneration() {
         alert('Book translation is not available in offline mode. Please select a translation provider in Settings.');
         return;
       }
+      const ckptInfo = getCheckpointInfo(state.fileName, 'translate');
+      let resumeStart = 0;
+      let resumeResults = [];
+      if (ckptInfo.exists) {
+        const resume = confirm('Previous progress found (paragraph ' + ckptInfo.completedIndex + ' of ' + ckptInfo.totalParagraphs + '). Resume?');
+        if (resume) {
+          const ckpt = loadTranslationCheckpoint(state.fileName, 'translate');
+          if (ckpt) { resumeStart = ckpt.completedIndex; resumeResults = ckpt.translatedParagraphs; }
+        } else {
+          clearTranslationCheckpoint(state.fileName, 'translate');
+        }
+      }
       translationProgress.style.display = '';
-      translationStatus.textContent = 'Preparing...';
+      translationStatus.textContent = resumeStart > 0 ? 'Resuming from paragraph ' + resumeStart + '...' : 'Preparing...';
       translationProgressBar.style.width = '0%';
       try {
         translatedParagraphs = await translateBook(state.paragraphs, {
           translateFn: translateText,
+          startIndex: resumeStart,
+          existingResults: resumeResults,
           onProgress(current, total) {
             const pct = Math.round((current / total) * 100);
             translationProgressBar.style.width = pct + '%';
             translationStatus.textContent = `Paragraph ${current} of ${total}`;
+          },
+          onParagraphComplete(idx, results) {
+            saveTranslationCheckpoint(state.fileName, 'translate', { completedIndex: idx, translatedParagraphs: results, totalParagraphs: state.paragraphs.filter(p => p.type !== 'image').length });
           }
         });
+        clearTranslationCheckpoint(state.fileName, 'translate');
         generateTranslatedAudioBtn.style.display = '';
         const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'book';
         const title = state.fileName || 'Translated Book';
@@ -2748,18 +2767,37 @@ function setupBookGeneration() {
       const header = $('#ollamaTranslationHeader');
       const modelLabel = state.ollamaModel || 'llama3';
       if (header) header.textContent = 'Translating with Ollama (' + modelLabel + ')...';
-      ollamaTranslationStatus.textContent = 'Preparing...';
+
+      const oCkptInfo = getCheckpointInfo(state.fileName, 'ollama-translate');
+      let oResumeStart = 0;
+      let oResumeResults = [];
+      if (oCkptInfo.exists) {
+        const resume = confirm('Previous Ollama progress found (paragraph ' + oCkptInfo.completedIndex + ' of ' + oCkptInfo.totalParagraphs + '). Resume?');
+        if (resume) {
+          const ckpt = loadTranslationCheckpoint(state.fileName, 'ollama-translate');
+          if (ckpt) { oResumeStart = ckpt.completedIndex; oResumeResults = ckpt.translatedParagraphs; }
+        } else {
+          clearTranslationCheckpoint(state.fileName, 'ollama-translate');
+        }
+      }
+      ollamaTranslationStatus.textContent = oResumeStart > 0 ? 'Resuming from paragraph ' + oResumeStart + '...' : 'Preparing...';
 
       try {
         translatedParagraphs = await translateBookWithOllama(state.paragraphs, {
           ollamaUrl: ollamaBaseUrl + '/api/generate',
           model: state.ollamaModel,
+          startIndex: oResumeStart,
+          existingResults: oResumeResults,
           onProgress(current, total) {
             const pct = Math.round((current / total) * 100);
             ollamaTranslationProgressBar.style.width = pct + '%';
             ollamaTranslationStatus.textContent = `Ollama (${modelLabel}): paragraph ${current} of ${total}`;
           },
+          onParagraphComplete(idx, results) {
+            saveTranslationCheckpoint(state.fileName, 'ollama-translate', { completedIndex: idx, translatedParagraphs: results, totalParagraphs: state.paragraphs.filter(p => p.type !== 'image').length });
+          },
         });
+        clearTranslationCheckpoint(state.fileName, 'ollama-translate');
         generateTranslatedAudioBtn.style.display = '';
         const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'book';
         const title = state.fileName || 'Translated Book';

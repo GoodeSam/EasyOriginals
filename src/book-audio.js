@@ -225,17 +225,25 @@ export async function generateBookAudio(paragraphs, options = {}) {
       'Please select an English voice in Settings for English content.'
     );
   }
-  const audioBlobs = [];
+  const { startIndex = 0, existingBlobs = [], onParagraphComplete } = options;
+  const audioBlobs = existingBlobs.length > 0 ? [...existingBlobs] : [];
   const nonBlankParas = textParagraphs.filter(p => p.sentences.join(' ').trim());
   const total = nonBlankParas.length;
-  let progressIndex = 0;
+  let progressIndex = startIndex;
 
+  // Skip already-completed paragraphs when resuming
+  let nonBlankIndex = 0;
   for (let i = 0; i < textParagraphs.length; i++) {
     if (_cancelled) throw new Error('Audio generation cancelled');
 
     const para = textParagraphs[i];
     const text = para.sentences.join(' ');
     if (!text.trim()) continue;
+
+    if (nonBlankIndex < startIndex) {
+      nonBlankIndex++;
+      continue;
+    }
 
     let blob;
     for (let attempt = 0; attempt <= SYNTH_MAX_RETRIES; attempt++) {
@@ -247,8 +255,10 @@ export async function generateBookAudio(paragraphs, options = {}) {
       }
     }
     audioBlobs.push(blob);
+    nonBlankIndex++;
     progressIndex++;
 
+    if (onParagraphComplete) onParagraphComplete(progressIndex, blob);
     if (onProgress) onProgress(progressIndex, total);
   }
 

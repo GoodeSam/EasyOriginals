@@ -36,8 +36,8 @@ export async function translateParagraph(text, translateFn, fromLang = 'en', toL
 export async function translateBook(paragraphs, options = {}) {
   _cancelled = false;
   _abortController = new AbortController();
-  const { translateFn, fromLang = 'en', toLang = 'zh', onProgress } = options;
-  const translatedParagraphs = [];
+  const { translateFn, fromLang = 'en', toLang = 'zh', onProgress, onParagraphComplete, startIndex = 0, existingResults = [] } = options;
+  const translatedParagraphs = existingResults.length > 0 ? [...existingResults] : [];
   const textParagraphs = paragraphs.filter(p => p.type !== 'image');
   const total = textParagraphs.length;
   let textIndex = 0;
@@ -48,13 +48,20 @@ export async function translateBook(paragraphs, options = {}) {
     const para = paragraphs[i];
 
     if (para.type === 'image') {
-      translatedParagraphs.push(para);
+      if (i >= translatedParagraphs.length) translatedParagraphs.push(para);
+      continue;
+    }
+
+    if (textIndex < startIndex) {
+      if (i >= translatedParagraphs.length) translatedParagraphs.push({ sentences: [''] });
+      textIndex++;
+      if (onProgress) onProgress(textIndex, total);
       continue;
     }
 
     const text = para.sentences.join(' ');
     if (!text.trim()) {
-      translatedParagraphs.push({ sentences: [''] });
+      if (i >= translatedParagraphs.length) translatedParagraphs.push({ sentences: [''] });
       textIndex++;
       if (onProgress) onProgress(textIndex, total);
       continue;
@@ -64,9 +71,10 @@ export async function translateBook(paragraphs, options = {}) {
       _abortController.signal.addEventListener('abort', () => reject(new Error('Translation cancelled')), { once: true });
     });
     const translated = await Promise.race([translateParagraph(text, translateFn, fromLang, toLang), abortPromise]);
-    translatedParagraphs.push({ sentences: [translated] });
+    translatedParagraphs[i] = { sentences: [translated] };
     textIndex++;
 
+    if (onParagraphComplete) onParagraphComplete(textIndex, translatedParagraphs);
     if (onProgress) onProgress(textIndex, total);
   }
 

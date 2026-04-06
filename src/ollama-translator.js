@@ -121,8 +121,8 @@ export async function translateWithOllama(text, options = {}) {
 export async function translateBookWithOllama(paragraphs, options = {}) {
   _cancelled = false;
   _abortController = new AbortController();
-  const { model, fromLang, toLang, onProgress, ollamaUrl } = options;
-  const translatedParagraphs = [];
+  const { model, fromLang, toLang, onProgress, onParagraphComplete, ollamaUrl, startIndex = 0, existingResults = [] } = options;
+  const translatedParagraphs = existingResults.length > 0 ? [...existingResults] : [];
   const textParagraphs = paragraphs.filter(p => p.type !== 'image');
   const total = textParagraphs.length;
   let textIndex = 0;
@@ -133,13 +133,20 @@ export async function translateBookWithOllama(paragraphs, options = {}) {
     const para = paragraphs[i];
 
     if (para.type === 'image') {
-      translatedParagraphs.push(para);
+      if (i >= translatedParagraphs.length) translatedParagraphs.push(para);
+      continue;
+    }
+
+    if (textIndex < startIndex) {
+      if (i >= translatedParagraphs.length) translatedParagraphs.push({ sentences: [''] });
+      textIndex++;
+      if (onProgress) onProgress(textIndex, total);
       continue;
     }
 
     const text = para.sentences.join(' ');
     if (!text.trim()) {
-      translatedParagraphs.push({ sentences: [''] });
+      if (i >= translatedParagraphs.length) translatedParagraphs.push({ sentences: [''] });
       textIndex++;
       if (onProgress) onProgress(textIndex, total);
       continue;
@@ -161,9 +168,10 @@ export async function translateBookWithOllama(paragraphs, options = {}) {
         throw new Error('Paragraph ' + (textIndex + 1) + '/' + total + ' failed after ' + (attempt + 1) + ' attempts: ' + err.message);
       }
     }
-    translatedParagraphs.push({ sentences: [translated] });
+    translatedParagraphs[i] = { sentences: [translated] };
     textIndex++;
 
+    if (onParagraphComplete) onParagraphComplete(textIndex, translatedParagraphs);
     if (onProgress) onProgress(textIndex, total);
 
     // Cooldown between paragraphs to prevent Ollama overload
