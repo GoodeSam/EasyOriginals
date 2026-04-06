@@ -1063,7 +1063,9 @@ body {
   color: #059669;
   background: rgba(5,150,105,0.1);
 }
-.settings-panel .side-panel-header { font-family: -apple-system, sans-serif; }
+.settings-panel { max-height: 85vh; background: var(--bg, #fff); }
+.settings-panel .side-panel-header { font-family: -apple-system, sans-serif; background: var(--bg, #fff); }
+.settings-panel .settings-body { flex: 1; overflow-y: auto; background: var(--bg, #fff); }
 
 /* ===== Side-panel layout compensation ===== */
 /* Panels are now at the top — no right-side compensation needed */

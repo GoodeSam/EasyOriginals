@@ -803,7 +803,7 @@ function bindSettingsPanel() {
   const panel = createSettingsPanel();
   document.body.appendChild(panel);
   settingsToggle.addEventListener('click', () => {
-    panel.classList.toggle('active');
+    panel.classList.add('active');
   });
   // Re-sync state when settings panel saves
   panel.querySelector('#settingsSaveBtn').addEventListener('click', () => {
