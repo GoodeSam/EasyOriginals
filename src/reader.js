@@ -805,12 +805,17 @@ function bindSettingsPanel() {
   settingsToggle.addEventListener('click', () => {
     panel.classList.add('active');
   });
-  // Re-sync state when settings panel saves
+  // Re-sync state and close panel when Save is clicked
   panel.querySelector('#settingsSaveBtn').addEventListener('click', () => {
     const s = loadStorageSettings();
     state.apiKey = s.openaiApiKey;
     state.model = s.openaiModel;
     state.translationProvider = s.translationProvider;
+    setTimeout(() => panel.classList.remove('active'), 800);
+  });
+  // Close settings when clicking into the reader content
+  readerContent.addEventListener('click', () => {
+    panel.classList.remove('active');
   });
 }
 
@@ -4176,8 +4181,11 @@ function startAutoHideTimer() {
     if (searchBarEl) searchBarEl.classList.add('auto-hide');
     // Auto-hide all side toggles
     document.querySelectorAll('.side-toggle').forEach(t => t.classList.add('auto-hide'));
-    // Close all side panels for fullscreen reading
-    document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('active'));
+    // Close side panels for fullscreen reading, but keep settings panel open
+    document.querySelectorAll('.side-panel:not(.settings-panel)').forEach(p => p.classList.remove('active'));
+    const settingsOpen = document.querySelector('.settings-panel.active');
+    // Don't enter fullscreen while settings panel is open
+    if (settingsOpen) return;
     // Delay fullscreen layout change until bars have finished their hide transition
     // so the position:absolute switch doesn't cause a visible content jump
     if (!readerScreen.classList.contains('fullscreen-reading')) {
