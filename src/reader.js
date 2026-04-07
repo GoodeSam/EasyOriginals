@@ -6,7 +6,7 @@ import { parseEnglishDefinition } from './definition-utils.js';
 import { generateBookAudio, cancelBookAudio, downloadAudio, detectContentLanguage, voiceForLanguage } from './book-audio.js';
 import { translateBook, cancelTranslation } from './book-translator.js';
 import { translateBookWithOllama, cancelOllamaTranslation, exportAsMarkdown, exportTranslationMarkdown, checkOllamaConnection } from './ollama-translator.js';
-import { saveTranslationCheckpoint, loadTranslationCheckpoint, clearTranslationCheckpoint, getCheckpointInfo, RESUME_OVERLAP } from './checkpoint.js';
+import { saveTranslationCheckpoint, loadTranslationCheckpoint, clearTranslationCheckpoint, getCheckpointInfo, RESUME_OVERLAP, contentFingerprint } from './checkpoint.js';
 const TTS_MODEL = 'tts-1';
 const OPENAI_TTS_VOICES = [
   { value: 'alloy', label: 'Alloy', persona: 'Neutral and balanced' },
@@ -52,11 +52,22 @@ function showMessage(text) {
   const copyBtn = document.getElementById('messageModalCopy');
   const closeBtn = document.getElementById('messageModalClose');
   if (!modal || !textEl) { alert(text); return; }
+  const prevFocus = document.activeElement;
   textEl.textContent = text;
   modal.classList.add('active');
-  const close = () => modal.classList.remove('active');
+  closeBtn.focus();
+  const close = () => { modal.classList.remove('active'); if (prevFocus) prevFocus.focus(); };
   closeBtn.onclick = close;
   modal.onclick = (e) => { if (e.target === modal) close(); };
+  modal.onkeydown = (e) => {
+    if (e.key === 'Escape') { close(); return; }
+    if (e.key === 'Tab') {
+      const focusable = [copyBtn, closeBtn];
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  };
   copyBtn.onclick = () => {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(() => {
@@ -1454,7 +1465,7 @@ async function parseMarkdown(file) {
       continue;
     }
 
-    const imgMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)/);
+    const imgMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/);
     if (imgMatch) {
       flushBuffer();
       paragraphs.push({ type: 'image', src: imgMatch[2], alt: imgMatch[1] });
@@ -1991,6 +2002,7 @@ async function ensureSettings() {
     state.openaiTtsVoice = s.openaiTtsVoice || 'alloy';
     state.ttsSource = s.ttsSource || 'edge';
     state.translatedTtsVoice = s.translatedTtsVoice || 'zh-CN-XiaoxiaoNeural';
+    state.chineseSpeechRate = Number(s.chineseSpeechRate) || 0;
     state.ollamaUrl = s.ollamaUrl || 'http://localhost:11434';
     state.ollamaModel = s.ollamaModel || 'llama3';
     state._settingsLoaded = true;
@@ -2656,19 +2668,20 @@ function setupBookGeneration() {
         alert('Book translation is not available in offline mode. Please select a translation provider in Settings.');
         return;
       }
-      const ckptInfo = getCheckpointInfo(state.fileName, 'translate');
+      const fp = contentFingerprint(state.paragraphs);
+      const ckptInfo = getCheckpointInfo(state.fileName, 'translate', fp);
       let resumeStart = 0;
       let resumeResults = [];
       if (ckptInfo.exists) {
         const resume = confirm('Previous progress found (paragraph ' + ckptInfo.completedIndex + ' of ' + ckptInfo.totalParagraphs + '). Resume?');
         if (resume) {
-          const ckpt = loadTranslationCheckpoint(state.fileName, 'translate');
+          const ckpt = loadTranslationCheckpoint(state.fileName, 'translate', fp);
           if (ckpt && ckpt.translatedParagraphs) {
             resumeStart = Math.max(0, ckpt.completedIndex - RESUME_OVERLAP);
             resumeResults = ckpt.translatedParagraphs;
           }
         } else {
-          clearTranslationCheckpoint(state.fileName, 'translate');
+          clearTranslationCheckpoint(state.fileName, 'translate', fp);
         }
       }
       translationProgress.style.display = '';
@@ -2685,10 +2698,10 @@ function setupBookGeneration() {
             translationStatus.textContent = `Paragraph ${current} of ${total}`;
           },
           onParagraphComplete(idx, results) {
-            saveTranslationCheckpoint(state.fileName, 'translate', { completedIndex: idx, translatedParagraphs: results, totalParagraphs: state.paragraphs.filter(p => p.type !== 'image').length });
+            saveTranslationCheckpoint(state.fileName, 'translate', { completedIndex: idx, translatedParagraphs: results, totalParagraphs: state.paragraphs.filter(p => p.type !== 'image').length, fingerprint: fp });
           }
         });
-        clearTranslationCheckpoint(state.fileName, 'translate');
+        clearTranslationCheckpoint(state.fileName, 'translate', fp);
         generateTranslatedAudioBtn.style.display = '';
         const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'book';
         const title = state.fileName || 'Translated Book';
@@ -2781,19 +2794,20 @@ function setupBookGeneration() {
       const modelLabel = state.ollamaModel || 'llama3';
       if (header) header.textContent = 'Translating with Ollama (' + modelLabel + ')...';
 
-      const oCkptInfo = getCheckpointInfo(state.fileName, 'ollama-translate');
+      const oFp = contentFingerprint(state.paragraphs);
+      const oCkptInfo = getCheckpointInfo(state.fileName, 'ollama-translate', oFp);
       let oResumeStart = 0;
       let oResumeResults = [];
       if (oCkptInfo.exists) {
         const resume = confirm('Previous Ollama progress found (paragraph ' + oCkptInfo.completedIndex + ' of ' + oCkptInfo.totalParagraphs + '). Resume?');
         if (resume) {
-          const ckpt = loadTranslationCheckpoint(state.fileName, 'ollama-translate');
+          const ckpt = loadTranslationCheckpoint(state.fileName, 'ollama-translate', oFp);
           if (ckpt && ckpt.translatedParagraphs) {
             oResumeStart = Math.max(0, ckpt.completedIndex - RESUME_OVERLAP);
             oResumeResults = ckpt.translatedParagraphs;
           }
         } else {
-          clearTranslationCheckpoint(state.fileName, 'ollama-translate');
+          clearTranslationCheckpoint(state.fileName, 'ollama-translate', oFp);
         }
       }
       ollamaTranslationStatus.textContent = oResumeStart > 0 ? 'Resuming from paragraph ' + oResumeStart + ' (re-verifying last ' + RESUME_OVERLAP + ')...' : 'Preparing...';
@@ -2810,10 +2824,10 @@ function setupBookGeneration() {
             ollamaTranslationStatus.textContent = `Ollama (${modelLabel}): paragraph ${current} of ${total}`;
           },
           onParagraphComplete(idx, results) {
-            saveTranslationCheckpoint(state.fileName, 'ollama-translate', { completedIndex: idx, translatedParagraphs: results, totalParagraphs: state.paragraphs.filter(p => p.type !== 'image').length });
+            saveTranslationCheckpoint(state.fileName, 'ollama-translate', { completedIndex: idx, translatedParagraphs: results, totalParagraphs: state.paragraphs.filter(p => p.type !== 'image').length, fingerprint: oFp });
           },
         });
-        clearTranslationCheckpoint(state.fileName, 'ollama-translate');
+        clearTranslationCheckpoint(state.fileName, 'ollama-translate', oFp);
         generateTranslatedAudioBtn.style.display = '';
         const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'book';
         const title = state.fileName || 'Translated Book';
@@ -3389,7 +3403,7 @@ async function saveFile(filename, blob) {
   a.download = filename;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
-  return 'Downloads/' + filename;
+  return filename + ' (download started)';
 }
 
 function downloadMarkdown(filename, content) {

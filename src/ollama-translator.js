@@ -261,7 +261,8 @@ export function exportAsMarkdown(originalParagraphs, translatedParagraphs, title
     const trans = translatedParagraphs[i];
 
     if (orig.type === 'image') {
-      lines.push(`![${orig.alt || ''}](${orig.src || ''})\n`);
+      const imgSrc = (orig.src && !orig.src.startsWith('blob:')) ? orig.src : '[image]';
+      lines.push(`![${orig.alt || ''}](${imgSrc})\n`);
       continue;
     }
 
@@ -290,7 +291,8 @@ export function exportTranslationMarkdown(translatedParagraphs, title = 'Transla
 
   for (const para of translatedParagraphs) {
     if (para.type === 'image') {
-      lines.push(`![${para.alt || ''}](${para.src || ''})\n`);
+      const pSrc = (para.src && !para.src.startsWith('blob:')) ? para.src : '[image]';
+      lines.push(`![${para.alt || ''}](${pSrc})\n`);
       continue;
     }
     const text = para.sentences.join(' ');

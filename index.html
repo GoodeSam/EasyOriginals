@@ -27,7 +27,7 @@
         <input type="url" id="urlInput" placeholder="https://example.com/article" autocomplete="url" class="url-input">
         <button class="btn btn-primary" id="urlLoadBtn">Load</button>
       </div>
-      <div id="urlError" class="url-error" style="display:none"></div>
+      <div id="urlError" class="url-error" role="alert" aria-live="assertive" style="display:none"></div>
       <div class="upload-divider"><span>or drop / browse a file</span></div>
       <input type="file" id="fileInput" accept=".pdf,.epub,.docx,.txt,.md,.png,.jpg,.jpeg,.webp" hidden>
       <button class="btn btn-primary" id="browseBtn">Browse Files</button>

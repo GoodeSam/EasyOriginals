@@ -47,7 +47,7 @@ export function createSettingsPanel() {
       </select>
 
       <div style="border-top:1px solid #e0e0e0;margin:12px 0 8px;padding-top:10px;">
-        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;">English Voice</label>
+        <label for="edgeTtsVoice" style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;">English Voice</label>
         <select id="edgeTtsVoice" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:8px;">
         </select>
         <label for="speechRate" style="display:block;font-size:12px;color:#888;margin-bottom:4px;">English Speech Rate</label>
@@ -60,7 +60,7 @@ export function createSettingsPanel() {
       </div>
 
       <div style="border-top:1px solid #e0e0e0;margin:4px 0 8px;padding-top:10px;">
-        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;">Chinese Voice</label>
+        <label for="settingsTranslatedVoice" style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;">Chinese Voice</label>
         <select id="settingsTranslatedVoice" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:8px;">
         </select>
         <label for="chineseSpeechRate" style="display:block;font-size:12px;color:#888;margin-bottom:4px;">Chinese Speech Rate</label>
@@ -81,7 +81,7 @@ export function createSettingsPanel() {
       </div>
 
       <button class="btn btn-primary" id="settingsSaveBtn" style="display:block;width:100%;padding:10px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;background:#4f46e5;color:#fff;">Save Settings</button>
-      <div id="settingsStatus" style="font-size:12px;text-align:center;margin-top:8px;display:none;"></div>
+      <div id="settingsStatus" role="status" aria-live="polite" style="font-size:12px;text-align:center;margin-top:8px;display:none;"></div>
     </div>
   `;
 
