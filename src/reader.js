@@ -2629,6 +2629,8 @@ function setupBookGeneration() {
       try {
         const result = await generateBookAudio(state.paragraphs, {
           voice: autoVoice,
+          englishVoice: voiceForLanguage('en', state.edgeTtsVoice),
+          chineseVoice: voiceForLanguage('zh', state.translatedTtsVoice || state.edgeTtsVoice),
           speechRate: state.speechRate,
           chineseSpeechRate: state.chineseSpeechRate,
           onProgress(current, total) {
@@ -2737,6 +2739,8 @@ function setupBookGeneration() {
       try {
         const result = await generateBookAudio(translatedParagraphs, {
           voice: translatedVoice,
+          englishVoice: voiceForLanguage('en', state.edgeTtsVoice),
+          chineseVoice: voiceForLanguage('zh', state.translatedTtsVoice || state.edgeTtsVoice),
           speechRate: state.speechRate,
           chineseSpeechRate: state.chineseSpeechRate,
           onProgress(current, total) {
