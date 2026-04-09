@@ -238,6 +238,24 @@ function looksOmitted(source, translation) {
   return ratio < 0.2;
 }
 
+function looksOvergenerated(source, translation) {
+  if (!source || !translation) return false;
+  const ratio = translation.length / source.length;
+  return ratio > 2.2;
+}
+
+function hasDuplicateSentences(text) {
+  // Split on Chinese sentence-ending punctuation or newlines
+  const sentences = text.split(/[。！？\n]+/).map(s => s.trim()).filter(s => s.length > 6);
+  if (sentences.length < 2) return false;
+  const seen = new Set();
+  for (const s of sentences) {
+    if (seen.has(s)) return true;
+    seen.add(s);
+  }
+  return false;
+}
+
 function extractFromTags(raw) {
   const match = raw.match(/<TRANSLATION>([\s\S]*?)<\/TRANSLATION>/);
   if (match) return match[1].trim();
@@ -251,6 +269,8 @@ function validateTranslation(source, translation) {
   if (hasTraditionalChinese(translation)) issues.push('traditional_chars');
   if (hasLabelsOrArtifacts(translation)) issues.push('labels');
   if (looksOmitted(source, translation)) issues.push('omitted');
+  if (looksOvergenerated(source, translation)) issues.push('overgenerated');
+  if (hasDuplicateSentences(translation)) issues.push('duplicated');
   return issues;
 }
 
@@ -267,6 +287,8 @@ function buildSystemPrompt(fromLang, toLang) {
     '5. Preserve the original meaning, tone, and style. Use natural Chinese equivalents for literary or idiomatic expressions.',
     '6. For proper nouns (person names, place names, brand names), use the standard established Chinese translation.',
     '7. For domain-specific terms (economics, finance, technology), use correct Chinese technical terminology.',
+    '8. Do NOT add any sentence, explanation, paraphrase, or content not present in the source.',
+    '9. Preserve directionality and predicate relations exactly. Do not replace with a more familiar saying or proverb.',
   ].join('\n');
 }
 
@@ -287,22 +309,25 @@ function buildUserMessage(text, context) {
   return parts.join('\n');
 }
 
-function buildRepairMessage(source, badTranslation, issues) {
-  const issueDescs = [];
-  if (issues.includes('english_residue')) issueDescs.push('contains untranslated English words');
-  if (issues.includes('traditional_chars')) issueDescs.push('uses Traditional Chinese instead of Simplified');
-  if (issues.includes('labels')) issueDescs.push('contains unwanted labels or notes');
-  if (issues.includes('omitted')) issueDescs.push('is incomplete — parts of the source were omitted');
+function buildRepairMessage(source, issues) {
+  const rules = [];
+  if (issues.includes('english_residue')) rules.push('Every English word must be rendered in Chinese. No Latin-script words allowed except standard acronyms (GDP, AI, IT).');
+  if (issues.includes('traditional_chars')) rules.push('Use Simplified Chinese only. No Traditional Chinese characters.');
+  if (issues.includes('labels')) rules.push('Output only the translation. No labels, notes, Pinyin, or meta-text.');
+  if (issues.includes('omitted')) rules.push('Translate every sentence completely. Do not skip or summarize.');
+  if (issues.includes('overgenerated')) rules.push('Do not add any content not in the source. Translate only what is given.');
+  if (issues.includes('duplicated')) rules.push('Do not repeat any sentence. Each sentence should appear exactly once.');
   return [
-    'The previous translation was rejected because it ' + issueDescs.join(', and ') + '.',
-    'Please translate again. Fix ALL issues. Output ONLY the corrected Simplified Chinese translation inside <TRANSLATION>...</TRANSLATION>.',
+    'The previous translation attempt was rejected. Translate the source text again from scratch.',
+    'Critical rules for this attempt:',
+    ...rules.map((r, i) => `${i + 1}. ${r}`),
+    '',
+    'Translate the text inside <SOURCE>...</SOURCE> into Simplified Chinese.',
+    'Return ONLY the Chinese translation inside <TRANSLATION>...</TRANSLATION>.',
     '',
     '<SOURCE>',
     source,
     '</SOURCE>',
-    '',
-    'Previous bad translation for reference:',
-    badTranslation,
   ].join('\n');
 }
 
@@ -326,9 +351,13 @@ async function callOllama(ollamaUrl, model, messages, externalSignal, textLength
   }
   const signal = reqCtrl.signal;
 
+  // Cap output length relative to input to prevent hallucinated additions
+  const numPredict = strict
+    ? Math.max(32, Math.ceil(textLength * 1.1))
+    : Math.max(64, Math.ceil(textLength * 1.3));
   const opts = strict
-    ? { ...OLLAMA_OPTIONS, temperature: 0, top_p: 0.8, top_k: 10 }
-    : { ...OLLAMA_OPTIONS };
+    ? { ...OLLAMA_OPTIONS, temperature: 0, top_p: 0.8, top_k: 10, num_predict: numPredict }
+    : { ...OLLAMA_OPTIONS, num_predict: numPredict };
 
   let res;
   try {
@@ -412,29 +441,46 @@ export async function translateWithOllama(text, options = {}) {
   let result = extractFromTags(raw);
 
   // Validate and repair if needed (up to 2 repair attempts with stricter decoding)
+  let bestResult = result;
+  let bestIssueCount = validateTranslation(text, result).length;
+
   for (let repair = 0; repair < 2; repair++) {
     const issues = validateTranslation(text, result);
     if (issues.length === 0) break;
 
-    const repairMsg = buildRepairMessage(text, result, issues);
+    const repairMsg = buildRepairMessage(text, issues);
     const repairMessages = [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: repairMsg },
     ];
     raw = await callOllama(ollamaUrl, model, repairMessages, externalSignal, text.length, true);
     result = extractFromTags(raw);
+
+    // Track the best result across attempts
+    const newIssueCount = validateTranslation(text, result).length;
+    if (newIssueCount < bestIssueCount) {
+      bestResult = result;
+      bestIssueCount = newIssueCount;
+    }
+  }
+
+  // Use the best result from all attempts
+  const finalIssues = validateTranslation(text, bestResult);
+  if (finalIssues.length > 0) {
+    console.warn('[Ollama] Translation still has issues after repairs:', finalIssues.join(', '),
+      '| Source preview:', text.slice(0, 80));
   }
 
   // Apply CJK typography polishing (from tepub's cjk-text-formatter)
-  return polishCjkText(result);
+  return polishCjkText(bestResult);
 }
 
-function _getNeighborText(paragraphs, currentIdx, direction) {
+function _getNeighborText(paragraphs, currentIdx, direction, maxLen = 150) {
   for (let j = currentIdx + direction; j >= 0 && j < paragraphs.length; j += direction) {
     const p = paragraphs[j];
     if (p.type === 'image') continue;
     const t = p.sentences.join(' ').trim();
-    if (t) return t.length > 300 ? t.slice(0, 300) + '…' : t;
+    if (t) return t.length > maxLen ? t.slice(0, maxLen) + '…' : t;
     break;
   }
   return null;
@@ -496,9 +542,15 @@ export async function translateBookWithOllama(paragraphs, options = {}) {
     }
 
     // Build sliding window context from neighboring paragraphs
-    const prevPara = _getNeighborText(paragraphs, i, -1);
-    const nextPara = _getNeighborText(paragraphs, i, +1);
-    const context = (prevPara || nextPara) ? { prev: prevPara, next: nextPara } : null;
+    // Skip context for long paragraphs (model should focus on the source itself)
+    // Scale context cap proportionally to source length
+    let context = null;
+    if (text.length < 500) {
+      const ctxCap = Math.min(150, Math.max(60, Math.round(text.length * 0.4)));
+      const prevPara = _getNeighborText(paragraphs, i, -1, ctxCap);
+      const nextPara = _getNeighborText(paragraphs, i, +1, ctxCap);
+      context = (prevPara || nextPara) ? { prev: prevPara, next: nextPara } : null;
+    }
 
     let translated;
     for (let attempt = 0; attempt <= OLLAMA_MAX_RETRIES; attempt++) {
