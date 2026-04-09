@@ -1,5 +1,5 @@
 Append the final report（English first，then Chinese) to the end of the current document at  
-/Users/victor/projects/EasyOriginals/[EasyOriginalsProcess.md](http://EasyOriginalsProcess.md) (append only, do not overwrite).
+/Users/victor/projects/EasyOriginals/[EasyOriginalsProcess2.md](http://EasyOriginalsProcess.md) (append only, do not overwrite).
 
 \>> 结合[https\://github.com/ZuodaoTech/everyone-can-use-english](https://github.com/ZuodaoTech/everyone-can-use-english) 这里面的内容，分析 [https\://enjoy.bot](https://enjoy.bot) 可以直接在网页版上使用，而不用下载安装APP，这个软件是如何制作的
 
@@ -328,6 +328,10 @@ How URL loading works:
   top bar
 
   15 new tests, 148 total, all passing.
+
+
+
+
 
 
 
@@ -1726,7 +1730,7 @@ Ask Codex whether this Zustand pattern could cause stale state.
 **Audit type**: Mini (5-dim)
 **Fixer**: Claude
 **Model**: gpt-5.3-codex | **Effort**: high | **Sandbox**: workspace-write
-**Thread ID**: `019d3305-90d1-7830-9eae-046fe7c06404` *(use ********************`/continue 019d3305-90d1-7830-9eae-046fe7c06404`******************** to iterate further — Codex only)*
+**Thread ID**: `019d3305-90d1-7830-9eae-046fe7c06404` *(use ****************************`/continue 019d3305-90d1-7830-9eae-046fe7c06404`**************************** to iterate further — Codex only)*
 **Rounds**: 2
 
 ## Result: ACCEPTED
@@ -1825,7 +1829,7 @@ const wordNoteBtn = $('#wordNoteBtn');
 - `paraNoteBtn.click` → extracts `paraPopupText.textContent` → `addNote(text)`
 - `wordNoteBtn.click` → extracts `popupWord.textContent` → `addNote(text)`
 
-**New function — ********************************`updateNote(index, newText)`********************************:**
+**New function — ************************************************`updateNote(index, newText)`************************************************:**
 
 ```javascript
 function updateNote(index, newText) {
@@ -1836,7 +1840,7 @@ function updateNote(index, newText) {
 }
 ```
 
-**Updated ********************************`renderNotes()`********************************:**
+**Updated ************************************************`renderNotes()`************************************************:**
 
 - Each note item now renders a `.note-text` div, a `.note-actions` container with edit (✎) and delete (×) buttons.
 - Clicking the edit button replaces the `.note-text` div with a `<textarea>` for inline editing.
@@ -1909,7 +1913,7 @@ const wordNoteBtn = $('#wordNoteBtn');
 - `paraNoteBtn.click` → 提取 `paraPopupText.textContent` → `addNote(text)`
 - `wordNoteBtn.click` → 提取 `popupWord.textContent` → `addNote(text)`
 
-**新增函数 — ********************************`updateNote(index, newText)`********************************：**
+**新增函数 — ************************************************`updateNote(index, newText)`************************************************：**
 
 ```javascript
 function updateNote(index, newText) {
@@ -1920,7 +1924,7 @@ function updateNote(index, newText) {
 }
 ```
 
-**更新 ********************************`renderNotes()`********************************：**
+**更新 ************************************************`renderNotes()`************************************************：**
 
 - 每个笔记项现在渲染 `.note-text` 文本容器、`.note-actions` 操作容器（含编辑 ✎ 和删除 × 按钮）。
 - 点击编辑按钮将 `.note-text` 替换为 `<textarea>` 进行行内编辑。
@@ -1988,7 +1992,7 @@ Written **before** implementation (TDD red-green cycle). Two new test groups:
 
 ### 2. JavaScript Changes: `src/reader.js`
 
-**New function — ****************************`noteWithFeedback(btn, text, originalLabel)`****************************:**
+**New function — ********************************************`noteWithFeedback(btn, text, originalLabel)`********************************************:**
 
 ```javascript
 function noteWithFeedback(btn, text, originalLabel) {
@@ -2069,7 +2073,7 @@ All 14 new tests and all 413 existing tests pass.
 
 ### 2. JavaScript 变更：`src/reader.js`
 
-**新增函数 — ****************************`noteWithFeedback(btn, text, originalLabel)`****************************：**
+**新增函数 — ********************************************`noteWithFeedback(btn, text, originalLabel)`********************************************：**
 
 ```javascript
 function noteWithFeedback(btn, text, originalLabel) {
@@ -2193,7 +2197,880 @@ ushed to GitHub: 285cecd on main.
   Nothing further to do here — it's already in place.
 ```
 
-
-
 \>> 使用TDD实现：借鉴 [https\://github.com/GoodeSam/tepub](https://github.com/GoodeSam/tepub) 可以将上传的书籍，全书使用Edge的TTS免费生成原文的音频版，全文的翻译，译文的音频版。 Implement using TDD the ability to upload books and generate audio versions of the original text and translations using Edge's free TTS, referencing [https\://github.com/GoodeSam/tepub](https://github.com/GoodeSam/tepub) for guidance on processing full-book content and generating translated versions.
 
+\>> 使用TDD实现：借鉴 [https\://github.com/GoodeSam/tepub   可以将上传的书籍，利用免费的Ollama模型，提供可以下载的全文翻译的markdown格式。在toolbar上有相应的图标。   ](https://github.com/GoodeSam/tepub)All done. Here's what was implemented:
+
+New module: src/ollama-translator.js
+
+- translateWithOllama(text, options) — calls local Ollama at  
+  [http\://localhost:11434/api/generate](http://localhost:11434/api/generate) with configurable model  
+  (default: llama3)
+- translateBookWithOllama(paragraphs, options) — translates all  
+  paragraphs with progress tracking and cancellation
+- cancelOllamaTranslation() — stops in-progress translation
+- exportAsMarkdown(original, translated, title) — generates  
+  bilingual markdown with original/translated pairs
+- downloadMarkdown(content, filename) — triggers .md file  
+  download
+
+UI additions (index.html)
+
+- Robot icon button (ollamaTranslateBtn) in the toolbar next to  
+  the existing Translate Book button
+- Progress modal with bar, status text, and cancel button
+- CSP updated to allow [http\://localhost:11434](http://localhost:11434) connections
+
+Integration (reader.js)
+
+- Imports and window-exposes the new module
+- Click handler: translates the book via Ollama, then  
+  auto-downloads the bilingual markdown
+
+Tests: 35 new tests in tests/ollama-translator.test.js covering
+exports, API details, book translation logic, markdown export,  
+download helper, UI elements, CSP, and reader.js integration.
+Full suite: 558 tests passing.
+
+Pushed to GitHub. Commit aca44e5 is now on origin/main.
+
+\>> 优化toolbar的排列。 Optimize toolbar arrangement.    Pushed e4d8fe2 to origin/main.
+
+\>> 在 [https\://github.com/GoodeSam/EasyOriginals/actions](https://github.com/GoodeSam/EasyOriginals/actions) 上，#85和#86 失败了，怎么处理。 Investigate and fix the failed GitHub Actions runs #85 and #86 at [https\://github.com/GoodeSam/EasyOriginals/actions](https://github.com/GoodeSam/EasyOriginals/actions).
+
+```javascript
+ Pushed b356c09.                     
+                                                                   
+  Root cause: downloadMarkdown was imported from                   
+  ollama-translator.js but reader.js already had a local
+  downloadMarkdown function (used for notes/word list export). The 
+  Vite bundler (rolldown) caught the duplicate declaration at build
+   time, even though Vitest's static source analysis tests didn't.
+                                                                   
+  Fix: Removed the import (the local function does the same thing) 
+  and swapped the argument order at the call site to match the
+  local signature (filename, content).
+```
+
+在 **Feature Guide 里面写明，全书翻译，全书转TTS音频否内容会保存在哪里。以及现在最新版的所有功能（包括新增加的，变化的）   Update the Feature Guide to document: where full-book translation and full-book TTS audio content is saved, and list all current features including newly added and recently changed ones.**
+
+⏺ Pushed 8adc8c7 to origin/main.
+
+现在选择 Ollama translation 会出现：  [goodesam.github.io](http://goodesam.github.io) says
+
+Ollama translation failed: Failed to fetch，我该怎么办？
+
+\>> 找出具体原因，并实现 Ollama 翻译.  Identify the root cause of the Ollama translation issue and implement Ollama translation.
+
+⏺ All 572 tests pass, build succeeds. Here's what was fixed:
+
+Root cause: The Ollama URL was hardcoded to  
+[http\://localhost:11434](http://localhost:11434) with no connectivity check, no  
+configuration, and no helpful diagnostics when the request fails.
+
+Changes made:
+
+1. src/ollama-translator.js — URL now comes from  
+   options.ollamaUrl instead of hardcoded constant; added
+   checkOllamaConnection() that pings the base URL before attempting
+   translation
+2. src/storage.js — Added ollamaUrl and ollamaModel to KEYS and
+   DEFAULTS, so settings persist in localStorage
+3. src/settings-ui.js — Added "Ollama (Local AI Translation)"
+   section with URL and model inputs in the Settings panel
+4. src/reader.js — State object includes ollamaUrl/ollamaModel;
+   both loadSettings() and ensureSettings() load them; the Ollama  
+   button handler now:  
+   \- Runs a pre-flight connectivity check  
+   \- Shows a diagnostic alert with step-by-step setup instructions
+   when Ollama is unreachable  
+   \- Passes configured URL and model to the translator
+5. tests/ollama-translator.test.js — 12 new tests for  
+   checkOllamaConnection, storage persistence, and settings UI  
+   integration
+
+User experience: Instead of a cryptic "Failed to fetch", users  
+now see clear setup instructions (install Ollama, pull model,  
+configure CORS, or change URL in Settings).
+
+✻ Cogitated for 5m 24s
+
+⏺ Pushed c4e09c7 to origin/main.
+
+\>> 现在选择translate with Ollama，输出：“goodesam.github.io says  
+Cannot connect to Ollama at [http\://localhost:11434](http://localhost:11434).
+To use this feature:
+
+1. Install Ollama:[https\://ollama.com2](https://ollama.com2). Run:ollama serve3.Pull a model: ollama pull llama34.Allow CORS:OLLAMA\_ORIGINS="[https\://goodesam.github.io"ollama](https://goodesam.github.io"ollama) serve  
+   You can change the Ollama URL in Settings.  
+   Error: Failed to fetch  
+   ”  解决这个问题，使用户直接点这个图标，就可以不用下载安装，就直接使用Ollama翻译。  Enable Ollama translation via the toolbar icon without requiring local Ollama installation or setup.
+
+⏺ Pushed e2c4d06 to origin/main.
+
+What changed: The robot icon (🤖) now works immediately without  
+any setup:
+
+1. Tries Ollama first — if you have it running locally, it uses  
+   your local AI model
+2. Falls back automatically — if Ollama isn't available, uses the
+   configured free translation provider (Google or Microsoft,  
+   whichever is selected in Settings)
+3. Always produces the bilingual Markdown — either way, you get  
+   the side-by-side original + translated .md file downloaded
+
+The progress bar shows which backend is being used (e.g.  
+"microsoft: paragraph 3 of 42"). No install, no API keys, no CORS
+configuration needed for the default path.
+
+\>> install Ollama for me
+
+⏺ Ollama is installed, running, and llama3 is ready:
+
+- Installed: ollama v0.20.2 via Homebrew
+- Running: as a background service (brew services start ollama)
+- Model: llama3 (4.7 GB) pulled and ready
+
+To use it with EasyOriginals on localhost, start the app with  
+CORS enabled:
+
+OLLAMA\_ORIGINS="[https\://goodesam.github.io](https://goodesam.github.io)" brew services restart
+ollama
+
+Or for local dev ([http\://localhost:5173](http://localhost:5173)), it should work out of  
+the box since Ollama allows localhost origins by default.
+
+\>> 生成音频的过程中出现了：Audiobook generation failed: Edge TTS request timed out
+
+⏺ Pushed 6f96a94.
+
+What changed:
+
+- Timeout scales with text — 30s base + 15ms per character (a  
+  2000-char paragraph gets 60s; a 500-char one gets 37.5s)
+- Retry on failure — up to 2 retries on timeout or connection
+  errors; cancellation skips retries and stops immediately
+
+\>> 将translate book这个图标对应的内容改为使用默认的 \*\*Translation Provider来进行，且能同时导出markdown和word两种格式的内容，每种格式又分为全译文版和原文译文混合版。\*\*翻译结束后，界面停留在翻译内容的保存地址上。将后面机器人图标对应的内容改为使用Ollama提供的翻译。\*\*且能同时导出markdown和word两种格式的内容，每种格式又分为全译文版和原文译文混合版。\*\*翻译结束后，界面停留在翻译内容的保存地址上。    Configure the translate book icon to use the default Translation Provider and the robot icon to use Ollama. Both should export markdown and word formats in two variants: full translation and mixed original-translation. Display the saved file location after completion.
+
+\>> 使EasyOriginal可以对markdown格式的内容进行阅读     Enable EasyOriginal to parse and render markdown-formatted content.
+
+Already pushed in the previous step — f3a7822 is on origin/main.
+
+Nothing new to push.
+
+\>> 使用tranlate books（Ollama local）依然输出：“goodesam.github.io says  
+Cannot connect to Ollama at [http\://localhost:11434](http://localhost:11434).
+To use Ollama translation:
+1.Install Ollama:[https\://ollama.com](https://ollama.com)
+2\. Run: ollama serve3. Pull a model: ollama pull llama34. Allow CORS:OLLAMA\_ORIGINS="[https\://goodesam.github.io"ollama](https://goodesam.github.io"ollama) serve
+You can change the Ollama URL in Settings.
+Or use the globe icon to translate with Google/Microsoft instead.”
+
+Fix the translate feature to properly detect and connect to local Ollama at [http\://localhost:11434](http://localhost:11434) instead of always displaying the connection error message.
+
+⏺ Pushed 6d227ba.
+
+Root cause: Ollama was running fine at localhost:11434, but the  
+browser's CORS policy blocked fetch requests from  
+[https\://goodesam.github.io](https://goodesam.github.io). Ollama returned no  
+Access-Control-Allow-Origin header, so the browser rejected the
+response and threw "Failed to fetch".
+
+Two fixes applied:
+
+1. Runtime: Set OLLAMA\_ORIGINS="\*" via launchctl setenv so Ollama
+   allows cross-origin requests — now returns
+   Access-Control-Allow-Origin: \*
+2. Code: Improved checkOllamaConnection to give specific  
+   guidance:  
+   \- 403 Forbidden → tells user to set OLLAMA\_ORIGINS
+   \- Failed to fetch → explains it could be Ollama not running OR
+   CORS blocking  
+   \- Removes the generic/confusing error message
+
+To persist the CORS setting across reboots, add to your shell  
+profile:  
+launchctl setenv OLLAMA\_ORIGINS "\*"
+
+\>> 将翻译全书和转化成音频的输出结果保存到书籍原本的位置
+
+Save translated and audio-converted output files to the source document's directory.
+
+```shell
+⏺ Pushed c84165d.                              
+                                                                   
+  How it works now:                                                
+                                                                  
+  When generating translations, audio, or exports, a directory     
+  picker dialog appears (via the File System Access API) letting
+  you choose where to save — typically the source document's       
+  folder. All files are written directly there, and the completion
+  alert shows the actual paths:                                   
+
+  Translation complete! Files saved:
+    • MyBooks/story-translated.md                                  
+    • MyBooks/story-bilingual.md
+    • MyBooks/story-translated.docx                                
+    • MyBooks/story-bilingual.docx                                 
+                                                                  
+  Fallback: If the browser doesn't support directory picking       
+  (Firefox) or the user cancels the picker, files fall back to the
+  standard Downloads folder — no functionality lost.               
+                                                            
+  Affected outputs: translation files (4 variants), audiobook .mp3,
+   translated audio .mp3, and DOCX export.
+```
+
+\>> 翻译中输出：“Ollama translation failed: Failed to fetch”
+
+⏺ Pushed 73549f4.
+
+What changed: The translation fetch now catches network errors  
+separately from HTTP errors and shows actionable messages:
+
+- Network/CORS failure: Cannot reach Ollama at  
+  [http\://localhost:11434/api/generate](http://localhost:11434/api/generate). Ensure Ollama is running  
+  (ollama serve) and CORS is configured:  
+  OLLAMA\_ORIGINS="[https\://goodesam.github.io](https://goodesam.github.io)" ollama serve
+
+───────────────────
+
+\>>使用TDD实现： 使EasyOriginal可以对中文内容也转换成语音     Implement Chinese language support for EasyOriginal's text-to-speech conversion using TDD.
+
+⏺ Pushed 98ae31e.
+
+What changed:
+
+Core fix — dynamic SSML language:
+
+- langFromVoice('zh-CN-XiaoxiaoNeural') → 'zh-CN' (extracts
+  locale from voice name)
+- SSML xml:lang now uses the detected language instead of
+  hardcoded en-US
+- Fixed in both synthesizeParagraph (audiobook generation) and  
+  playEdgeTTS (single-sentence playback)
+- Browser speech fallback also uses dynamic language
+
+Chinese voices added:
+
+┌───────────────────────┬────────────────────────┐  
+│         Voice         │         Label          │
+├───────────────────────┼────────────────────────┤  
+│ zh-CN-XiaoxiaoNeural  │ Xiaoxiao (CN, female)  │  
+├───────────────────────┼────────────────────────┤  
+│ zh-CN-YunjianNeural   │ Yunjian (CN, male)     │  
+├───────────────────────┼────────────────────────┤
+│ zh-CN-XiaoyiNeural    │ Xiaoyi (CN, female)    │  
+├───────────────────────┼────────────────────────┤  
+│ zh-TW-HsiaoChenNeural │ HsiaoChen (TW, female) │  
+├───────────────────────┼────────────────────────┤  
+│ zh-TW-YunJheNeural    │ YunJhe (TW, male)      │  
+└───────────────────────┴────────────────────────┘
+
+Settings:
+
+- New "Translated Audio Voice" selector in Settings panel
+  (defaults to Xiaoxiao)
+- translatedTtsVoice persisted in localStorage
+
+\>> Use TDD to fix:“[goodesam.github.io](http://goodesam.github.io) says
+
+Ollama translation failed: Cannot reach Ollama at [http\://localhost:11434/api/generate.Ensure](http://localhost:11434/api/generate.Ensure) Ollama is running (ollama serve)and CORSis configured:OLLAMA\_ORlGINS="[https\://goodesam.github.io"ollama](https://goodesam.github.io"ollama) serve”
+
+⏺ Pushed 78201bb.
+
+Two fixes applied:
+
+1. Runtime — CORS persisted across reboots:  
+   Added OLLAMA\_ORIGINS="\*" to  
+   \~/Library/LaunchAgents/homebrew\.mxcl.ollama.plist so the setting
+   survives Ollama restarts and system reboots.
+2. Code — connection check validates actual API:
+
+- checkOllamaConnection now pings /api/tags instead of the base
+  URL — this verifies the Ollama API layer is working, not just  
+  that something is listening on port 11434
+- CORS-specific error messages include the exact OLLAMA\_ORIGINS
+  fix command
+- Network errors distinguish between "not running" and "CORS
+  blocked"
+
+> > 当网页中产生类似于:“[goodesam.github.io](http://goodesam.github.io) says
+
+Ollama translation failed: Cannot reach Ollama at [http\://localhost:11434/api/generate.Ensure](http://localhost:11434/api/generate.Ensure) Ollama is running (ollama serve)and CORSis configured:OLLAMA\_ORlGINS="[https\://goodesam.github.io"ollama](https://goodesam.github.io"ollama) serve”的各种提示时，按下copy键后，提升的内容会复制到剪贴板中
+
+Add a copy button to error message popups (e.g., Ollama connection errors) that copies the full message text to the clipboard when clicked.
+
+```python
+⏺ Pushed d0308ec.                    
+
+  Error messages and completion summaries now appear in a styled
+  modal with a Copy button. Users can click it to copy the full
+  text (e.g., Ollama setup instructions, file paths) to their
+  clipboard. The modal also closes on clicking OK or outside the   
+  dialog.
+```
+
+\>> 用EasyOriginals打开 '/Users/victor/Desktop/books/reading/Magic Tree House 29 Christmas in Camelot (Mary Pope Osborne \[Osborne, Mary Pope]) ([z-lib.org](http://z-lib.org))-translated.docx’，导出的Audio，是 '/Users/victor/Downloads/Magic Tree House 29 Christmas in Camelot (Mary Pope Osborne \[Osborne, Mary Pope]) ([z-lib.org](http://z-lib.org))-translated (2).mp3’ 内容中没有汉语的音频，解决.    Debug and fix why exporting '/Users/victor/Desktop/books/reading/Magic Tree House 29 Christmas in Camelot (Mary Pope Osborne \[Osborne, Mary Pope]) ([z-lib.org](http://z-lib.org))-translated.docx' via EasyOriginals produces an MP3 missing Chinese language audio.
+
+\>> 问题依然没有解决，依然没有对中文内容生成音频。 Fix TTS audio generation for Chinese content.
+
+Pushed 79c3326.
+
+Root cause: Edge TTS silently returns zero audio chunks when a  
+voice doesn't match the text language (e.g., English voice +
+Chinese text). The code then produced a 0-byte MP3 blob — a  
+silent file with no error.
+
+Verified with edge-tts CLI:
+
+- zh-CN-XiaoxiaoNeural + Chinese text → 20KB audio (works)
+- en-US-AriaNeural + Chinese text → NoAudioReceived (silent fail)
+
+Fixes:
+
+1. Empty audio detection — synthesizeParagraph now rejects when
+   audioChunks.length \=== 0, with a message explaining the  
+   voice/language mismatch
+2. Early language mismatch check — generateBookAudio samples the
+   first paragraph for Chinese characters (\u4e00-\u9fff) and throws
+   immediately if the voice language doesn't match, before  
+   attempting any synthesis. Error messages name the voice and
+   suggest switching in Settings.
+3. detectChinese() helper — detects CJK characters in text for
+   the pre-check
+
+\>> 询问Codex 对中文内容不能产生音频的问题的解决方案      Ask Codex to diagnose and fix the issue where Chinese content fails to generate audio.
+
+```javascript
+Pushed 611a0e4. Codex diagnosed 4 bugs, all now fixed:    
+                                                                  
+  #: 1                                                             
+  Bug: Audio handlers read stale state.translatedTtsVoice after 
+  user                                                             
+    changes Settings                                               
+  Fix: Added await ensureSettings() before reading voice in both  
+    handlers                                                       
+  ────────────────────────────────────────                      
+  #: 2                                                            
+  Bug: Translated voice dropdown shows English voices — user can   
+    save wrong voice                                            
+  Fix: Filtered to zh-* voices only; coerces invalid saved values  
+  to                                                            
+    default                                                        
+  ────────────────────────────────────────
+  #: 3                                                             
+  Bug: Language mismatch check only inspects first paragraph —
+    misses Chinese text after English chapter headers             
+  Fix: Scans all paragraphs, sets hasChinese/hasNonChinese flags   
+  ────────────────────────────────────────
+  #: 4                                                             
+  Bug: playEdgeTTS (live sentence playback) silently plays nothing
+    on mismatch                                                   
+  Fix: Added empty-audio guard matching synthesizeParagraph
+```
+
+\>> 优化设置界面，使其可以根据中英文内容自动选择设置好的中文和英文voice 来避免下面问题：Audiobook generation failed: Chinese text detected but the selected voice is en-US-GuyNeural (en-US).
+
+Edge TTS cannot speak Chinese with an English voice.
+
+Please select a Chinese voice (e.g. zh-CN-XiaoxiaoNeural) in Settings.
+
+```javascript
+Add content-language detection to Settings that                  
+  automatically selects matching voices: Chinese voices            
+  (e.g., zh-CN-XiaoxiaoNeural) for Chinese text, English           
+  voices (e.g., en-US-GuyNeural) for English text,                 
+  preventing Edge TTS errors when generating audiobooks.
+```
+
+```cpp
+Pushed 546c2c0.                                           
+                                                                  
+  How it works now:                                                
+                                          
+  When generating audio, the app automatically detects the content 
+  language before selecting a voice:                               
+                                                                  
+  ┌────────────┬───────────────────────┬───────────────────────┐   
+  │  Content   │       Detection       │    Voice Selected     │
+  ├────────────┼───────────────────────┼───────────────────────┤   
+  │ English    │ detectContentLanguage │ User's English voice  │
+  │ book       │  → 'en'               │ (e.g.                 │  
+  │            │                       │ en-US-GuyNeural)      │
+  ├────────────┼───────────────────────┼───────────────────────┤
+  │ Chinese    │ detectContentLanguage │ User's Chinese voice  │
+  │ translated │  → 'zh'               │ (e.g.                 │   
+  │  text      │                       │ zh-CN-XiaoxiaoNeural) │
+  ├────────────┼───────────────────────┼───────────────────────┤   
+  │ Chinese    │                       │                       │
+  │ book       │ detectContentLanguage │ Auto-switches to      │   
+  │ loaded     │  → 'zh'               │ Chinese voice         │
+  │ directly   │                       │                       │  
+  └────────────┴───────────────────────┴───────────────────────┘   
+  
+  voiceForLanguage(lang, currentVoice) prefers the user's          
+  configured voice if it matches the detected language. If there's
+  a mismatch (e.g., user has English voice but content is Chinese),
+   it falls back to the correct default — no more silent MP3s.     
+  
+  The status bar shows which voice was auto-selected: Preparing... 
+  (zh-CN-XiaoxiaoNeural).
+```
+
+\>> 询问Codex 使用Ollama翻译一本书到中间后常常会失败的问题的解决方案。 Ask Codex to diagnose and fix the issue where translating a book with Ollama frequently fails midway through.
+
+```python
+ Pushed 790f125. Codex diagnosed 7 failure modes; here's what was
+  fixed:
+                                                                   
+  ┌────────────────────────┬───────────────────────────────────┐
+  │         Issue          │                Fix                │   
+  ├────────────────────────┼───────────────────────────────────┤   
+  │ No retry — one         │ Up to 2 retries per paragraph     │  
+  │ transient failure      │ with exponential backoff (2s, 4s) │   
+  │ kills entire book      │                                   │
+  ├────────────────────────┼───────────────────────────────────┤  
+  │ No per-request timeout │ 60s + 30ms/char timeout, scales   │
+  │  — slow paragraphs     │ with text length                  │   
+  │ hang forever           │                                   │
+  ├────────────────────────┼───────────────────────────────────┤   
+  │ Malformed JSON crashes │ res.json() wrapped in try/catch,  │   
+  │  the loop              │ retryable                         │  
+  ├────────────────────────┼───────────────────────────────────┤   
+  │ Error hides paragraph  │ Failures now show "Paragraph      │
+  │ location               │ 42/380 failed: ..."               │   
+  ├────────────────────────┼───────────────────────────────────┤
+  │ Multiple clicks start  │ Button disabled during            │   
+  │ overlapping jobs       │ translation                       │   
+  ├────────────────────────┼───────────────────────────────────┤  
+  │ Connection error       │ check.error surfaced in the setup │   
+  │ discarded              │  message                          │
+  ├────────────────────────┼───────────────────────────────────┤  
+  │ Retryable vs fatal     │ isRetryable() helper: retries on  │
+  │ errors not             │ timeout, 429, 5xx, network, JSON  │   
+  │ distinguished          │ errors; stops immediately on      │
+  │                        │ cancel                            │   
+  └────────────────────────┴───────────────────────────────────┘
+```
+
+解决报错出现 ：Ollama translation failed: Paragraph 301/2644 failed: Ollama fetch failed: Failed to fetch
+
+⏺ Pushed 3321171.
+
+根本原因： Ollama 被约300个快速连续请求压垮。当它停止接受连接时，
+
+3次重试在6秒内全部失败——Ollama 没有足够时间恢复。
+
+修复：
+
+┌─────────────┬──────────────────────────────────────────────┐
+
+│    问题     │                     修复                     │
+
+├─────────────┼──────────────────────────────────────────────┤
+
+│ 无冷却时间  │ 段落间增加 500ms 冷却，防止 Ollama 过载      │
+
+├─────────────┼──────────────────────────────────────────────┤
+
+│ 重试太少太  │ 重试次数 2→3，延迟 2s/4s →                   │
+
+│ 快          │ 5s/10s/20s（指数退避）                       │
+
+├─────────────┼──────────────────────────────────────────────┤
+
+│ 中止监听器  │ 每个请求向共享 AbortController               │
+
+│ 泄漏        │ 添加的监听器在成功后从未移除——长时间运行时累 │
+
+│             │ 积数千个孤立监听器                           │
+
+├─────────────┼──────────────────────────────────────────────┤
+
+│ 错误信息不  │ 现在显示尝试次数："Paragraph 301/2644 failed │
+
+│ 够详细      │  after 4 attempts: ..."                      │
+
+└─────────────┴──────────────────────────────────────────────┘
+
+对于 2644 段的书，500ms 冷却增加约 22
+
+分钟总翻译时间，但显著提高完成率。
+
+Pushed f85e754.
+
+问题原因： 用户在 [goodesam.github.io](http://goodesam.github.io) 上点击 Ollama
+
+翻译，但他们的电脑上没有运行
+
+Ollama。浏览器无法从远程网站连接到本地的 localhost:11434。
+
+修复： 所有错误消息现在明确说明：
+
+▎ Ollama must be installed and running on THIS computer.
+
+并建议使用 🌐 地球图标（Google/Microsoft
+
+翻译），无需任何本地设置即可使用。
+
+如果你想用 Ollama 翻译，需要在你自己的电脑上：
+
+ollama serve                    # 安装后启动
+
+ollama pull llama3              # 下载模型
+
+OLLAMA\_ORIGINS="[https\://goodesam.github.io](https://goodesam.github.io)" ollama serve  #
+
+允许跨域
+
+\>> 使用TDD实现：对于翻译全书和全书转语音，每个阶段都保存进度。重新运行任何命令都会从上次中断处继续。    Using TDD, implement stage-by-stage progress saving for book translation and book-to-speech operations in the genie. Enable any command to resume from where it was last interrupted.
+
+Pushed a3b8c2b.
+
+How it works now:
+
+When translating a 2644-paragraph book and it fails at paragraph
+301:
+
+Ollama translation failed: Paragraph 301/2644 failed after 4  
+attempts: ...
+
+Next time the user clicks the translate button:
+
+┌─────────────────────────────────────┐
+│ Previous progress found             │  
+│ (paragraph 300 of 2644). Resume?    │  
+│                                     │  
+│        \[OK]     \[Cancel]            │  
+└─────────────────────────────────────┘
+
+- OK → resumes from paragraph 301, skipping 300 already-completed
+  paragraphs
+- Cancel → discards checkpoint, starts fresh
+
+Architecture:
+
+┌───────────────────────────┬─────────────────────────────────┐
+│         Component         │              Role               │
+├───────────────────────────┼─────────────────────────────────┤
+│                           │ CRUD for localStorage           │  
+│ src/checkpoint.js         │ checkpoints, keyed by           │
+│                           │ fileName:opType                 │  
+├───────────────────────────┼─────────────────────────────────┤
+│                           │ Accepts startIndex +            │
+│ translateBook()           │ existingResults, calls          │  
+│                           │ onParagraphComplete after each  │
+│                           │ paragraph                       │  
+├───────────────────────────┼─────────────────────────────────┤
+│ translateBookWithOllama() │ Same resume options             │  
+├───────────────────────────┼─────────────────────────────────┤
+│                           │ Accepts startIndex +            │
+│ generateBookAudio()       │ existingBlobs, calls            │
+│                           │ onParagraphComplete after each  │
+│                           │ paragraph                       │
+├───────────────────────────┼─────────────────────────────────┤  
+│                           │ Check → prompt → load → pass to │
+│ reader.js handlers        │  operation → save per paragraph │  
+│                           │  → clear on success             │
+└───────────────────────────┴─────────────────────────────────┘
+
+Checkpoint is cleared only on successful completion. On cancel or
+error, it persists for next time.
+
+\>> 使EasyOriginals可以对下面格式的中英文进行翻译，自动识别内容中的中文和英文，且选择对应的English voice和Chinese voice。其中的“\[Original] ”和”\[Translated] “不发音，内容格式如下：“
+
+\[Original] Once upon a time, in Frog Creek, Pennsylvania, a mysterious tree house appeared in the woods. A boy named Jack and his sister Annie, climbed into the tree house. They found that it was filled with books.
+
+\[Translated] 很久很久以前，在宾夕法尼亚州的蛙溪镇，一座神秘的树屋出现在树林中。一个叫杰克的男孩和他的妹妹安妮爬进了树屋。他们发现里面堆满了书籍。“
+
+Pushed fc8aade.
+
+现在 EasyOriginals 可以处理双语中英文内容了：
+
+对于这种格式的内容：  
+\[Original] Once upon a time, in Frog Creek, Pennsylvania...  
+\[Translated] 很久很久以前，在宾夕法尼亚州的蛙溪镇...
+
+TTS 引擎会：
+
+1. \[Original] 和 \[Translated] 标签不发音 — stripTtsLabels()  
+   在合成前去除
+2. 自动识别每段的语言 — detectChinese() 检测中文字符
+3. 自动选择对应的语音：  
+   \- 英文段落 → en-US-AriaNeural（或用户设置的英文语音）  
+   \- 中文段落 → zh-CN-XiaoxiaoNeural（或用户设置的中文语音）
+4. 不再报错 — 以前混合中英文会抛出"language  
+   mismatch"错误，现在双语内容正常工作
+
+\>> 在settings界面，可以设置中英文朗读的角色和速度。以控制中文段落和英文段落的语音生成。
+
+Pushed c8b1de5.
+
+Settings panel now has two TTS sections:
+
+┌─────────────┬──────────────────────────────────────────────┐  
+│   Section   │                   Controls                   │  
+├─────────────┼──────────────────────────────────────────────┤  
+│ English     │ Voice selector (all English voices) + Speech │  
+│ Voice       │  Rate slider                                 │
+├─────────────┼──────────────────────────────────────────────┤  
+│ Chinese     │ Voice selector (Chinese voices only) +       │
+│ Voice       │ Speech Rate slider                           │  
+└─────────────┴──────────────────────────────────────────────┘
+
+Each language's voice role and speed are completely independent.
+When generating audio from bilingual content:
+
+- English paragraph → uses English voice at English speech rate
+- Chinese paragraph → uses Chinese voice at Chinese speech rate
+
+For example, you might set English to en-US-GuyNeural at +20%  
+speed and Chinese to zh-CN-XiaoxiaoNeural at -10% speed — each  
+paragraph automatically gets its own voice and rate.
+
+\>> 如果一本书翻译中途暂停了，不需要从头开始，而是接着刚才的前面一点地继续进行。并处理好衔接部分不要重复或者有缺失。      Implement resumable translation that continues from slightly before the pause point instead of restarting, and properly handle overlaps to prevent duplication or missing content.
+
+\>> 对settings界面进行优化，在点击保存或者阅读界面之前，不退出settings界面。setings界面整体有统一的背景色。settings界面可以上下滑动，以查看下面的内容
+
+Pushed eb61fae.
+
+Changes:
+
+┌─────────────────────────────┬──────────────────────────────┐
+
+│           Before            │            After             │
+
+├─────────────────────────────┼──────────────────────────────┤
+
+│ Gear icon toggles panel     │ Gear icon only opens; close  │
+
+│ (could close accidentally)  │ via X button or Save         │
+
+├─────────────────────────────┼──────────────────────────────┤
+
+│ No scroll — content         │ overflow-y: auto with flex:  │
+
+│ overflows on small screens  │ 1 — all settings scrollable  │
+
+├─────────────────────────────┼──────────────────────────────┤
+
+│ Background: hardcoded #fff  │ var(--bg) — adapts to sepia, │
+
+│                             │  dark, green themes          │
+
+├─────────────────────────────┼──────────────────────────────┤
+
+│ Max height: 60vh            │ 85vh — more content visible  │
+
+│                             │ without scrolling            │
+
+└─────────────────────────────┴──────────────────────────────┘
+
+\>> 在settings的界面时，不要自动进入全屏模式。仅仅当点击save按钮或者点击阅读界面，才保存设置，并退出设置界面。
+
+Prevent the settings panel from automatically entering
+
+fullscreen mode. Save settings and close the panel only
+
+when the save button is clicked or the editor is clicked.
+
+```python
+Pushed 5d85c27.                                                  
+                                                                  
+  What changed:                                                    
+                                          
+  ┌────────────────────────┬───────────────────────────────────┐   
+  │         Before         │               After               │   
+  ├────────────────────────┼───────────────────────────────────┤  
+  │ Auto-hide timer closes │ Settings panel excluded from      │   
+  │  settings panel after  │ auto-hide — stays open            │
+  │ 5s                     │                                   │   
+  ├────────────────────────┼───────────────────────────────────┤
+  │ App enters fullscreen  │ Blocked — fullscreen waits until  │  
+  │ while settings is open │ settings is closed                │   
+  ├────────────────────────┼───────────────────────────────────┤
+  │ No way to close except │ Closes on Save click (after 800ms │   
+  │  X button              │  feedback) or clicking the reader │
+  │                        │  content                          │   
+  ├────────────────────────┼───────────────────────────────────┤   
+  │ Settings panel fights  │ Settings panel is respected as an │  
+  │ with fullscreen mode   │  active UI that prevents          │   
+  │                        │ fullscreen                        │
+  └────────────────────────┴───────────────────────────────────┘
+```
+
+\>> 再EasyOriginals的首页，应该有一个slogan，给我一句好的Slogan。  Write an engaging, concise slogan for the EasyOriginals
+
+homepage that clearly conveys the product's value
+
+proposition.
+
+\>> 解决：settings中是yunjian（chinese male）但是对全书转音频，中文音是xiaoxiao（female）. Fix the voice mismatch in audio export: settings specify yunjian (Chinese male voice) but full-book audio conversion uses xiaoxiao (Chinese female voice).
+
+⏺ All 52 tests pass.
+
+The fix: Both generateBookAudio call sites in reader.js now  
+explicitly pass englishVoice and chineseVoice derived from the  
+user's actual settings:
+
+- englishVoice comes from state.edgeTtsVoice (the  
+  original/English voice setting)
+- chineseVoice comes from state.translatedTtsVoice (where Yunjian
+  is configured), falling back to state.edgeTtsVoice
+
+Previously, neither was passed, so generateBookAudio fell back  
+through voiceForLanguage('zh', voice) which — when voice was an
+English voice — returned the hardcoded zh-CN-XiaoxiaoNeural  
+default instead of the user's configured Yunjian voice.
+
+\>> /Users/victor/Downloads/003\_prologue-the-theory-bilingual.docx 是EasyOriginals使用Ollama翻译的内容，评价翻译的结果怎么样
+
+Evaluate the translation quality of /Users/victor/Downloads/003\_prologue-the-theory-bilingual.docx, which EasyOriginals translated using Ollama.
+
+---
+
+## Translation Quality Evaluation Report — 003\_prologue-the-theory-bilingual.docx
+
+### Overall Grade: Poor (2/10)
+
+---
+
+### 1. Untranslated English Words Left Inline
+
+Multiple English words are left untranslated, breaking the Chinese text:
+
+| Line | Problem                                                            |
+| ---- | ------------------------------------------------------------------ |
+| 4    | `théory` — not even correct English, appears to be a hallucination |
+| 10   | `conceive的` and `disable` left in English mid-sentence             |
+| 13   | Outputs `英文：` / `中文：` labels as if confused about its own task     |
+| 55   | `money只在投資中增值` — "money" untranslated                              |
+| 61   | `—you不知道的` — "you" untranslated                                    |
+| 64   | `-surprise` left in English with a stray hyphen                    |
+
+### 2. Character Set Inconsistency (Simplified vs Traditional)
+
+The translation randomly switches between Simplified Chinese (简体) and Traditional Chinese (繁體), sometimes within the same paragraph:
+
+- Lines 7, 10, 22, 31: Simplified (描绘, 经济, 时代)
+- Lines 16, 19, 25, 28: Traditional (確保, 資本主義, 頻寬)
+- This is unacceptable — a professional translation must be consistent.
+
+### 3. Hallucinations and Fabricated Content
+
+- Line 4: `théory` — a nonsense word that doesn't exist in any language.
+- Line 13: The model output structural labels (`英文：` / `中文：`) instead of translating.
+- Line 49: Appends unrequested Pinyin romanization with errors (`yǐnghóngjiā` is not a real word).
+
+### 4. Mistranslations and Semantic Errors
+
+| Line | Original                                                              | Translation                   | Issue                                                                   |
+| ---- | --------------------------------------------------------------------- | ----------------------------- | ----------------------------------------------------------------------- |
+| 19   | "conundrum, wrapped in an enigma, capped with a perplex of paradoxes" | `謎，包圍著一個秘密，頂端是-paradox-困惑的混亂` | Butchered literary allusion; `-paradox-` left in English                |
+| 22   | "seeds of the new era were sown in 1971"                              | `揭开新时代的种子`                    | "Unveiled the seeds" — wrong verb, loses the sowing metaphor            |
+| 25   | "the 'float' has swollen"                                             | `金融"浮島"`                      | Translated "float" as "floating island" (浮島) — wrong term               |
+| 37   | "Wealth is knowledge"                                                 | `富有是知识`                       | 富有 means "rich/affluent" (adjective), not "wealth" (noun). Should be 财富 |
+| 70   | "a dance to the music of time"                                        | `对时间的舞蹈`                      | Loses the literary reference; awkward phrasing                          |
+
+### 5. Omitted Content
+
+- Line 13: The clause about "emergency socialism" (`best defined as "emergency socialism"`) is completely dropped.
+- Line 28: Multiple concepts compressed and mangled; "business philosophies" tacked on awkwardly.
+
+### 6. Grammatical/Structural Problems
+
+- Line 10: `亚当·史密斯和卡尔·马克思所conceive的` — broken code-switching grammar.
+- Line 19: Sentence structure collapses into fragments.
+- Line 34: `經濟信息論從四個基本命題中汲取` — the "key truths" framing is lost; sentence is incomplete.
+
+### Summary
+
+| Dimension               | Rating                                                |
+| ----------------------- | ----------------------------------------------------- |
+| Completeness            | Poor — content dropped and labels injected            |
+| Accuracy                | Poor — multiple mistranslations                       |
+| Fluency                 | Poor — reads like machine output, not natural Chinese |
+| Consistency (Simp/Trad) | Fail — random mixing                                  |
+| Untranslated residue    | Fail — English words scattered throughout             |
+| Hallucinations          | Present — fake Pinyin, `théory`, structural labels    |
+
+**Recommendation**: This output is not usable as-is. The Ollama model (likely a smaller local model) lacks the capacity to handle this dense, literary-academic English text. For content of this complexity, a larger model or a professional translation pipeline with post-editing would be needed.
+
+---
+
+## 翻译质量评估报告 — 003\_prologue-the-theory-bilingual.docx
+
+### 总评：差（2/10）
+
+---
+
+### 1. 未翻译的英文单词残留
+
+多处英文单词未翻译，直接嵌入中文文本中：
+
+| 行号 | 问题                                 |
+| -- | ---------------------------------- |
+| 4  | `théory` — 甚至不是正确的英文，疑似模型幻觉        |
+| 10 | `conceive的` 和 `disable` 以英文形式残留在句中 |
+| 13 | 输出了 `英文：` / `中文：` 标签，仿佛对自身任务产生混淆   |
+| 55 | `money只在投資中增值` — "money" 未翻译       |
+| 61 | `—you不知道的` — "you" 未翻译             |
+| 64 | `-surprise` 以英文残留，并带有多余连字符         |
+
+### 2. 简繁体混用
+
+译文在简体中文和繁体中文之间随机切换，有时在同一段落内：
+
+- 第 7、10、22、31 行：简体（描绘、经济、时代）
+- 第 16、19、25、28 行：繁体（確保、資本主義、頻寬）
+- 这是不可接受的——专业翻译必须保持字符集一致。
+
+### 3. 幻觉与捏造内容
+
+- 第 4 行：`théory` — 任何语言中都不存在的无意义词汇。
+- 第 13 行：模型输出了结构标签（`英文：` / `中文：`）而非翻译内容。
+- 第 49 行：附加了未请求的拼音注音，且含有错误（`yǐnghóngjiā` 并非真实词汇）。
+
+### 4. 误译与语义错误
+
+| 行号 | 原文                                                                    | 译文                            | 问题                           |
+| -- | --------------------------------------------------------------------- | ----------------------------- | ---------------------------- |
+| 19 | "conundrum, wrapped in an enigma, capped with a perplex of paradoxes" | `謎，包圍著一個秘密，頂端是-paradox-困惑的混亂` | 文学典故被破坏；`-paradox-` 以英文残留    |
+| 22 | "seeds of the new era were sown in 1971"                              | `揭开新时代的种子`                    | 动词错误（"揭开"而非"播下"），丢失了播种隐喻     |
+| 25 | "the 'float' has swollen"                                             | `金融"浮島"`                      | 将金融术语"float"（浮动）误译为"浮岛"      |
+| 37 | "Wealth is knowledge"                                                 | `富有是知识`                       | "富有"是形容词（富裕的），非名词"财富"，应为"财富" |
+| 70 | "a dance to the music of time"                                        | `对时间的舞蹈`                      | 丢失文学意蕴，措辞生硬                  |
+
+### 5. 内容遗漏
+
+- 第 13 行：关于"紧急社会主义"（`best defined as "emergency socialism"`）的从句被完全省略。
+- 第 28 行：多个概念被压缩和混淆；"商业哲学"生硬地附在句尾。
+
+### 6. 语法与结构问题
+
+- 第 10 行：`亚当·史密斯和卡尔·马克思所conceive的` — 中英混杂的破碎语法。
+- 第 19 行：句子结构崩塌为碎片。
+- 第 34 行：`經濟信息論從四個基本命題中汲取` — 丢失了"关键真理"的框架表述；句子不完整。
+
+### 总结
+
+| 维度    | 评级                      |
+| ----- | ----------------------- |
+| 完整性   | 差 — 内容被省略，标签被注入         |
+| 准确性   | 差 — 多处误译                |
+| 流畅度   | 差 — 读起来像机器输出，而非自然中文     |
+| 简繁一致性 | 不合格 — 随机混用              |
+| 未翻译残留 | 不合格 — 英文单词散布全文          |
+| 幻觉    | 存在 — 虚假拼音、`théory`、结构标签 |
+
+**建议**：此翻译输出无法直接使用。该 Ollama 模型（可能是较小的本地模型）缺乏处理此类密集、文学性学术英语文本的能力。对于此复杂度的内容，需要使用更大的模型或配备人工校对的专业翻译流程。
+
+
+
+\>> 我依然想要使用Ollama 来翻译，解决翻译质量差的问题
+
+
+
+\>> 询问Codex，目前使用Ollama 翻译质量差的问题该怎么解决

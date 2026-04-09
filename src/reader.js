@@ -2818,7 +2818,7 @@ function setupBookGeneration() {
 
       try {
         translatedParagraphs = await translateBookWithOllama(state.paragraphs, {
-          ollamaUrl: ollamaBaseUrl + '/api/generate',
+          ollamaUrl: ollamaBaseUrl + '/api/chat',
           model: state.ollamaModel,
           startIndex: oResumeStart,
           existingResults: oResumeResults,

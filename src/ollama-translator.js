@@ -10,7 +10,7 @@
  * non-streaming response, configurable model, and retry resilience.
  */
 
-const DEFAULT_OLLAMA_URL = 'http://localhost:11434/api/generate';
+const DEFAULT_OLLAMA_URL = 'http://localhost:11434/api/chat';
 const DEFAULT_MODEL = 'llama3';
 const OLLAMA_TIMEOUT_BASE_MS = 60000;
 const OLLAMA_TIMEOUT_PER_CHAR_MS = 30;
@@ -26,7 +26,7 @@ let _cancelled = false;
 let _abortController = null;
 
 async function waitForOllamaReady(baseUrl) {
-  const healthUrl = baseUrl.replace(/\/api\/generate$/, '/api/tags');
+  const healthUrl = baseUrl.replace(/\/api\/(generate|chat)$/, '/api/tags');
   const deadline = Date.now() + OLLAMA_HEALTH_MAX_WAIT_MS;
   while (Date.now() < deadline) {
     if (_cancelled) return false;
@@ -60,7 +60,22 @@ export async function translateWithOllama(text, options = {}) {
   const externalSignal = options.signal;
   const ollamaUrl = options.ollamaUrl || DEFAULT_OLLAMA_URL;
 
-  const prompt = `Translate the following text from ${fromLang} to ${toLang}. Return only the translation, no explanations.\n\n${text}`;
+  const systemPrompt = [
+    `You are a professional ${fromLang}-to-${toLang} translator.`,
+    'Rules you MUST follow:',
+    '1. Use Simplified Chinese (简体中文) exclusively. Never mix in Traditional Chinese characters.',
+    '2. Translate EVERY word. Never leave any English words, phrases, or fragments untranslated in the output.',
+    '3. Output ONLY the translated text. Do not add Pinyin, romanization, labels like "英文：/中文：", notes, or explanations.',
+    '4. Translate the COMPLETE text. Do not omit, summarize, or skip any part of the source.',
+    '5. Preserve the original meaning, tone, and style. For literary or idiomatic expressions, use natural Chinese equivalents rather than word-for-word translation.',
+    '6. For proper nouns (person names, place names, brand names), use the standard established Chinese translation.',
+    '7. For domain-specific terms (economics, finance, technology), use the correct Chinese technical terminology.',
+  ].join('\n');
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: text },
+  ];
 
   if (externalSignal && externalSignal.aborted) {
     const err = new Error('Ollama translation cancelled');
@@ -84,7 +99,7 @@ export async function translateWithOllama(text, options = {}) {
     res = await fetch(ollamaUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, prompt, stream: false }),
+      body: JSON.stringify({ model, messages, stream: false }),
       signal,
     });
   } catch (err) {
@@ -123,10 +138,14 @@ export async function translateWithOllama(text, options = {}) {
     synErr.name = 'SyntaxError';
     throw synErr;
   }
-  if (typeof data.response !== 'string') {
+  // Support both /api/chat (message.content) and /api/generate (response) formats
+  const translated = (data.message && typeof data.message.content === 'string')
+    ? data.message.content
+    : (typeof data.response === 'string' ? data.response : null);
+  if (translated === null) {
     throw new Error('Unexpected Ollama response: ' + JSON.stringify(data).slice(0, 200));
   }
-  return data.response.trim();
+  return translated.trim();
 }
 
 /**
