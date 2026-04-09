@@ -3376,3 +3376,128 @@ Compare these three files: /Users/victor/Downloads/003*prologue-the-theory-bilin
 
   Ollama translation in EasyOriginals to test V4.
 
+                                                                   
+
+⏺ Pushed as 6908e60.
+
+\>> 对比这四个的翻译质量 /Users/victor/Downloads/004_chapter-one-life-after-capitalism-bilingual-OllamaQwen3.docx，/Users/victor/Downloads/004_chapter-one-life-after-capitalism-bilingual——Microsoft.docx，/Users/victor/Downloads/004_chapter-one-life-after-capitalism-bilingual——google.docx，/Users/victor/Downloads/004_chapter-one-life-after-capitalism-bilingual——OllamaQwen2.5.docx
+
+---
+
+## Four-Way Translation Comparison — Chapter One: Life after Capitalism
+
+### Overall Scores
+
+| Engine | Score | Key Strength | Key Weakness |
+|--------|-------|-------------|-------------|
+| **EDGE (Microsoft)** | **9/10** | Near-flawless fluency, literary quality, complete accuracy | Minor: repeated word in L34, odd Ma transliterations |
+| **Google Translate** | **8.5/10** | Accurate technical terms, clean proper nouns | English names in parentheses; "Information is surprise" wrong |
+| **Ollama Qwen3:14b** | **6/10** | Glossary caught Shannon, "Money is time" correct | 12+ English residue instances, half-translated terms |
+| **Ollama Qwen2.5:14b** | **5.5/10** | Similar base quality to Qwen3 | More English residue, same structural issues |
+
+---
+
+### Qwen3 English Residue (Severe, 12+ instances)
+
+scarcity untranslated (L13), carbon dioxide half-translated (L28), shed/lobster Cobb salad/mahi-mahi in English (L43), corn untranslated (L52), Traditional char mixed in (L67), econometrics half-translated (L76), engages left in English (L79), earth crust half-translated (L91), tokenized untranslated (L109), ultimately rooted/regulates in English (L112), -surprising- fragments (L130).
+
+### Head-to-Head Key Passages
+
+| Test | Qwen3 | Qwen2.5 | Google | EDGE |
+|------|-------|---------|--------|------|
+| scarcity (L13) | UNTRANSLATED | UNTRANSLATED | correct | correct |
+| invisible hand (L16) | ok | ok | ok | best |
+| carbon dioxide (L28) | BROKEN | BROKEN | correct | correct |
+| Money Is Time (L94) | CORRECT (verifier) | CORRECT | correct | correct |
+| Claude Shannon (L127) | CORRECT (glossary) | correct | correct | correct |
+| econometrics (L76) | BROKEN | complete | correct | correct |
+| Final paragraph (L130) | BROKEN fragments | issues | complete | best |
+
+### Summary Matrix
+
+| Dimension | Qwen3 | Qwen2.5 | Google | EDGE |
+|-----------|-------|---------|--------|------|
+| Completeness | Fair | Fair | Excellent | Excellent |
+| Accuracy | Poor | Poor-Fair | Good | Excellent |
+| Fluency | Fair | Fair | Good | Excellent |
+| English residue | FAIL (12+) | FAIL (10+) | Minor | Pass |
+| Technical terms | FAIL | FAIL | Pass | Pass |
+| Overall | 6/10 | 5.5/10 | 8.5/10 | 9/10 |
+
+### Key Findings
+
+1. EDGE is the clear winner at 9/10.
+2. Google is a strong second at 8.5/10.
+3. Qwen3 regressed on longer chapter text -- 12+ half-translated English instances.
+4. Glossary and back-translation verifier work (Shannon correct, Money is time correct) but cannot fix core model vocabulary gaps.
+5. For production: EDGE should remain primary for literary/academic content. Ollama needs 32b+ model or specialized translation model for dense academic English.
+
+### Quality Progression (All Versions)
+
+| Version | Model | Chapter | Score |
+|---------|-------|---------|-------|
+| V1 | llama3 | Prologue | 2/10 |
+| V2 | llama3 + structured prompt | Prologue | 5/10 |
+| V3 | qwen2.5:14b + all fixes | Prologue | 7/10 |
+| V3 | qwen2.5:14b + all fixes | Chapter 1 | 5.5/10 |
+| V4 | qwen3:14b + glossary + verifier | Prologue | 7/10 |
+| V4 | qwen3:14b + glossary + verifier | Chapter 1 | 6/10 |
+| -- | Google Translate | Chapter 1 | 8.5/10 |
+| -- | EDGE (Microsoft) | Chapter 1 | 9/10 |
+
+---
+
+## 四方翻译对比报告 -- 第一章：资本主义后的生活
+
+### 总评
+
+| 引擎 | 评分 | 核心优势 | 核心不足 |
+|------|------|----------|----------|
+| EDGE（微软） | 9/10 | 近乎完美的流畅度和文学质量 | 极轻微：重复用词、音译有误 |
+| Google 翻译 | 8.5/10 | 准确的技术术语和专有名词 | 括号保留英文名；"信息是惊喜"误译 |
+| Ollama Qwen3:14b | 6/10 | 词汇表修复了香农，钱是时间正确 | 12+处英文残留，半翻译术语 |
+| Ollama Qwen2.5:14b | 5.5/10 | 与Qwen3基础质量相似 | 更多英文残留 |
+
+### Qwen3 英文残留（严重，12+处）
+
+scarcity未翻译(L13)、碳dioxide半翻译(L28)、shed/lobster Cobb salad/mahi-mahi英文(L43)、corn未翻译(L52)、经济ometrics半翻译(L76)、engages英文(L79)、地球crust半翻译(L91)、tokenized未翻译(L109)、ultimately rooted/regulates英文(L112)、-surprising-碎片(L130)。
+
+### 关键段落对比
+
+| 测试 | Qwen3 | Qwen2.5 | Google | EDGE |
+|------|-------|---------|--------|------|
+| scarcity(L13) | 未翻译 | 未翻译 | 正确 | 正确 |
+| carbon dioxide(L28) | 断裂 | 断裂 | 正确 | 正确 |
+| Money Is Time(L94) | 正确(验证器) | 正确 | 正确 | 正确 |
+| Claude Shannon(L127) | 正确(词汇表) | 正确 | 正确 | 正确 |
+| econometrics(L76) | 断裂 | 完整 | 正确 | 正确 |
+
+### 总结矩阵
+
+| 维度 | Qwen3 | Qwen2.5 | Google | EDGE |
+|------|-------|---------|--------|------|
+| 完整性 | 尚可 | 尚可 | 优秀 | 优秀 |
+| 准确性 | 差 | 差至尚可 | 良好 | 优秀 |
+| 英文残留 | 不合格(12+) | 不合格(10+) | 轻微 | 合格 |
+| 总评 | 6/10 | 5.5/10 | 8.5/10 | 9/10 |
+
+### 关键发现
+
+1. EDGE明确胜出（9/10）。
+2. Google紧随其后（8.5/10）。
+3. Qwen3在长章节文本上退步，12+处半翻译英文。
+4. 词汇表和验证器有效（香农正确、钱是时间正确），但无法修复模型核心词汇能力不足。
+5. 生产环境建议：EDGE作为文学/学术内容主要翻译引擎。Ollama需要32b+模型或专业翻译模型。
+
+### 全版本质量走势
+
+| 版本 | 模型 | 章节 | 评分 |
+|------|------|------|------|
+| V1 | llama3 | 序言 | 2/10 |
+| V2 | llama3+结构化提示 | 序言 | 5/10 |
+| V3 | qwen2.5:14b+全部修复 | 序言 | 7/10 |
+| V3 | qwen2.5:14b+全部修复 | 第一章 | 5.5/10 |
+| V4 | qwen3:14b+词汇表+验证器 | 序言 | 7/10 |
+| V4 | qwen3:14b+词汇表+验证器 | 第一章 | 6/10 |
+| -- | Google翻译 | 第一章 | 8.5/10 |
+| -- | EDGE（微软） | 第一章 | 9/10 |
