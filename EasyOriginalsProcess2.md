@@ -3155,5 +3155,181 @@ Want me to implement any of these improvements?
 
 
 
+\>> /Users/victor/Downloads/003_prologue-the-theory-bilingual.docx 是翻译的结果，评价这个结果
 
 
+
+
+
+
+
+
+---
+
+## Translation Quality Evaluation Report V3 — 003_prologue-the-theory-bilingual.docx (qwen2.5:14b-instruct + all fixes)
+
+### Overall Grade: Good (7/10) — up from Fair (5/10) and Poor (2/10)
+
+---
+
+### Improvements Over V2
+
+| Dimension | V2 (5/10) | V3 (7/10) | Change |
+|-----------|-----------|-----------|--------|
+| Hallucinated content | 1 duplicate sentence (line 10) | **None** | Fixed |
+| Simplified/Traditional | Pass | **Pass** | Maintained |
+| Completeness | Mostly complete | **Fully complete** | Improved |
+| Proper noun translation | 4 left in English | Most translated (斯密, 尼克松, 弗里德曼, 图灵, 冯·诺伊曼) | Much better |
+| Phrasing naturalness | Awkward in places | Noticeably more fluent | Improved |
+| Short propositions (37-70) | Mostly accurate | **All accurate** | Maintained |
+
+---
+
+### Remaining Issues
+
+#### 1. English Residue (1 instance — down from 4)
+
+| Line | Problem |
+|------|---------|
+| 25 | `hypertrophy` still untranslated: `财务的 hypertrophy` — should be `过度膨胀` or `肥大症` |
+
+#### 2. Semantic Reversal (Still Present)
+
+| Line | Original | Translation | Issue |
+|------|----------|-------------|-------|
+| 46 | "Money is time" | `时间是金钱` | **Still reversed.** The author's deliberate inversion of "Time is money" is the whole point — "Money is time" (钱是时间). The model defaults to the common proverb despite rule 9. |
+
+#### 3. Proper Noun Errors
+
+| Line | Original | Translation | Issue |
+|------|----------|-------------|-------|
+| 28 | Claude Shannon | `克劳德·谢泼德` | Wrong — `谢泼德` is "Shepard", not "Shannon". Should be `克劳德·香农` |
+| 28 | Meta | `元气` | Wrong — `元气` means "vitality/vigor". Should be `Meta`（保留原名）or `元宇宙公司` |
+
+#### 4. Minor Accuracy Issues
+
+| Line | Original | Translation | Issue |
+|------|----------|-------------|-------|
+| 7 | "Life after Capitalism" (book title) | `资本主义后生活` | Missing book-title markers: should be `《资本主义之后的生活》` |
+| 13 | "in no sense is an economy's distribution of wealth as significant as its production" | `财富分配也不是生产的同等重要性` | Meaning correct but phrasing clumsy |
+| 16 | "assured allocations of scarce resources" | `有限资源的确保分配` | `确保...确保` repetition persists from V2 |
+| 22 | "The seeds of the new era were sown in 1971" | `理查德·尼克松和米尔顿·弗里德曼公布了...` | Sowing metaphor still lost |
+| 52 | "You can only keep what you give away" | `你只能保留你所捐赠的东西` | `捐赠` too narrow, should be `给予` |
+| 70 | "a dance to the music of time" | `一首与时间共舞的乐曲` | Better than V2 (dance now present), but conflates dance and music |
+
+#### 5. What's Working Well
+
+- Line 10: No more hallucinated duplicate sentence — anti-hallucination fix worked
+- Line 22: `理查德·尼克松` and `米尔顿·弗里德曼` — proper noun translation correct
+- Line 28: `与此同时` — fixed the awkward `在同一时刻` from V2
+- Line 28: `阿兰·图灵` and `约翰·冯·诺伊曼` — now transliterated (though Shannon is wrong)
+- Line 31: Complex economic passage translated fully and coherently
+- Line 34: `经济信息理论从四个基本命题的总结中诞生` — complete and natural
+- Lines 37-43, 55, 58, 61, 64, 67: All clean, accurate, natural Chinese
+
+---
+
+### Summary Table
+
+| Dimension | V1 | V2 | V3 |
+|-----------|----|----|-----|
+| Completeness | Poor | Fair | **Good** — no omissions, no hallucinations |
+| Accuracy | Poor | Fair | **Good** — 1 reversal, 2 proper noun errors |
+| Fluency | Poor | Fair | **Good** — mostly natural Chinese |
+| Simplified/Traditional | Fail | Pass | **Pass** |
+| English residue | Fail (6+) | Improved (4) | **Near-pass** (1: hypertrophy) |
+| Hallucinations | Severe | Mild (1) | **None** |
+| Literary quality | Poor | Fair | **Fair-Good** — metaphors partially preserved |
+
+### Verdict
+
+The combination of qwen2.5:14b-instruct + all 7 code fixes produced a major quality jump. Hallucinations are eliminated, proper nouns are mostly correct, completeness is solid, and fluency is much improved. The three persistent issues are:
+
+1. **"Money is time" reversal** — The model's training strongly associates this with "时间是金钱" and overrides the explicit anti-proverb rule. A back-translation verifier or special handling for short aphorisms would catch this.
+2. **"Claude Shannon" → `克劳德·谢泼德`** — A factual hallucination in transliteration. A proper-noun glossary injected into the prompt would fix this.
+3. **"hypertrophy" untranslated** — A rare academic term the 14B model doesn't know how to translate. A domain glossary or fallback dictionary lookup would handle it.
+
+---
+
+## 翻译质量评估报告 V3 — 003_prologue-the-theory-bilingual.docx（qwen2.5:14b-instruct + 全部修复）
+
+### 总评：良好（7/10）——从尚可（5/10）和差（2/10）提升
+
+---
+
+### 相较 V2 的改进
+
+| 维度 | V2（5/10） | V3（7/10） | 变化 |
+|------|-----------|-----------|------|
+| 幻觉内容 | 1 处重复句（第 10 行） | **无** | 已修复 |
+| 简繁一致性 | 合格 | **合格** | 保持 |
+| 完整性 | 基本完整 | **完全完整** | 改善 |
+| 专有名词翻译 | 4 处保留英文 | 大部分已翻译（斯密、尼克松、弗里德曼、图灵、冯·诺伊曼） | 明显改善 |
+| 表述自然度 | 部分生硬 | 明显更流畅 | 改善 |
+| 短语命题（37-70 行） | 基本准确 | **全部准确** | 保持 |
+
+---
+
+### 仍存在的问题
+
+#### 1. 英文残留（1 处——从 4 处减少）
+
+| 行号 | 问题 |
+|------|------|
+| 25 | `hypertrophy` 未翻译：`财务的 hypertrophy`——应为 `过度膨胀` 或 `肥大症` |
+
+#### 2. 语义颠倒（仍存在）
+
+| 行号 | 原文 | 译文 | 问题 |
+|------|------|------|------|
+| 46 | "Money is time" | `时间是金钱` | **仍然颠倒。** 作者刻意颠倒 "Time is money" 的表述，"Money is time"（钱是时间）才是要点。模型默认使用常见谚语，无视规则 9。 |
+
+#### 3. 专有名词错误
+
+| 行号 | 原文 | 译文 | 问题 |
+|------|------|------|------|
+| 28 | Claude Shannon | `克劳德·谢泼德` | 错误——`谢泼德` 是 "Shepard" 而非 "Shannon"。应为 `克劳德·香农` |
+| 28 | Meta | `元气` | 错误——`元气` 意为"活力"。应保留 `Meta` 或译为 `元宇宙公司` |
+
+#### 4. 次要准确性问题
+
+| 行号 | 原文 | 译文 | 问题 |
+|------|------|------|------|
+| 7 | "Life after Capitalism"（书名） | `资本主义后生活` | 缺少书名号：应为 `《资本主义之后的生活》` |
+| 13 | "in no sense is an economy's distribution of wealth as significant as its production" | `财富分配也不是生产的同等重要性` | 意思正确但表述笨拙 |
+| 16 | "assured allocations of scarce resources" | `有限资源的确保分配` | `确保...确保` 重复沿袭自 V2 |
+| 22 | "The seeds of the new era were sown in 1971" | `理查德·尼克松和米尔顿·弗里德曼公布了...` | 播种隐喻仍丢失 |
+| 52 | "You can only keep what you give away" | `你只能保留你所捐赠的东西` | `捐赠` 过于狭窄，应为 `给予` |
+| 70 | "a dance to the music of time" | `一首与时间共舞的乐曲` | 比 V2 好（"舞蹈" 已出现），但将舞蹈和乐曲混为一体 |
+
+#### 5. 表现良好之处
+
+- 第 10 行：不再有幻觉重复句——反幻觉修复生效
+- 第 22 行：`理查德·尼克松` 和 `米尔顿·弗里德曼`——专有名词翻译正确
+- 第 28 行：`与此同时`——修复了 V2 中生硬的 `在同一时刻`
+- 第 28 行：`阿兰·图灵` 和 `约翰·冯·诺伊曼`——已音译（但香农翻译错误）
+- 第 31 行：复杂经济段落翻译完整且连贯
+- 第 34 行：`经济信息理论从四个基本命题的总结中诞生`——完整且自然
+- 第 37-43、55、58、61、64、67 行：全部干净、准确、自然的中文
+
+---
+
+### 总结表
+
+| 维度 | V1 | V2 | V3 |
+|------|----|----|-----|
+| 完整性 | 差 | 尚可 | **良好**——无遗漏，无幻觉 |
+| 准确性 | 差 | 尚可 | **良好**——1 处颠倒，2 处专有名词错误 |
+| 流畅度 | 差 | 尚可 | **良好**——大部分为自然中文 |
+| 简繁一致性 | 不合格 | 合格 | **合格** |
+| 英文残留 | 不合格（6+） | 改善（4） | **接近合格**（1 处：hypertrophy） |
+| 幻觉 | 严重 | 轻微（1） | **无** |
+| 文学质量 | 差 | 尚可 | **尚可至良好**——隐喻部分保留 |
+
+### 结论
+
+qwen2.5:14b-instruct 搭配全部 7 项代码修复带来了重大质量飞跃。幻觉已消除，专有名词大部分正确，完整性扎实，流畅度显著提升。三个持续存在的问题是：
+
+1. **"Money is time" 颠倒**——模型训练中强烈关联 "时间是金钱"，覆盖了明确的反谚语替换规则。反向翻译验证器或对短格言的特殊处理可以捕获此问题。
+2. **"Claude Shannon" → `克劳德·谢泼德`**——音译中的事实性幻觉。将专有名词词汇表注入提示词可修复。
+3. **"hypertrophy" 未翻译**——14B 模型不熟悉的罕见学术术语。领域词汇表或后备词典查询可处理。
