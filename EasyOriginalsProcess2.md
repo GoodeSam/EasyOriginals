@@ -363,6 +363,7 @@ How URL loading works:
 
 
 
+
 \>> 使用TDD实现：停止操作5秒以后，自动隐藏浏览器的网址栏和浏览器的其他内容，整个电脑屏幕仅仅只展现文档的阅读内容
 
 Implement a fullscreen reading mode using TDD: after 5 seconds of inactivity, automatically hide the toolbar, sidebar, status bar, and all UI chrome to display only the document content.
@@ -1732,7 +1733,7 @@ Ask Codex whether this Zustand pattern could cause stale state.
 **Audit type**: Mini (5-dim)
 **Fixer**: Claude
 **Model**: gpt-5.3-codex | **Effort**: high | **Sandbox**: workspace-write
-**Thread ID**: `019d3305-90d1-7830-9eae-046fe7c06404` *(use ********************************`/continue 019d3305-90d1-7830-9eae-046fe7c06404`******************************** to iterate further — Codex only)*
+**Thread ID**: `019d3305-90d1-7830-9eae-046fe7c06404` *(use **********************************`/continue 019d3305-90d1-7830-9eae-046fe7c06404`********************************** to iterate further — Codex only)*
 **Rounds**: 2
 
 ## Result: ACCEPTED
@@ -1831,7 +1832,7 @@ const wordNoteBtn = $('#wordNoteBtn');
 - `paraNoteBtn.click` → extracts `paraPopupText.textContent` → `addNote(text)`
 - `wordNoteBtn.click` → extracts `popupWord.textContent` → `addNote(text)`
 
-**New function — ********************************************************`updateNote(index, newText)`********************************************************:**
+**New function — ************************************************************`updateNote(index, newText)`************************************************************:**
 
 ```javascript
 function updateNote(index, newText) {
@@ -1842,7 +1843,7 @@ function updateNote(index, newText) {
 }
 ```
 
-**Updated ********************************************************`renderNotes()`********************************************************:**
+**Updated ************************************************************`renderNotes()`************************************************************:**
 
 - Each note item now renders a `.note-text` div, a `.note-actions` container with edit (✎) and delete (×) buttons.
 - Clicking the edit button replaces the `.note-text` div with a `<textarea>` for inline editing.
@@ -1915,7 +1916,7 @@ const wordNoteBtn = $('#wordNoteBtn');
 - `paraNoteBtn.click` → 提取 `paraPopupText.textContent` → `addNote(text)`
 - `wordNoteBtn.click` → 提取 `popupWord.textContent` → `addNote(text)`
 
-**新增函数 — ********************************************************`updateNote(index, newText)`********************************************************：**
+**新增函数 — ************************************************************`updateNote(index, newText)`************************************************************：**
 
 ```javascript
 function updateNote(index, newText) {
@@ -1926,7 +1927,7 @@ function updateNote(index, newText) {
 }
 ```
 
-**更新 ********************************************************`renderNotes()`********************************************************：**
+**更新 ************************************************************`renderNotes()`************************************************************：**
 
 - 每个笔记项现在渲染 `.note-text` 文本容器、`.note-actions` 操作容器（含编辑 ✎ 和删除 × 按钮）。
 - 点击编辑按钮将 `.note-text` 替换为 `<textarea>` 进行行内编辑。
@@ -1994,7 +1995,7 @@ Written **before** implementation (TDD red-green cycle). Two new test groups:
 
 ### 2. JavaScript Changes: `src/reader.js`
 
-**New function — ****************************************************`noteWithFeedback(btn, text, originalLabel)`****************************************************:**
+**New function — ********************************************************`noteWithFeedback(btn, text, originalLabel)`********************************************************:**
 
 ```javascript
 function noteWithFeedback(btn, text, originalLabel) {
@@ -2075,7 +2076,7 @@ All 14 new tests and all 413 existing tests pass.
 
 ### 2. JavaScript 变更：`src/reader.js`
 
-**新增函数 — ****************************************************`noteWithFeedback(btn, text, originalLabel)`****************************************************：**
+**新增函数 — ********************************************************`noteWithFeedback(btn, text, originalLabel)`********************************************************：**
 
 ```javascript
 function noteWithFeedback(btn, text, originalLabel) {
@@ -3363,13 +3364,15 @@ Evaluate and compare the three translations: /Users/victor/Downloads/003*prologu
 1. **EDGE 总体胜出** — 最佳文学质量、专有名词、隐喻保留和流畅度。唯一重大缺陷是 \$7.5 万亿解析错误（源文本 OCR 伪影）。
 2. **Google 紧随其后** — 动词细微差异（构想/创造）和舞蹈/乐曲行表现出色，但将"信息是惊喜"误译为形容词。
 3. **Ollama（qwen2.5:14b）具有竞争力** — 无幻觉且完整性扎实，但仍存在香农/Meta 错误、"钱是时间"颠倒及术语未翻译。新增词汇表和反向翻译验证器（尚未部署）预计可修复大部分问题。
-4. **三者均在 ****`$7. 5 trillion`**** 上出错** — 源文本 OCR 伪影。EDGE/Google 解析为"$7"+"5 万亿"。Ollama 正确处理了该数字。
-
-
+4. **三者均在 ********`$7. 5 trillion`******** 上出错** — 源文本 OCR 伪影。EDGE/Google 解析为"$7"+"5 万亿"。Ollama 正确处理了该数字。
 
 \>> 再次对比这三个 /Users/victor/Downloads/003_prologue-the-theory-bilingual——Ollama2.docx ，/Users/victor/Downloads/003_prologue-the-theory-bilingual——Google.docx ，/Users/victor/Downloads/003_prologue-the-theory-bilingual——EDGE.docx
 
 Compare these three files: /Users/victor/Downloads/003*prologue-the-theory-bilingual——Ollama2.docx, /Users/victor/Downloads/003*prologue-the-theory-bilingual——Google.docx, /Users/victor/Downloads/003_prologue-the-theory-bilingual——EDGE.docx.
 
 \>> 是否可以进一步提高Ollama的模型，来提高翻译质量。 Improve translation quality by optimizing the Ollama model selection or configuration.
+
+ qwen3:14b (9.3 GB) is installed and ready. You can now run a new 
+
+  Ollama translation in EasyOriginals to test V4.
 
