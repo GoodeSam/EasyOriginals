@@ -3071,6 +3071,63 @@ The translation randomly switches between Simplified Chinese (简体) and Tradit
 
 \>> 我依然想要使用Ollama 来翻译，解决翻译质量差的问题
 
+⏺ Pushed to GitHub as 834301a. The commit includes:
+
+- The Ollama translation quality fix (chat API + structured  
+  system prompt)
+- Process doc rename (EasyOriginalsProcess1.md →  
+  EasyOriginalsProcess2.md) with the appended evaluation report
+-
+
+\>> 询问Codex，目前代码使用Ollama 翻译质量可以通过哪些方面来提高。 Ask Codex how to improve the Ollama translation quality in the current code.
+
+⏺ Here's Codex's analysis — 6 concrete improvements ranked by
+impact:
+
+High Priority
+
+1. Add decoding parameters — Currently no options are passed in  
+   the request body. Set temperature: 0, top_p: 0.9, top_k: 20,
+   repeat_penalty: 1.1, and a seed for deterministic output. This  
+   directly reduces hallucinations and script mixing.
+2. Use structured input/output tags — Wrap source text in <SOURCE>...</SOURCE> and require output in\ <TRANSLATION>...</TRANSLATION>. Even better: split into numbered
+   sentences and require matching count back as a JSON array to  
+   catch omissions.
+3. Add a validation + repair loop — Don't blindly accept output.
+   Post-check for:  
+   \- Latin letters left inline (/[A-Za-z]{2,}/)
+   \- Traditional Chinese characters  
+   \- Fake labels (英文, 中文, Pinyin)  
+   \- Severe length mismatch (omitted content)
+
+If validation fails, run a targeted repair prompt.
+
+Medium-High Priority
+
+4. Improve chunking strategy — Currently each paragraph is  
+   flattened and translated in isolation. Instead: preserve sentence
+   boundaries with numbered items, and use a sliding window (prev +
+   current + next paragraph) for context on names, tense, and
+   terms.
+
+Medium Priority
+
+5. Add semantic retries — Current retries only handle transport  
+   errors. Add quality-based retries: attempt 1 normal, attempt 2
+   stricter parameters, attempt 3 sentence-by-sentence JSON.
+6. Better model defaults — llama3 is weak for EN→ZH literary
+   translation. Detect installed models, prefer  
+   multilingual/translation-capable ones, and surface
+   recommendations.
+
+Codex's recommended single best change:
+
+▎ Build a pipeline of: sentence-array input → deterministic  
+▎ decode → validate → repair if needed. This addresses all the
+▎ failure modes more effectively than adding more rules to the  
+▎ system prompt.
+
+Want me to implement any of these improvements?
 
 
-\>> 询问Codex，目前使用Ollama 翻译质量差的问题该怎么解决
+
