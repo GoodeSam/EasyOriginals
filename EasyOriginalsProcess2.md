@@ -361,6 +361,8 @@ How URL loading works:
 
 
 
+
+
 \>> 使用TDD实现：停止操作5秒以后，自动隐藏浏览器的网址栏和浏览器的其他内容，整个电脑屏幕仅仅只展现文档的阅读内容
 
 Implement a fullscreen reading mode using TDD: after 5 seconds of inactivity, automatically hide the toolbar, sidebar, status bar, and all UI chrome to display only the document content.
@@ -1730,7 +1732,7 @@ Ask Codex whether this Zustand pattern could cause stale state.
 **Audit type**: Mini (5-dim)
 **Fixer**: Claude
 **Model**: gpt-5.3-codex | **Effort**: high | **Sandbox**: workspace-write
-**Thread ID**: `019d3305-90d1-7830-9eae-046fe7c06404` *(use ****************************`/continue 019d3305-90d1-7830-9eae-046fe7c06404`**************************** to iterate further — Codex only)*
+**Thread ID**: `019d3305-90d1-7830-9eae-046fe7c06404` *(use ********************************`/continue 019d3305-90d1-7830-9eae-046fe7c06404`******************************** to iterate further — Codex only)*
 **Rounds**: 2
 
 ## Result: ACCEPTED
@@ -1829,7 +1831,7 @@ const wordNoteBtn = $('#wordNoteBtn');
 - `paraNoteBtn.click` → extracts `paraPopupText.textContent` → `addNote(text)`
 - `wordNoteBtn.click` → extracts `popupWord.textContent` → `addNote(text)`
 
-**New function — ************************************************`updateNote(index, newText)`************************************************:**
+**New function — ********************************************************`updateNote(index, newText)`********************************************************:**
 
 ```javascript
 function updateNote(index, newText) {
@@ -1840,7 +1842,7 @@ function updateNote(index, newText) {
 }
 ```
 
-**Updated ************************************************`renderNotes()`************************************************:**
+**Updated ********************************************************`renderNotes()`********************************************************:**
 
 - Each note item now renders a `.note-text` div, a `.note-actions` container with edit (✎) and delete (×) buttons.
 - Clicking the edit button replaces the `.note-text` div with a `<textarea>` for inline editing.
@@ -1913,7 +1915,7 @@ const wordNoteBtn = $('#wordNoteBtn');
 - `paraNoteBtn.click` → 提取 `paraPopupText.textContent` → `addNote(text)`
 - `wordNoteBtn.click` → 提取 `popupWord.textContent` → `addNote(text)`
 
-**新增函数 — ************************************************`updateNote(index, newText)`************************************************：**
+**新增函数 — ********************************************************`updateNote(index, newText)`********************************************************：**
 
 ```javascript
 function updateNote(index, newText) {
@@ -1924,7 +1926,7 @@ function updateNote(index, newText) {
 }
 ```
 
-**更新 ************************************************`renderNotes()`************************************************：**
+**更新 ********************************************************`renderNotes()`********************************************************：**
 
 - 每个笔记项现在渲染 `.note-text` 文本容器、`.note-actions` 操作容器（含编辑 ✎ 和删除 × 按钮）。
 - 点击编辑按钮将 `.note-text` 替换为 `<textarea>` 进行行内编辑。
@@ -1992,7 +1994,7 @@ Written **before** implementation (TDD red-green cycle). Two new test groups:
 
 ### 2. JavaScript Changes: `src/reader.js`
 
-**New function — ********************************************`noteWithFeedback(btn, text, originalLabel)`********************************************:**
+**New function — ****************************************************`noteWithFeedback(btn, text, originalLabel)`****************************************************:**
 
 ```javascript
 function noteWithFeedback(btn, text, originalLabel) {
@@ -2073,7 +2075,7 @@ All 14 new tests and all 413 existing tests pass.
 
 ### 2. JavaScript 变更：`src/reader.js`
 
-**新增函数 — ********************************************`noteWithFeedback(btn, text, originalLabel)`********************************************：**
+**新增函数 — ****************************************************`noteWithFeedback(btn, text, originalLabel)`****************************************************：**
 
 ```javascript
 function noteWithFeedback(btn, text, originalLabel) {
@@ -3067,8 +3069,6 @@ The translation randomly switches between Simplified Chinese (简体) and Tradit
 
 **建议**：此翻译输出无法直接使用。该 Ollama 模型（可能是较小的本地模型）缺乏处理此类密集、文学性学术英语文本的能力。对于此复杂度的内容，需要使用更大的模型或配备人工校对的专业翻译流程。
 
-
-
 \>> 我依然想要使用Ollama 来翻译，解决翻译质量差的问题
 
 ⏺ Pushed to GitHub as 834301a. The commit includes:
@@ -3087,15 +3087,15 @@ impact:
 High Priority
 
 1. Add decoding parameters — Currently no options are passed in  
-   the request body. Set temperature: 0, top_p: 0.9, top_k: 20,
-   repeat_penalty: 1.1, and a seed for deterministic output. This  
+   the request body. Set temperature: 0, top\_p: 0.9, top\_k: 20,
+   repeat\_penalty: 1.1, and a seed for deterministic output. This  
    directly reduces hallucinations and script mixing.
 2. Use structured input/output tags — Wrap source text in <SOURCE>...</SOURCE> and require output in\ <TRANSLATION>...</TRANSLATION>. Even better: split into numbered
    sentences and require matching count back as a JSON array to  
    catch omissions.
 3. Add a validation + repair loop — Don't blindly accept output.
    Post-check for:  
-   \- Latin letters left inline (/[A-Za-z]{2,}/)
+   \- Latin letters left inline (/\[A-Za-z]{2,}/)
    \- Traditional Chinese characters  
    \- Fake labels (英文, 中文, Pinyin)  
    \- Severe length mismatch (omitted content)
@@ -3129,207 +3129,247 @@ Codex's recommended single best change:
 
 Want me to implement any of these improvements?
 
-
-
 ⏺ All 6 improvements are implemented. Here's a summary of what
 
-  changed:
+changed:
 
 ⏺ Pushed as 4920186.
 
 \>> 访问/Users/victor/projects/tepub中的使用Ollama翻译的代码，看看能不能优化EasyOriginals的Ollama翻译质量.  Review the Ollama translation implementation in /Users/victor/projects/tepub and apply optimizations to EasyOriginals to improve translation quality.
 
-
-
-\>> '/Users/victor/Downloads/003_prologue-the-theory-bilingual (2).docx’是EasyOriginals的Ollama翻译内容，评价翻译结果     Evaluate the Ollama translation quality in '/Users/victor/Downloads/003_prologue-the-theory-bilingual (2).docx' (EasyOriginals bilingual translation content).
-
-                                                            
+\>> '/Users/victor/Downloads/003\_prologue-the-theory-bilingual (2).docx’是EasyOriginals的Ollama翻译内容，评价翻译结果     Evaluate the Ollama translation quality in '/Users/victor/Downloads/003\_prologue-the-theory-bilingual (2).docx' (EasyOriginals bilingual translation content).
 
 ⏺ Default model updated to qwen2.5:14b-instruct in both
 
-  ollama-translator.js and storage.js.
-
-
+ollama-translator.js and storage.js.
 
 ❯ /codex-toolkit:bug-analyze.  translation quality poor
 
+\>> /Users/victor/Downloads/003\_prologue-the-theory-bilingual.docx 是翻译的结果，评价这个结果
 
+\>> 如何可以进一步提高Ollama的翻译质量
 
-\>> /Users/victor/Downloads/003_prologue-the-theory-bilingual.docx 是翻译的结果，评价这个结果
+\>> 对这三份翻译（/Users/victor/Downloads/003\_prologue-the-theory-bilingual——Ollama.docx，/Users/victor/Downloads/003\_prologue-the-theory-bilingual——EDGE.docx，/Users/victor/Downloads/003\_prologue-the-theory-bilingual——Google.docx）进行评价和比较
 
-
-
-
-
-
-
+Evaluate and compare the three translations: /Users/victor/Downloads/003*prologue-the-theory-bilingual——Ollama.docx, /Users/victor/Downloads/003*prologue-the-theory-bilingual——EDGE.docx, /Users/victor/Downloads/003\_prologue-the-theory-bilingual——Google.docx.
 
 ---
 
-## Translation Quality Evaluation Report V3 — 003_prologue-the-theory-bilingual.docx (qwen2.5:14b-instruct + all fixes)
+## Three-Way Translation Comparison Report — Ollama vs EDGE vs Google
 
-### Overall Grade: Good (7/10) — up from Fair (5/10) and Poor (2/10)
+### Overall Scores
 
----
-
-### Improvements Over V2
-
-| Dimension | V2 (5/10) | V3 (7/10) | Change |
-|-----------|-----------|-----------|--------|
-| Hallucinated content | 1 duplicate sentence (line 10) | **None** | Fixed |
-| Simplified/Traditional | Pass | **Pass** | Maintained |
-| Completeness | Mostly complete | **Fully complete** | Improved |
-| Proper noun translation | 4 left in English | Most translated (斯密, 尼克松, 弗里德曼, 图灵, 冯·诺伊曼) | Much better |
-| Phrasing naturalness | Awkward in places | Noticeably more fluent | Improved |
-| Short propositions (37-70) | Mostly accurate | **All accurate** | Maintained |
+| Engine                   | Score      | Strengths                                                            | Key Weaknesses                                                                |
+| ------------------------ | ---------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **EDGE (Microsoft)**     | **8.5/10** | Best literary quality, all proper nouns correct, metaphors preserved | \$7.5 trillion parsing broken                                                 |
+| **Google Translate**     | **8/10**   | Best verb nuance (conceived/coined), proper nouns correct            | \$7.5 trillion broken, "Information is surprise" mistranslated                |
+| **Ollama (qwen2.5:14b)** | **7/10**   | No hallucinations, consistent format, \$7.5T number correct          | Shannon wrong, Meta wrong, "Money is time" reversed, hypertrophy untranslated |
 
 ---
 
-### Remaining Issues
+### Line-by-Line Comparison of Key Passages
 
-#### 1. English Residue (1 instance — down from 4)
+#### Line 7 — "Life after Capitalism depicts..."
 
-| Line | Problem |
-|------|---------|
-| 25 | `hypertrophy` still untranslated: `财务的 hypertrophy` — should be `过度膨胀` or `肥大症` |
+| Engine   | Translation                           | Verdict                                          |
+| -------- | ------------------------------------- | ------------------------------------------------ |
+| Ollama   | `资本主义后生活描绘当前经济时代，并推出新经济理论。`           | Missing book-title markers, missing 了            |
+| **EDGE** | `《资本主义之后的生活》描绘了当前的经济时代，并提出了一种新的经济理论。` | **Best** — book-title markers, complete, natural |
+| Google   | `资本主义后的生活描绘了当前的经济时代并推出了新的经济理论。`       | Good but missing 《》                              |
 
-#### 2. Semantic Reversal (Still Present)
+#### Line 10 — "conceived by Adam Smith and coined by Karl Marx"
 
-| Line | Original | Translation | Issue |
-|------|----------|-------------|-------|
-| 46 | "Money is time" | `时间是金钱` | **Still reversed.** The author's deliberate inversion of "Time is money" is the whole point — "Money is time" (钱是时间). The model defaults to the common proverb despite rule 9. |
+| Engine     | Translation          | Verdict                               |
+| ---------- | -------------------- | ------------------------------------- |
+| Ollama     | `亚当·斯密和卡尔·马克思所提出的理论` | Loses conceived/coined distinction    |
+| EDGE       | `亚当·斯密提出、卡尔·马克思提出`   | Also loses the distinction            |
+| **Google** | `由亚当·斯密构想、卡尔·马克思创造`  | **Best** — preserves conceived/coined |
 
-#### 3. Proper Noun Errors
+#### Line 10 — "defy and disable"
 
-| Line | Original | Translation | Issue |
-|------|----------|-------------|-------|
-| 28 | Claude Shannon | `克劳德·谢泼德` | Wrong — `谢泼德` is "Shepard", not "Shannon". Should be `克劳德·香农` |
-| 28 | Meta | `元气` | Wrong — `元气` means "vitality/vigor". Should be `Meta`（保留原名）or `元宇宙公司` |
+| Engine   | Translation       | Verdict                        |
+| -------- | ----------------- | ------------------------------ |
+| Ollama   | `违背了资本主义的基本原则`    | Drops "disable" entirely       |
+| **EDGE** | `违背并使资本主义的经典原则失效` | **Best** — both verbs captured |
+| Google   | `违背并破坏了资本主义的规范原则` | Good                           |
 
-#### 4. Minor Accuracy Issues
+#### Line 19 — Literary passage: "conundrum, wrapped in enigma..."
 
-| Line | Original | Translation | Issue |
-|------|----------|-------------|-------|
-| 7 | "Life after Capitalism" (book title) | `资本主义后生活` | Missing book-title markers: should be `《资本主义之后的生活》` |
-| 13 | "in no sense is an economy's distribution of wealth as significant as its production" | `财富分配也不是生产的同等重要性` | Meaning correct but phrasing clumsy |
-| 16 | "assured allocations of scarce resources" | `有限资源的确保分配` | `确保...确保` repetition persists from V2 |
-| 22 | "The seeds of the new era were sown in 1971" | `理查德·尼克松和米尔顿·弗里德曼公布了...` | Sowing metaphor still lost |
-| 52 | "You can only keep what you give away" | `你只能保留你所捐赠的东西` | `捐赠` too narrow, should be `给予` |
-| 70 | "a dance to the music of time" | `一首与时间共舞的乐曲` | Better than V2 (dance now present), but conflates dance and music |
+| Engine   | Translation                                | Verdict                                  |
+| -------- | ------------------------------------------ | ---------------------------------------- |
+| Ollama   | `谜团，包围着一个谜语，顶着一个悖论的混乱...精神错乱的理论`           | Loses literary structure                 |
+| **EDGE** | `谜团，包裹在谜团中，顶端是一连串悖论...荒谬教条的阴郁话语`           | **Best** — preserves cascading structure |
+| Google   | `难题，被一个谜团包裹着，上面充满了令人困惑的悖论...疯狂的学说的令人沮丧的话语` | Good structure, slightly wordy           |
 
-#### 5. What's Working Well
+#### Line 22 — "The seeds of the new era were sown in 1971"
 
-- Line 10: No more hallucinated duplicate sentence — anti-hallucination fix worked
-- Line 22: `理查德·尼克松` and `米尔顿·弗里德曼` — proper noun translation correct
-- Line 28: `与此同时` — fixed the awkward `在同一时刻` from V2
-- Line 28: `阿兰·图灵` and `约翰·冯·诺伊曼` — now transliterated (though Shannon is wrong)
-- Line 31: Complex economic passage translated fully and coherently
-- Line 34: `经济信息理论从四个基本命题的总结中诞生` — complete and natural
-- Lines 37-43, 55, 58, 61, 64, 67: All clean, accurate, natural Chinese
+| Engine     | Translation                      | Verdict                                         |
+| ---------- | -------------------------------- | ----------------------------------------------- |
+| Ollama     | `理查德·尼克松和米尔顿·弗里德曼公布了紧急社会主义的初始阶段` | **Metaphor lost**                               |
+| **EDGE**   | `新时代的种子在1971年播下`                 | **Best** — 种子...播下 perfectly preserves metaphor |
+| **Google** | `新时代的种子于 1971 年播下`               | Equally excellent                               |
 
----
+#### Line 25 — "\$7.5 trillion a day, a hypertrophy of finance"
 
-### Summary Table
+| Engine     | Translation                       | Verdict                                         |
+| ---------- | --------------------------------- | ----------------------------------------------- |
+| **Ollama** | `每天超过 7.5 万亿美元...财务的 hypertrophy` | **Number correct** but hypertrophy untranslated |
+| EDGE       | `超过7美元。每天5万亿，金融的肥大`               | **Number BROKEN**. 肥大 valid translation         |
+| Google     | `超过 7 美元的水平。每天 5 万亿美元`            | **Number BROKEN**. hypertrophy dropped          |
 
-| Dimension | V1 | V2 | V3 |
-|-----------|----|----|-----|
-| Completeness | Poor | Fair | **Good** — no omissions, no hallucinations |
-| Accuracy | Poor | Fair | **Good** — 1 reversal, 2 proper noun errors |
-| Fluency | Poor | Fair | **Good** — mostly natural Chinese |
-| Simplified/Traditional | Fail | Pass | **Pass** |
-| English residue | Fail (6+) | Improved (4) | **Near-pass** (1: hypertrophy) |
-| Hallucinations | Severe | Mild (1) | **None** |
-| Literary quality | Poor | Fair | **Fair-Good** — metaphors partially preserved |
+#### Line 28 — Proper nouns: Claude Shannon, Alan Turing, John von Neumann, Meta
 
-### Verdict
+| Engine     | Shannon           | Turing   | von Neumann | Meta         | Verdict         |
+| ---------- | ----------------- | -------- | ----------- | ------------ | --------------- |
+| Ollama     | 克劳德·谢泼德 **WRONG** | 阿兰·图灵 OK | 约翰·冯·诺伊曼 OK | 元气 **WRONG** | 2 errors        |
+| **EDGE**   | 克劳德·香农 OK         | 艾伦·图灵 OK | 约翰·冯·诺依曼 OK | Meta OK      | **All correct** |
+| **Google** | 克劳德·香农 OK         | 艾伦·图灵 OK | 约翰·冯·诺依曼 OK | Meta OK      | **All correct** |
 
-The combination of qwen2.5:14b-instruct + all 7 code fixes produced a major quality jump. Hallucinations are eliminated, proper nouns are mostly correct, completeness is solid, and fluency is much improved. The three persistent issues are:
+#### Line 46 — "Money is time" (THE critical test)
 
-1. **"Money is time" reversal** — The model's training strongly associates this with "时间是金钱" and overrides the explicit anti-proverb rule. A back-translation verifier or special handling for short aphorisms would catch this.
-2. **"Claude Shannon" → `克劳德·谢泼德`** — A factual hallucination in transliteration. A proper-noun glossary injected into the prompt would fix this.
-3. **"hypertrophy" untranslated** — A rare academic term the 14B model doesn't know how to translate. A domain glossary or fallback dictionary lookup would handle it.
+| Engine     | Translation | Verdict      |
+| ---------- | ----------- | ------------ |
+| Ollama     | `时间是金钱`     | **REVERSED** |
+| **EDGE**   | `钱就是时间`     | **CORRECT**  |
+| **Google** | `金钱就是时间`    | **CORRECT**  |
 
----
+#### Line 43 — "Information is surprise"
 
-## 翻译质量评估报告 V3 — 003_prologue-the-theory-bilingual.docx（qwen2.5:14b-instruct + 全部修复）
+| Engine     | Translation | Verdict                               |
+| ---------- | ----------- | ------------------------------------- |
+| **Ollama** | `信息是惊喜`     | Correct — noun form                   |
+| **EDGE**   | `信息就是惊喜`    | Correct — noun form                   |
+| Google     | `信息令人惊讶`    | **Wrong** — adjective instead of noun |
 
-### 总评：良好（7/10）——从尚可（5/10）和差（2/10）提升
+#### Line 52 — "You can only keep what you give away"
 
----
+| Engine   | Translation    | Verdict                         |
+| -------- | -------------- | ------------------------------- |
+| Ollama   | `你只能保留你所捐赠的东西` | 捐赠 (donate) too narrow          |
+| **EDGE** | `你只能保留你付出的东西`  | **Best** — 付出 (give/contribute) |
+| Google   | `你只能保留你所放弃的东西` | 放弃 (abandon) slightly off       |
 
-### 相较 V2 的改进
+#### Line 70 — "Economics is a dance to the music of time"
 
-| 维度 | V2（5/10） | V3（7/10） | 变化 |
-|------|-----------|-----------|------|
-| 幻觉内容 | 1 处重复句（第 10 行） | **无** | 已修复 |
-| 简繁一致性 | 合格 | **合格** | 保持 |
-| 完整性 | 基本完整 | **完全完整** | 改善 |
-| 专有名词翻译 | 4 处保留英文 | 大部分已翻译（斯密、尼克松、弗里德曼、图灵、冯·诺伊曼） | 明显改善 |
-| 表述自然度 | 部分生硬 | 明显更流畅 | 改善 |
-| 短语命题（37-70 行） | 基本准确 | **全部准确** | 保持 |
-
----
-
-### 仍存在的问题
-
-#### 1. 英文残留（1 处——从 4 处减少）
-
-| 行号 | 问题 |
-|------|------|
-| 25 | `hypertrophy` 未翻译：`财务的 hypertrophy`——应为 `过度膨胀` 或 `肥大症` |
-
-#### 2. 语义颠倒（仍存在）
-
-| 行号 | 原文 | 译文 | 问题 |
-|------|------|------|------|
-| 46 | "Money is time" | `时间是金钱` | **仍然颠倒。** 作者刻意颠倒 "Time is money" 的表述，"Money is time"（钱是时间）才是要点。模型默认使用常见谚语，无视规则 9。 |
-
-#### 3. 专有名词错误
-
-| 行号 | 原文 | 译文 | 问题 |
-|------|------|------|------|
-| 28 | Claude Shannon | `克劳德·谢泼德` | 错误——`谢泼德` 是 "Shepard" 而非 "Shannon"。应为 `克劳德·香农` |
-| 28 | Meta | `元气` | 错误——`元气` 意为"活力"。应保留 `Meta` 或译为 `元宇宙公司` |
-
-#### 4. 次要准确性问题
-
-| 行号 | 原文 | 译文 | 问题 |
-|------|------|------|------|
-| 7 | "Life after Capitalism"（书名） | `资本主义后生活` | 缺少书名号：应为 `《资本主义之后的生活》` |
-| 13 | "in no sense is an economy's distribution of wealth as significant as its production" | `财富分配也不是生产的同等重要性` | 意思正确但表述笨拙 |
-| 16 | "assured allocations of scarce resources" | `有限资源的确保分配` | `确保...确保` 重复沿袭自 V2 |
-| 22 | "The seeds of the new era were sown in 1971" | `理查德·尼克松和米尔顿·弗里德曼公布了...` | 播种隐喻仍丢失 |
-| 52 | "You can only keep what you give away" | `你只能保留你所捐赠的东西` | `捐赠` 过于狭窄，应为 `给予` |
-| 70 | "a dance to the music of time" | `一首与时间共舞的乐曲` | 比 V2 好（"舞蹈" 已出现），但将舞蹈和乐曲混为一体 |
-
-#### 5. 表现良好之处
-
-- 第 10 行：不再有幻觉重复句——反幻觉修复生效
-- 第 22 行：`理查德·尼克松` 和 `米尔顿·弗里德曼`——专有名词翻译正确
-- 第 28 行：`与此同时`——修复了 V2 中生硬的 `在同一时刻`
-- 第 28 行：`阿兰·图灵` 和 `约翰·冯·诺伊曼`——已音译（但香农翻译错误）
-- 第 31 行：复杂经济段落翻译完整且连贯
-- 第 34 行：`经济信息理论从四个基本命题的总结中诞生`——完整且自然
-- 第 37-43、55、58、61、64、67 行：全部干净、准确、自然的中文
+| Engine     | Translation       | Verdict                                 |
+| ---------- | ----------------- | --------------------------------------- |
+| Ollama     | `经济学是一首与时间共舞的乐曲`  | Conflates dance into music              |
+| EDGE       | `经济学是一场随着时间音乐跳的舞` | Both elements present, slightly awkward |
+| **Google** | `经济学是随着时间音乐而起的舞蹈` | **Best** — natural, preserves both      |
 
 ---
 
-### 总结表
+### Summary Matrix
 
-| 维度 | V1 | V2 | V3 |
-|------|----|----|-----|
-| 完整性 | 差 | 尚可 | **良好**——无遗漏，无幻觉 |
-| 准确性 | 差 | 尚可 | **良好**——1 处颠倒，2 处专有名词错误 |
-| 流畅度 | 差 | 尚可 | **良好**——大部分为自然中文 |
-| 简繁一致性 | 不合格 | 合格 | **合格** |
-| 英文残留 | 不合格（6+） | 改善（4） | **接近合格**（1 处：hypertrophy） |
-| 幻觉 | 严重 | 轻微（1） | **无** |
-| 文学质量 | 差 | 尚可 | **尚可至良好**——隐喻部分保留 |
+| Dimension             | Ollama                           | EDGE          | Google                  |
+| --------------------- | -------------------------------- | ------------- | ----------------------- |
+| Completeness          | Good                             | Good          | Good                    |
+| Accuracy              | Fair — 1 reversal, 2 noun errors | **Excellent** | Good — 1 mistranslation |
+| Fluency               | Good                             | **Excellent** | Good                    |
+| Proper nouns          | Fair                             | **Perfect**   | **Perfect**             |
+| Literary quality      | Fair                             | **Excellent** | Good                    |
+| Number handling       | **Good** — \$7.5T correct        | Fail          | Fail                    |
+| Metaphor preservation | Poor                             | **Excellent** | **Excellent**           |
+| **Overall**           | **7/10**                         | **8.5/10**    | **8/10**                |
 
-### 结论
+### Key Takeaways
 
-qwen2.5:14b-instruct 搭配全部 7 项代码修复带来了重大质量飞跃。幻觉已消除，专有名词大部分正确，完整性扎实，流畅度显著提升。三个持续存在的问题是：
+1. **EDGE wins overall** — best literary quality, proper nouns, metaphor preservation, and fluency. Only flaw is \$7.5 trillion parsing error (source-text OCR artifact).
+2. **Google is a close second** — excels at verb nuance (conceived/coined) and the dance/music line, but mistranslates "Information is surprise" as adjective.
+3. **Ollama (qwen2.5:14b) is competitive** — no hallucinations, solid completeness, but Shannon/Meta proper noun errors, "Money is time" reversal, and untranslated terms remain. New glossary and back-translation verifier (not yet deployed) should fix most.
+4. **All three fail** on `$7. 5 trillion` — source-text OCR artifact. EDGE/Google parse as "\$7" + "5 trillion". Ollama handled correctly.
 
-1. **"Money is time" 颠倒**——模型训练中强烈关联 "时间是金钱"，覆盖了明确的反谚语替换规则。反向翻译验证器或对短格言的特殊处理可以捕获此问题。
-2. **"Claude Shannon" → `克劳德·谢泼德`**——音译中的事实性幻觉。将专有名词词汇表注入提示词可修复。
-3. **"hypertrophy" 未翻译**——14B 模型不熟悉的罕见学术术语。领域词汇表或后备词典查询可处理。
+---
+
+## 三方翻译对比报告 — Ollama vs EDGE vs Google
+
+### 总评
+
+| 引擎                      | 评分         | 优势                     | 主要不足                                       |
+| ----------------------- | ---------- | ---------------------- | ------------------------------------------ |
+| **EDGE（微软）**            | **8.5/10** | 最佳文学质量，专有名词全部正确，隐喻保留完整 | \$7.5 万亿解析错误                               |
+| **Google 翻译**           | **8/10**   | 最佳动词细微差异（构想/创造），专有名词正确 | \$7.5 万亿解析错误，"信息是惊喜" 误译为形容词                |
+| **Ollama（qwen2.5:14b）** | **7/10**   | 无幻觉，格式一致，\$7.5 万亿数字正确  | 香农翻译错误，Meta 翻译错误，"钱是时间" 颠倒，hypertrophy 未翻译 |
+
+---
+
+### 关键段落逐行对比
+
+#### 第 7 行 — "Life after Capitalism depicts..."
+
+| 引擎       | 译文                                    | 评价          |
+| -------- | ------------------------------------- | ----------- |
+| Ollama   | `资本主义后生活描绘当前经济时代，并推出新经济理论。`           | 缺少书名号《》，缺少了 |
+| **EDGE** | `《资本主义之后的生活》描绘了当前的经济时代，并提出了一种新的经济理论。` | **最佳**      |
+| Google   | `资本主义后的生活描绘了当前的经济时代并推出了新的经济理论。`       | 较好但缺少《》     |
+
+#### 第 10 行 — "conceived by Adam Smith and coined by Karl Marx"
+
+| 引擎         | 译文                   | 评价     |
+| ---------- | -------------------- | ------ |
+| Ollama     | `亚当·斯密和卡尔·马克思所提出的理论` | 丢失区分   |
+| EDGE       | `亚当·斯密提出、卡尔·马克思提出`   | 同样丢失   |
+| **Google** | `由亚当·斯密构想、卡尔·马克思创造`  | **最佳** |
+
+#### 第 22 行 — "The seeds of the new era were sown in 1971"
+
+| 引擎         | 译文                               | 评价       |
+| ---------- | -------------------------------- | -------- |
+| Ollama     | `理查德·尼克松和米尔顿·弗里德曼公布了紧急社会主义的初始阶段` | **隐喻丢失** |
+| **EDGE**   | `新时代的种子在1971年播下`                 | **最佳**   |
+| **Google** | `新时代的种子于 1971 年播下`               | 同样优秀     |
+
+#### 第 46 行 — "Money is time"（关键测试）
+
+| 引擎         | 译文       | 评价     |
+| ---------- | -------- | ------ |
+| Ollama     | `时间是金钱`  | **颠倒** |
+| **EDGE**   | `钱就是时间`  | **正确** |
+| **Google** | `金钱就是时间` | **正确** |
+
+#### 第 28 行 — 专有名词
+
+| 引擎         | Shannon        | Meta      | 评价       |
+| ---------- | -------------- | --------- | -------- |
+| Ollama     | 克劳德·谢泼德 **错误** | 元气 **错误** | 2 处错误    |
+| **EDGE**   | 克劳德·香农         | Meta      | **全部正确** |
+| **Google** | 克劳德·香农         | Meta      | **全部正确** |
+
+#### 第 70 行 — "Economics is a dance to the music of time"
+
+| 引擎         | 译文                | 评价      |
+| ---------- | ----------------- | ------- |
+| Ollama     | `经济学是一首与时间共舞的乐曲`  | 将舞蹈混入乐曲 |
+| EDGE       | `经济学是一场随着时间音乐跳的舞` | 略显生硬    |
+| **Google** | `经济学是随着时间音乐而起的舞蹈` | **最佳**  |
+
+---
+
+### 总结矩阵
+
+| 维度     | Ollama   | EDGE       | Google   |
+| ------ | -------- | ---------- | -------- |
+| 完整性    | 良好       | 良好         | 良好       |
+| 准确性    | 尚可       | **优秀**     | 良好       |
+| 流畅度    | 良好       | **优秀**     | 良好       |
+| 专有名词   | 尚可       | **完美**     | **完美**   |
+| 文学质量   | 尚可       | **优秀**     | 良好       |
+| 数字处理   | **良好**   | 不合格        | 不合格      |
+| 隐喻保留   | 差        | **优秀**     | **优秀**   |
+| **总评** | **7/10** | **8.5/10** | **8/10** |
+
+### 关键结论
+
+1. **EDGE 总体胜出** — 最佳文学质量、专有名词、隐喻保留和流畅度。唯一重大缺陷是 \$7.5 万亿解析错误（源文本 OCR 伪影）。
+2. **Google 紧随其后** — 动词细微差异（构想/创造）和舞蹈/乐曲行表现出色，但将"信息是惊喜"误译为形容词。
+3. **Ollama（qwen2.5:14b）具有竞争力** — 无幻觉且完整性扎实，但仍存在香农/Meta 错误、"钱是时间"颠倒及术语未翻译。新增词汇表和反向翻译验证器（尚未部署）预计可修复大部分问题。
+4. **三者均在 ****`$7. 5 trillion`**** 上出错** — 源文本 OCR 伪影。EDGE/Google 解析为"$7"+"5 万亿"。Ollama 正确处理了该数字。
+
+
+
+\>> 再次对比这三个 /Users/victor/Downloads/003_prologue-the-theory-bilingual——Ollama2.docx ，/Users/victor/Downloads/003_prologue-the-theory-bilingual——Google.docx ，/Users/victor/Downloads/003_prologue-the-theory-bilingual——EDGE.docx
+
+Compare these three files: /Users/victor/Downloads/003*prologue-the-theory-bilingual——Ollama2.docx, /Users/victor/Downloads/003*prologue-the-theory-bilingual——Google.docx, /Users/victor/Downloads/003_prologue-the-theory-bilingual——EDGE.docx.
+
+\>> 是否可以进一步提高Ollama的模型，来提高翻译质量。 Improve translation quality by optimizing the Ollama model selection or configuration.
+
