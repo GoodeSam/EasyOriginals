@@ -34,7 +34,7 @@ const DEFAULTS = {
   translatedTtsVoice: 'zh-CN-XiaoxiaoNeural',
   chineseSpeechRate: 0,
   ollamaUrl: 'http://localhost:11434',
-  ollamaModel: 'llama3',
+  ollamaModel: 'qwen2.5:14b-instruct',
 };
 
 let _cache = null;
