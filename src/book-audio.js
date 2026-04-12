@@ -231,21 +231,37 @@ export async function generateBookAudio(paragraphs, options = {}) {
       continue;
     }
 
-    // Auto-select voice and rate based on paragraph content language
-    const isChinese = detectChinese(text);
-    const paraVoice = isChinese ? chineseVoice : englishVoice;
-    const paraRate = isChinese ? chineseSpeechRate : speechRate;
+    // Synthesize each sentence individually so we can skip sentences
+    // whose language doesn't match the voice (instead of failing the whole book)
+    const sentences = para.sentences.map(s => stripTtsLabels(s)).filter(s => s.trim());
+    const sentenceBlobs = [];
+    for (const sentence of sentences) {
+      if (_cancelled) throw new Error('Audio generation cancelled');
+      const isChinese = detectChinese(sentence);
+      const sentVoice = isChinese ? chineseVoice : englishVoice;
+      const sentRate = isChinese ? chineseSpeechRate : speechRate;
 
-    let blob;
-    for (let attempt = 0; attempt <= SYNTH_MAX_RETRIES; attempt++) {
-      try {
-        blob = await synthesizeParagraph(text, { voice: paraVoice, speechRate: paraRate });
-        break;
-      } catch (err) {
-        if (attempt === SYNTH_MAX_RETRIES || _cancelled) throw err;
+      let blob;
+      let skipped = false;
+      for (let attempt = 0; attempt <= SYNTH_MAX_RETRIES; attempt++) {
+        try {
+          blob = await synthesizeParagraph(sentence, { voice: sentVoice, speechRate: sentRate });
+          break;
+        } catch (err) {
+          if (_cancelled) throw err;
+          if (err.message.includes('returned no audio')) {
+            console.warn(`Skipping sentence (voice/language mismatch): "${sentence.slice(0, 80)}…"`);
+            skipped = true;
+            break;
+          }
+          if (attempt === SYNTH_MAX_RETRIES) throw err;
+        }
       }
+      if (!skipped) sentenceBlobs.push(blob);
     }
-    audioBlobs.push(blob);
+    if (sentenceBlobs.length > 0) {
+      audioBlobs.push(concatenateAudioBlobs(sentenceBlobs));
+    }
     nonBlankIndex++;
     progressIndex++;
 
@@ -254,6 +270,68 @@ export async function generateBookAudio(paragraphs, options = {}) {
   }
 
   const blob = await concatenateAudioBlobs(audioBlobs);
+  return { blob, paragraphCount: audioBlobs.length };
+}
+
+/**
+ * Generate a bilingual audiobook that interleaves original and translated paragraphs.
+ * Original paragraphs are read with the English voice, translated with the Chinese voice.
+ * Prefix labels ("Original:", "Translated:", "[Original]", "[Translated]") are stripped.
+ *
+ * @param {Array} originalParagraphs - Original paragraph objects.
+ * @param {Array} translatedParagraphs - Translated paragraph objects.
+ * @param {object} options - Options: englishVoice, chineseVoice, speechRate, chineseSpeechRate, onProgress.
+ * @returns {Promise<{blob: Blob, paragraphCount: number}>}
+ */
+export async function generateBilingualAudio(originalParagraphs, translatedParagraphs, options = {}) {
+  _cancelled = false;
+  const { speechRate, onProgress } = options;
+  const chineseSpeechRate = options.chineseSpeechRate != null ? options.chineseSpeechRate : speechRate;
+  const englishVoice = options.englishVoice || voiceForLanguage('en');
+  const chineseVoice = options.chineseVoice || voiceForLanguage('zh');
+
+  // Build interleaved pairs: [{ text, voice, rate }, ...]
+  const entries = [];
+  for (let i = 0; i < originalParagraphs.length; i++) {
+    const orig = originalParagraphs[i];
+    const trans = translatedParagraphs[i];
+    if (orig.type === 'image') continue;
+
+    const origText = stripTtsLabels(orig.sentences.join(' '));
+    const transText = trans ? stripTtsLabels(trans.sentences.join(' ')) : '';
+
+    if (origText.trim()) entries.push({ text: origText, voice: englishVoice, rate: speechRate });
+    if (transText.trim()) entries.push({ text: transText, voice: chineseVoice, rate: chineseSpeechRate });
+  }
+
+  const total = entries.length;
+  const audioBlobs = [];
+
+  for (let i = 0; i < entries.length; i++) {
+    if (_cancelled) throw new Error('Audio generation cancelled');
+    const { text, voice, rate } = entries[i];
+
+    let blob;
+    let skipped = false;
+    for (let attempt = 0; attempt <= SYNTH_MAX_RETRIES; attempt++) {
+      try {
+        blob = await synthesizeParagraph(text, { voice, speechRate: rate });
+        break;
+      } catch (err) {
+        if (_cancelled) throw err;
+        if (err.message.includes('returned no audio')) {
+          console.warn(`Skipping sentence (voice/language mismatch): "${text.slice(0, 80)}…"`);
+          skipped = true;
+          break;
+        }
+        if (attempt === SYNTH_MAX_RETRIES) throw err;
+      }
+    }
+    if (!skipped) audioBlobs.push(blob);
+    if (onProgress) onProgress(i + 1, total);
+  }
+
+  const blob = concatenateAudioBlobs(audioBlobs);
   return { blob, paragraphCount: audioBlobs.length };
 }
 

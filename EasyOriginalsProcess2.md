@@ -1,5 +1,20 @@
-Append the final report（English first，then Chinese) to the end of the current document at  
-/Users/victor/projects/EasyOriginals/[EasyOriginalsProcess2.md](http://EasyOriginalsProcess.md) (append only, do not overwrite).
+Append the final report (English first, then Chinese) to the end of the current document at /Users/victor/projects/EasyOriginals/EasyOriginalsProcess2.md (append only, do not overwrite).
+
+To avoid the `cat >>` heredoc being blocked by the sandbox during writing, use the Edit tool.
+
+
+
+将最终报告（英文在前，中文在后）追加到当前文档 /Users/victor/projects/EasyOriginals/EasyOriginalsProcess2.md 的末尾（仅追加，不要覆盖）。
+
+为了避免使用 `cat >>` heredoc 写入时被沙箱拦截，请使用 Edit 工具。
+
+
+
+```shell
+ cat >> heredoc
+  被沙箱拦截了写入，改用 Edit
+  工具
+```
 
 \>> 结合[https\://github.com/ZuodaoTech/everyone-can-use-english](https://github.com/ZuodaoTech/everyone-can-use-english) 这里面的内容，分析 [https\://enjoy.bot](https://enjoy.bot) 可以直接在网页版上使用，而不用下载安装APP，这个软件是如何制作的
 
@@ -328,6 +343,12 @@ How URL loading works:
   top bar
 
   15 new tests, 148 total, all passing.
+
+
+
+
+
+
 
 
 
@@ -1733,7 +1754,7 @@ Ask Codex whether this Zustand pattern could cause stale state.
 **Audit type**: Mini (5-dim)
 **Fixer**: Claude
 **Model**: gpt-5.3-codex | **Effort**: high | **Sandbox**: workspace-write
-**Thread ID**: `019d3305-90d1-7830-9eae-046fe7c06404` *(use **********************************`/continue 019d3305-90d1-7830-9eae-046fe7c06404`********************************** to iterate further — Codex only)*
+**Thread ID**: `019d3305-90d1-7830-9eae-046fe7c06404` *(use **********************************************`/continue 019d3305-90d1-7830-9eae-046fe7c06404`********************************************** to iterate further — Codex only)*
 **Rounds**: 2
 
 ## Result: ACCEPTED
@@ -1832,7 +1853,7 @@ const wordNoteBtn = $('#wordNoteBtn');
 - `paraNoteBtn.click` → extracts `paraPopupText.textContent` → `addNote(text)`
 - `wordNoteBtn.click` → extracts `popupWord.textContent` → `addNote(text)`
 
-**New function — ************************************************************`updateNote(index, newText)`************************************************************:**
+**New function — ************************************************************************************`updateNote(index, newText)`************************************************************************************:**
 
 ```javascript
 function updateNote(index, newText) {
@@ -1843,7 +1864,7 @@ function updateNote(index, newText) {
 }
 ```
 
-**Updated ************************************************************`renderNotes()`************************************************************:**
+**Updated ************************************************************************************`renderNotes()`************************************************************************************:**
 
 - Each note item now renders a `.note-text` div, a `.note-actions` container with edit (✎) and delete (×) buttons.
 - Clicking the edit button replaces the `.note-text` div with a `<textarea>` for inline editing.
@@ -1916,7 +1937,7 @@ const wordNoteBtn = $('#wordNoteBtn');
 - `paraNoteBtn.click` → 提取 `paraPopupText.textContent` → `addNote(text)`
 - `wordNoteBtn.click` → 提取 `popupWord.textContent` → `addNote(text)`
 
-**新增函数 — ************************************************************`updateNote(index, newText)`************************************************************：**
+**新增函数 — ************************************************************************************`updateNote(index, newText)`************************************************************************************：**
 
 ```javascript
 function updateNote(index, newText) {
@@ -1927,7 +1948,7 @@ function updateNote(index, newText) {
 }
 ```
 
-**更新 ************************************************************`renderNotes()`************************************************************：**
+**更新 ************************************************************************************`renderNotes()`************************************************************************************：**
 
 - 每个笔记项现在渲染 `.note-text` 文本容器、`.note-actions` 操作容器（含编辑 ✎ 和删除 × 按钮）。
 - 点击编辑按钮将 `.note-text` 替换为 `<textarea>` 进行行内编辑。
@@ -1995,7 +2016,7 @@ Written **before** implementation (TDD red-green cycle). Two new test groups:
 
 ### 2. JavaScript Changes: `src/reader.js`
 
-**New function — ********************************************************`noteWithFeedback(btn, text, originalLabel)`********************************************************:**
+**New function — ********************************************************************************`noteWithFeedback(btn, text, originalLabel)`********************************************************************************:**
 
 ```javascript
 function noteWithFeedback(btn, text, originalLabel) {
@@ -2076,7 +2097,7 @@ All 14 new tests and all 413 existing tests pass.
 
 ### 2. JavaScript 变更：`src/reader.js`
 
-**新增函数 — ********************************************************`noteWithFeedback(btn, text, originalLabel)`********************************************************：**
+**新增函数 — ********************************************************************************`noteWithFeedback(btn, text, originalLabel)`********************************************************************************：**
 
 ```javascript
 function noteWithFeedback(btn, text, originalLabel) {
@@ -3364,23 +3385,21 @@ Evaluate and compare the three translations: /Users/victor/Downloads/003*prologu
 1. **EDGE 总体胜出** — 最佳文学质量、专有名词、隐喻保留和流畅度。唯一重大缺陷是 \$7.5 万亿解析错误（源文本 OCR 伪影）。
 2. **Google 紧随其后** — 动词细微差异（构想/创造）和舞蹈/乐曲行表现出色，但将"信息是惊喜"误译为形容词。
 3. **Ollama（qwen2.5:14b）具有竞争力** — 无幻觉且完整性扎实，但仍存在香农/Meta 错误、"钱是时间"颠倒及术语未翻译。新增词汇表和反向翻译验证器（尚未部署）预计可修复大部分问题。
-4. **三者均在 ********`$7. 5 trillion`******** 上出错** — 源文本 OCR 伪影。EDGE/Google 解析为"$7"+"5 万亿"。Ollama 正确处理了该数字。
+4. **三者均在 ********************************`$7. 5 trillion`******************************** 上出错** — 源文本 OCR 伪影。EDGE/Google 解析为"\$7"+"5 万亿"。Ollama 正确处理了该数字。
 
-\>> 再次对比这三个 /Users/victor/Downloads/003_prologue-the-theory-bilingual——Ollama2.docx ，/Users/victor/Downloads/003_prologue-the-theory-bilingual——Google.docx ，/Users/victor/Downloads/003_prologue-the-theory-bilingual——EDGE.docx
+\>> 再次对比这三个 /Users/victor/Downloads/003\_prologue-the-theory-bilingual——Ollama2.docx ，/Users/victor/Downloads/003\_prologue-the-theory-bilingual——Google.docx ，/Users/victor/Downloads/003\_prologue-the-theory-bilingual——EDGE.docx
 
-Compare these three files: /Users/victor/Downloads/003*prologue-the-theory-bilingual——Ollama2.docx, /Users/victor/Downloads/003*prologue-the-theory-bilingual——Google.docx, /Users/victor/Downloads/003_prologue-the-theory-bilingual——EDGE.docx.
+Compare these three files: /Users/victor/Downloads/003*prologue-the-theory-bilingual——Ollama2.docx, /Users/victor/Downloads/003*prologue-the-theory-bilingual——Google.docx, /Users/victor/Downloads/003\_prologue-the-theory-bilingual——EDGE.docx.
 
 \>> 是否可以进一步提高Ollama的模型，来提高翻译质量。 Improve translation quality by optimizing the Ollama model selection or configuration.
 
- qwen3:14b (9.3 GB) is installed and ready. You can now run a new 
+qwen3:14b (9.3 GB) is installed and ready. You can now run a new
 
-  Ollama translation in EasyOriginals to test V4.
-
-                                                                   
+Ollama translation in EasyOriginals to test V4.
 
 ⏺ Pushed as 6908e60.
 
-\>> 对比这四个的翻译质量 /Users/victor/Downloads/004_chapter-one-life-after-capitalism-bilingual-OllamaQwen3.docx，/Users/victor/Downloads/004_chapter-one-life-after-capitalism-bilingual——Microsoft.docx，/Users/victor/Downloads/004_chapter-one-life-after-capitalism-bilingual——google.docx，/Users/victor/Downloads/004_chapter-one-life-after-capitalism-bilingual——OllamaQwen2.5.docx
+\>> 对比这四个的翻译质量 /Users/victor/Downloads/004\_chapter-one-life-after-capitalism-bilingual-OllamaQwen3.docx，/Users/victor/Downloads/004\_chapter-one-life-after-capitalism-bilingual——Microsoft.docx，/Users/victor/Downloads/004\_chapter-one-life-after-capitalism-bilingual——google.docx，/Users/victor/Downloads/004\_chapter-one-life-after-capitalism-bilingual——OllamaQwen2.5.docx
 
 ---
 
@@ -3388,12 +3407,12 @@ Compare these three files: /Users/victor/Downloads/003*prologue-the-theory-bilin
 
 ### Overall Scores
 
-| Engine | Score | Key Strength | Key Weakness |
-|--------|-------|-------------|-------------|
-| **EDGE (Microsoft)** | **9/10** | Near-flawless fluency, literary quality, complete accuracy | Minor: repeated word in L34, odd Ma transliterations |
-| **Google Translate** | **8.5/10** | Accurate technical terms, clean proper nouns | English names in parentheses; "Information is surprise" wrong |
-| **Ollama Qwen3:14b** | **6/10** | Glossary caught Shannon, "Money is time" correct | 12+ English residue instances, half-translated terms |
-| **Ollama Qwen2.5:14b** | **5.5/10** | Similar base quality to Qwen3 | More English residue, same structural issues |
+| Engine                 | Score      | Key Strength                                               | Key Weakness                                                  |
+| ---------------------- | ---------- | ---------------------------------------------------------- | ------------------------------------------------------------- |
+| **EDGE (Microsoft)**   | **9/10**   | Near-flawless fluency, literary quality, complete accuracy | Minor: repeated word in L34, odd Ma transliterations          |
+| **Google Translate**   | **8.5/10** | Accurate technical terms, clean proper nouns               | English names in parentheses; "Information is surprise" wrong |
+| **Ollama Qwen3:14b**   | **6/10**   | Glossary caught Shannon, "Money is time" correct           | 12+ English residue instances, half-translated terms          |
+| **Ollama Qwen2.5:14b** | **5.5/10** | Similar base quality to Qwen3                              | More English residue, same structural issues                  |
 
 ---
 
@@ -3403,26 +3422,26 @@ scarcity untranslated (L13), carbon dioxide half-translated (L28), shed/lobster 
 
 ### Head-to-Head Key Passages
 
-| Test | Qwen3 | Qwen2.5 | Google | EDGE |
-|------|-------|---------|--------|------|
-| scarcity (L13) | UNTRANSLATED | UNTRANSLATED | correct | correct |
-| invisible hand (L16) | ok | ok | ok | best |
-| carbon dioxide (L28) | BROKEN | BROKEN | correct | correct |
-| Money Is Time (L94) | CORRECT (verifier) | CORRECT | correct | correct |
-| Claude Shannon (L127) | CORRECT (glossary) | correct | correct | correct |
-| econometrics (L76) | BROKEN | complete | correct | correct |
-| Final paragraph (L130) | BROKEN fragments | issues | complete | best |
+| Test                   | Qwen3              | Qwen2.5      | Google   | EDGE    |
+| ---------------------- | ------------------ | ------------ | -------- | ------- |
+| scarcity (L13)         | UNTRANSLATED       | UNTRANSLATED | correct  | correct |
+| invisible hand (L16)   | ok                 | ok           | ok       | best    |
+| carbon dioxide (L28)   | BROKEN             | BROKEN       | correct  | correct |
+| Money Is Time (L94)    | CORRECT (verifier) | CORRECT      | correct  | correct |
+| Claude Shannon (L127)  | CORRECT (glossary) | correct      | correct  | correct |
+| econometrics (L76)     | BROKEN             | complete     | correct  | correct |
+| Final paragraph (L130) | BROKEN fragments   | issues       | complete | best    |
 
 ### Summary Matrix
 
-| Dimension | Qwen3 | Qwen2.5 | Google | EDGE |
-|-----------|-------|---------|--------|------|
-| Completeness | Fair | Fair | Excellent | Excellent |
-| Accuracy | Poor | Poor-Fair | Good | Excellent |
-| Fluency | Fair | Fair | Good | Excellent |
-| English residue | FAIL (12+) | FAIL (10+) | Minor | Pass |
-| Technical terms | FAIL | FAIL | Pass | Pass |
-| Overall | 6/10 | 5.5/10 | 8.5/10 | 9/10 |
+| Dimension       | Qwen3      | Qwen2.5    | Google    | EDGE      |
+| --------------- | ---------- | ---------- | --------- | --------- |
+| Completeness    | Fair       | Fair       | Excellent | Excellent |
+| Accuracy        | Poor       | Poor-Fair  | Good      | Excellent |
+| Fluency         | Fair       | Fair       | Good      | Excellent |
+| English residue | FAIL (12+) | FAIL (10+) | Minor     | Pass      |
+| Technical terms | FAIL       | FAIL       | Pass      | Pass      |
+| Overall         | 6/10       | 5.5/10     | 8.5/10    | 9/10      |
 
 ### Key Findings
 
@@ -3434,16 +3453,16 @@ scarcity untranslated (L13), carbon dioxide half-translated (L28), shed/lobster 
 
 ### Quality Progression (All Versions)
 
-| Version | Model | Chapter | Score |
-|---------|-------|---------|-------|
-| V1 | llama3 | Prologue | 2/10 |
-| V2 | llama3 + structured prompt | Prologue | 5/10 |
-| V3 | qwen2.5:14b + all fixes | Prologue | 7/10 |
-| V3 | qwen2.5:14b + all fixes | Chapter 1 | 5.5/10 |
-| V4 | qwen3:14b + glossary + verifier | Prologue | 7/10 |
-| V4 | qwen3:14b + glossary + verifier | Chapter 1 | 6/10 |
-| -- | Google Translate | Chapter 1 | 8.5/10 |
-| -- | EDGE (Microsoft) | Chapter 1 | 9/10 |
+| Version | Model                           | Chapter   | Score  |
+| ------- | ------------------------------- | --------- | ------ |
+| V1      | llama3                          | Prologue  | 2/10   |
+| V2      | llama3 + structured prompt      | Prologue  | 5/10   |
+| V3      | qwen2.5:14b + all fixes         | Prologue  | 7/10   |
+| V3      | qwen2.5:14b + all fixes         | Chapter 1 | 5.5/10 |
+| V4      | qwen3:14b + glossary + verifier | Prologue  | 7/10   |
+| V4      | qwen3:14b + glossary + verifier | Chapter 1 | 6/10   |
+| --      | Google Translate                | Chapter 1 | 8.5/10 |
+| --      | EDGE (Microsoft)                | Chapter 1 | 9/10   |
 
 ---
 
@@ -3451,12 +3470,12 @@ scarcity untranslated (L13), carbon dioxide half-translated (L28), shed/lobster 
 
 ### 总评
 
-| 引擎 | 评分 | 核心优势 | 核心不足 |
-|------|------|----------|----------|
-| EDGE（微软） | 9/10 | 近乎完美的流畅度和文学质量 | 极轻微：重复用词、音译有误 |
-| Google 翻译 | 8.5/10 | 准确的技术术语和专有名词 | 括号保留英文名；"信息是惊喜"误译 |
-| Ollama Qwen3:14b | 6/10 | 词汇表修复了香农，钱是时间正确 | 12+处英文残留，半翻译术语 |
-| Ollama Qwen2.5:14b | 5.5/10 | 与Qwen3基础质量相似 | 更多英文残留 |
+| 引擎                 | 评分     | 核心优势            | 核心不足              |
+| ------------------ | ------ | --------------- | ----------------- |
+| EDGE（微软）           | 9/10   | 近乎完美的流畅度和文学质量   | 极轻微：重复用词、音译有误     |
+| Google 翻译          | 8.5/10 | 准确的技术术语和专有名词    | 括号保留英文名；"信息是惊喜"误译 |
+| Ollama Qwen3:14b   | 6/10   | 词汇表修复了香农，钱是时间正确 | 12+处英文残留，半翻译术语    |
+| Ollama Qwen2.5:14b | 5.5/10 | 与Qwen3基础质量相似    | 更多英文残留            |
 
 ### Qwen3 英文残留（严重，12+处）
 
@@ -3464,22 +3483,22 @@ scarcity未翻译(L13)、碳dioxide半翻译(L28)、shed/lobster Cobb salad/mahi
 
 ### 关键段落对比
 
-| 测试 | Qwen3 | Qwen2.5 | Google | EDGE |
-|------|-------|---------|--------|------|
-| scarcity(L13) | 未翻译 | 未翻译 | 正确 | 正确 |
-| carbon dioxide(L28) | 断裂 | 断裂 | 正确 | 正确 |
-| Money Is Time(L94) | 正确(验证器) | 正确 | 正确 | 正确 |
-| Claude Shannon(L127) | 正确(词汇表) | 正确 | 正确 | 正确 |
-| econometrics(L76) | 断裂 | 完整 | 正确 | 正确 |
+| 测试                   | Qwen3   | Qwen2.5 | Google | EDGE |
+| -------------------- | ------- | ------- | ------ | ---- |
+| scarcity(L13)        | 未翻译     | 未翻译     | 正确     | 正确   |
+| carbon dioxide(L28)  | 断裂      | 断裂      | 正确     | 正确   |
+| Money Is Time(L94)   | 正确(验证器) | 正确      | 正确     | 正确   |
+| Claude Shannon(L127) | 正确(词汇表) | 正确      | 正确     | 正确   |
+| econometrics(L76)    | 断裂      | 完整      | 正确     | 正确   |
 
 ### 总结矩阵
 
-| 维度 | Qwen3 | Qwen2.5 | Google | EDGE |
-|------|-------|---------|--------|------|
-| 完整性 | 尚可 | 尚可 | 优秀 | 优秀 |
-| 准确性 | 差 | 差至尚可 | 良好 | 优秀 |
-| 英文残留 | 不合格(12+) | 不合格(10+) | 轻微 | 合格 |
-| 总评 | 6/10 | 5.5/10 | 8.5/10 | 9/10 |
+| 维度   | Qwen3    | Qwen2.5  | Google | EDGE |
+| ---- | -------- | -------- | ------ | ---- |
+| 完整性  | 尚可       | 尚可       | 优秀     | 优秀   |
+| 准确性  | 差        | 差至尚可     | 良好     | 优秀   |
+| 英文残留 | 不合格(12+) | 不合格(10+) | 轻微     | 合格   |
+| 总评   | 6/10     | 5.5/10   | 8.5/10 | 9/10 |
 
 ### 关键发现
 
@@ -3491,13 +3510,200 @@ scarcity未翻译(L13)、碳dioxide半翻译(L28)、shed/lobster Cobb salad/mahi
 
 ### 全版本质量走势
 
-| 版本 | 模型 | 章节 | 评分 |
-|------|------|------|------|
-| V1 | llama3 | 序言 | 2/10 |
-| V2 | llama3+结构化提示 | 序言 | 5/10 |
-| V3 | qwen2.5:14b+全部修复 | 序言 | 7/10 |
-| V3 | qwen2.5:14b+全部修复 | 第一章 | 5.5/10 |
-| V4 | qwen3:14b+词汇表+验证器 | 序言 | 7/10 |
-| V4 | qwen3:14b+词汇表+验证器 | 第一章 | 6/10 |
-| -- | Google翻译 | 第一章 | 8.5/10 |
-| -- | EDGE（微软） | 第一章 | 9/10 |
+| 版本 | 模型                | 章节  | 评分     |
+| -- | ----------------- | --- | ------ |
+| V1 | llama3            | 序言  | 2/10   |
+| V2 | llama3+结构化提示      | 序言  | 5/10   |
+| V3 | qwen2.5:14b+全部修复  | 序言  | 7/10   |
+| V3 | qwen2.5:14b+全部修复  | 第一章 | 5.5/10 |
+| V4 | qwen3:14b+词汇表+验证器 | 序言  | 7/10   |
+| V4 | qwen3:14b+词汇表+验证器 | 第一章 | 6/10   |
+| -- | Google翻译          | 第一章 | 8.5/10 |
+| -- | EDGE（微软）          | 第一章 | 9/10   |
+
+---
+
+## Final Report: EasyOriginals Translation Pipeline Assessment
+
+### English Summary
+
+The EasyOriginals project systematically explored local LLM translation quality through five iterative versions. Starting from a baseline llama3 translation scoring 2/10, structured prompting, model upgrades (qwen2.5:14b, qwen3:14b), glossary injection, and back-translation verification progressively improved output to 6-7/10. However, commercial translation engines (Google Translate: 8.5/10, Microsoft Edge: 9/10) consistently outperformed local models on Chapter 1 literary content.
+
+**Key findings:**
+
+1. **Structured prompting** was the single biggest improvement lever (2/10 → 5/10)
+2. **Model size matters**: 14b parameter models plateau around 6-7/10 for literary German→Chinese translation
+3. **Glossary + back-translation verification** provides marginal gains (\~0.5 points) but cannot compensate for fundamental model vocabulary limitations
+4. **Commercial engines remain superior** for production literary/academic translation
+5. **Recommendation**: Use Edge/Google as primary translation engine; reserve Ollama for experimentation and non-critical content
+
+### 中文总结
+
+EasyOriginals 项目通过五个迭代版本系统性地探索了本地大语言模型的翻译质量。从基线 llama3 翻译评分 2/10 开始，通过结构化提示、模型升级（qwen2.5:14b、qwen3:14b）、词汇表注入和回译验证，逐步将输出质量提升至 6-7/10。然而，商业翻译引擎（Google 翻译：8.5/10，微软 Edge：9/10）在第一章文学内容上始终优于本地模型。
+
+**主要发现：**
+
+1. **结构化提示**是最大的改进杠杆（2/10 → 5/10）
+2. **模型规模很重要**：14b 参数模型在文学类德译中的翻译质量上限约为 6-7/10
+3. **词汇表 + 回译验证**提供边际收益（约 0.5 分），但无法弥补模型核心词汇能力的不足
+4. **商业引擎仍然优越**，适用于生产环境的文学/学术翻译
+5. **建议**：使用 Edge/Google 作为主要翻译引擎；将 Ollama 保留用于实验和非关键内容
+
+\>> 解决这个问题：当英语文字中有一些非英语内容时报错的问题。Audiobook generation failed: Edge TTS returned no audio for voice "en-US-ChristopherNeural".
+
+This usually means the text language does not match the voice language.
+
+Voice language: en-US
+
+Try selecting a voice that matches the text language in Settings.
+
+\>> 仅仅跳过该句子，而不是跳过该段落. ⏺ Now each sentence is synthesized individually. If a
+
+sentence fails with "no audio" (language
+
+mismatch), only that sentence is skipped — the rest
+
+of the paragraph and book continue. The
+
+per-sentence voice/rate detection also means
+
+Chinese sentences within an English paragraph will
+
+correctly use the Chinese voice.
+
+\>> 当内容格式如下时，对“Original:”开头的段落用英语朗读，且跳过“Original:”字段。对“Translated: ”开头的段落用汉语朗读，且跳过“Translated:”字段。
+
+内容如下：
+
+Original: For Noah and Nico,
+
+Translated: 致诺亚和尼科，
+
+Original: Southampton’s future strikeforce.
+
+Translated: 南安普顿未来的锋线。
+
+Add text-to-speech to the editor that reads paragraphs starting with 'Original:' in English and starting with 'Translated:' in Chinese, skipping the prefix labels in audio output.
+
+---
+
+## Report: Mixed-Language TTS Error Fix & Bilingual Audiobook Generation
+
+### Problem
+
+When generating audiobooks with an English voice (e.g. `en-US-ChristopherNeural`), paragraphs containing non-English content (German, French, Chinese, etc.) caused Edge TTS to return zero audio bytes, throwing the error:
+
+> Audiobook generation failed: Edge TTS returned no audio for voice "en-US-ChristopherNeural".
+
+This crashed the entire audiobook generation process — all progress was lost.
+
+### Changes Made
+
+#### 1. Sentence-Level Graceful Skip (`src/book-audio.js`, `generateBookAudio`)
+
+**Before:** Each paragraph was synthesized as a single joined string. If any part failed, the whole audiobook generation aborted.
+
+**After:** Each paragraph is now synthesized **sentence by sentence**. Per-sentence language detection selects the correct voice (English or Chinese). If a sentence still fails with "returned no audio" (e.g. text in an unsupported language like German), only that sentence is skipped with a `console.warn` — the rest of the book continues.
+
+Key code (lines 234-264):
+
+```javascript
+const sentences = para.sentences.map(s => stripTtsLabels(s)).filter(s => s.trim());
+const sentenceBlobs = [];
+for (const sentence of sentences) {
+  const isChinese = detectChinese(sentence);
+  const sentVoice = isChinese ? chineseVoice : englishVoice;
+  // ... synthesize with retry, skip on "returned no audio" ...
+}
+if (sentenceBlobs.length > 0) {
+  audioBlobs.push(concatenateAudioBlobs(sentenceBlobs));
+}
+```
+
+#### 2. Bilingual Audiobook Generation (`src/book-audio.js`, new `generateBilingualAudio`)
+
+New exported function (lines 276-336) that takes original + translated paragraph arrays and produces a single MP3 with interleaved audio:
+
+- **Original paragraphs** -> English voice (e.g. `en-US-ChristopherNeural`)
+- **Translated paragraphs** -> Chinese voice (e.g. `zh-CN-XiaoxiaoNeural`)
+- Prefix labels (`[Original]`, `[Translated]`, `Original:`, `Translated:`) are stripped via `stripTtsLabels()` before synthesis
+- Same skip-on-mismatch resilience as the main audiobook generator
+- Independent speech rate settings for English and Chinese
+
+#### 3. UI Button (`index.html`, line 78)
+
+Added a hidden toolbar button `#generateBilingualAudioBtn` (icon: headphones + globe) that appears after a book translation completes, alongside the existing "Generate Translated Audio" button.
+
+#### 4. Button Wiring (`src/reader.js`)
+
+- Imported `generateBilingualAudio` from `book-audio.js`
+- The bilingual button is shown (`display: ''`) when either the Google/Microsoft or Ollama translation completes (two code paths)
+- Click handler generates bilingual audio using the user's configured English and Chinese voices/rates, saves as `{bookname}-bilingual.mp3`
+- Progress displays as "Segment X of Y" in the shared audiobook progress bar
+- Added feature guide entry with English and Chinese descriptions
+
+### Files Changed
+
+| File                | Change                                                                                          |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| `src/book-audio.js` | Sentence-level synthesis + skip in `generateBookAudio`; new `generateBilingualAudio` export     |
+| `index.html`        | Added `#generateBilingualAudioBtn` button                                                       |
+| `src/reader.js`     | Import, button visibility on translation complete (2 paths), click handler, feature guide entry |
+
+### Build Verification
+
+`vite build` completes successfully (14 modules, 121.50 kB JS gzip 39.10 kB).
+
+---
+
+## 报告：混合语言 TTS 报错修复 & 双语有声书生成
+
+### 问题
+
+使用英语语音（如 `en-US-ChristopherNeural`）生成有声书时，如果段落中包含非英语内容（德语、法语、中文等），Edge TTS 会返回零字节音频，抛出错误：
+
+> Audiobook generation failed: Edge TTS returned no audio for voice "en-US-ChristopherNeural".
+
+这会导致整个有声书生成过程崩溃，所有已完成的进度全部丢失。
+
+### 所做更改
+
+#### 1. 句子级别的优雅跳过（`src/book-audio.js`，`generateBookAudio`）
+
+**之前：** 每个段落作为一整段文本合成。如果任何部分失败，整个有声书生成中止。
+
+**之后：** 每个段落现在**逐句合成**。每句自动检测语言并选择对应的语音（英语或中文）。如果某句仍然因"returned no audio"失败（例如德语等不支持的语言），仅跳过该句并在控制台输出警告 -- 其余内容继续生成。
+
+#### 2. 双语有声书生成（`src/book-audio.js`，新增 `generateBilingualAudio`）
+
+新导出函数，接受原文 + 译文段落数组，生成一个交替朗读的 MP3：
+
+- **原文段落** -> 英语语音（如 `en-US-ChristopherNeural`）
+- **译文段落** -> 中文语音（如 `zh-CN-XiaoxiaoNeural`）
+- 前缀标签（`[Original]`、`[Translated]`、`Original:`、`Translated:`）在合成前通过 `stripTtsLabels()` 去除
+- 与主有声书生成器相同的语言不匹配跳过机制
+- 英语和中文独立的语速设置
+
+#### 3. UI 按钮（`index.html`）
+
+在工具栏添加隐藏按钮 `#generateBilingualAudioBtn`（图标：耳机+地球），翻译完成后与"生成译文音频"按钮一同显示。
+
+#### 4. 按钮逻辑（`src/reader.js`）
+
+- 从 `book-audio.js` 导入 `generateBilingualAudio`
+- 翻译完成时（Google/Microsoft 和 Ollama 两条路径）显示双语按钮
+- 点击处理器使用用户配置的英语和中文语音/语速生成双语音频，保存为 `{书名}-bilingual.mp3`
+- 进度显示为"Segment X of Y"
+- 添加了中英文功能指南条目
+
+### 修改文件
+
+| 文件                  | 更改内容                                                         |
+| ------------------- | ------------------------------------------------------------ |
+| `src/book-audio.js` | `generateBookAudio` 逐句合成+跳过；新增 `generateBilingualAudio` 导出函数 |
+| `index.html`        | 添加 `#generateBilingualAudioBtn` 按钮                           |
+| `src/reader.js`     | 导入、翻译完成时显示按钮（2条路径）、点击处理器、功能指南条目                              |
+
+### 构建验证
+
+`vite build` 成功完成（14 模块，121.50 kB JS，gzip 39.10 kB）。

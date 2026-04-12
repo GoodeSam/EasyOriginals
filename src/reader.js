@@ -3,7 +3,7 @@ import { loadSettings as loadStorageSettings, DEFAULT_MODEL } from './storage.js
 import { createSettingsPanel } from './settings-ui.js';
 import { setItem as syncSetItem, removeItem as syncRemoveItem } from './sync-storage.js';
 import { parseEnglishDefinition } from './definition-utils.js';
-import { generateBookAudio, cancelBookAudio, downloadAudio, detectContentLanguage, voiceForLanguage } from './book-audio.js';
+import { generateBookAudio, generateBilingualAudio, cancelBookAudio, downloadAudio, detectContentLanguage, voiceForLanguage } from './book-audio.js';
 import { translateBook, cancelTranslation } from './book-translator.js';
 import { translateBookWithOllama, cancelOllamaTranslation, exportAsMarkdown, exportTranslationMarkdown, checkOllamaConnection } from './ollama-translator.js';
 import { saveTranslationCheckpoint, loadTranslationCheckpoint, clearTranslationCheckpoint, getCheckpointInfo, RESUME_OVERLAP, contentFingerprint } from './checkpoint.js';
@@ -2609,6 +2609,7 @@ function setupBookGeneration() {
   const translationProgressBar = $('#translationProgressBar');
   const translationStatus = $('#translationStatus');
   const generateTranslatedAudioBtn = $('#generateTranslatedAudioBtn');
+  const generateBilingualAudioBtn = $('#generateBilingualAudioBtn');
   const ollamaTranslateBtn = $('#ollamaTranslateBtn');
   const cancelOllamaTranslationBtn = $('#cancelOllamaTranslationBtn');
   const ollamaTranslationProgress = $('#ollamaTranslationProgress');
@@ -2705,6 +2706,7 @@ function setupBookGeneration() {
         });
         clearTranslationCheckpoint(state.fileName, 'translate', fp);
         generateTranslatedAudioBtn.style.display = '';
+        generateBilingualAudioBtn.style.display = '';
         const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'book';
         const title = state.fileName || 'Translated Book';
         translationStatus.textContent = 'Exporting files...';
@@ -2761,6 +2763,45 @@ function setupBookGeneration() {
       } finally {
         audiobookProgress.style.display = 'none';
         generateTranslatedAudioBtn.disabled = false;
+      }
+    });
+  }
+
+  if (generateBilingualAudioBtn) {
+    generateBilingualAudioBtn.addEventListener('click', async () => {
+      if (!translatedParagraphs || translatedParagraphs.length === 0) return;
+      if (generateBilingualAudioBtn.disabled) return;
+      generateBilingualAudioBtn.disabled = true;
+      await ensureSettings();
+      const engVoice = voiceForLanguage('en', state.edgeTtsVoice);
+      const chnVoice = voiceForLanguage('zh', state.translatedTtsVoice || state.edgeTtsVoice);
+      audiobookProgress.style.display = '';
+      audiobookStatus.textContent = 'Preparing bilingual audio... (' + engVoice + ' + ' + chnVoice + ')';
+      audiobookProgressBar.style.width = '0%';
+      try {
+        const result = await generateBilingualAudio(state.paragraphs, translatedParagraphs, {
+          englishVoice: engVoice,
+          chineseVoice: chnVoice,
+          speechRate: state.speechRate,
+          chineseSpeechRate: state.chineseSpeechRate,
+          onProgress(current, total) {
+            const pct = Math.round((current / total) * 100);
+            audiobookProgressBar.style.width = pct + '%';
+            audiobookStatus.textContent = `Segment ${current} of ${total}`;
+          }
+        });
+        const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'audiobook';
+        const filename = baseName + '-bilingual.mp3';
+        await pickOutputDirectory();
+        const savedPath = await saveFile(filename, result.blob);
+        showMessage('Bilingual audiobook saved:\n\n  \u2022 ' + savedPath);
+      } catch (err) {
+        if (err.message !== 'Audio generation cancelled') {
+          showMessage('Bilingual audio generation failed: ' + err.message);
+        }
+      } finally {
+        audiobookProgress.style.display = 'none';
+        generateBilingualAudioBtn.disabled = false;
       }
     });
   }
@@ -2833,6 +2874,7 @@ function setupBookGeneration() {
         });
         clearTranslationCheckpoint(state.fileName, 'ollama-translate', oFp);
         generateTranslatedAudioBtn.style.display = '';
+        generateBilingualAudioBtn.style.display = '';
         const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'book';
         const title = state.fileName || 'Translated Book';
         ollamaTranslationStatus.textContent = 'Exporting files...';
@@ -4097,6 +4139,15 @@ const FEATURE_REGISTRY = [
     name_cn: '\u751f\u6210\u7ffb\u8bd1\u97f3\u9891',
     description_cn: '\u4f7f\u7528\u4e2d\u6587 TTS \u8bed\u97f3\u4ece\u7ffb\u8bd1\u6587\u672c\u751f\u6210 MP3 \u6709\u58f0\u4e66\u3002\u6587\u4ef6\u4fdd\u5b58\u5230\u4e0b\u8f7d\u6587\u4ef6\u5939\u3002\u5b8c\u6210\u5168\u4e66\u7ffb\u8bd1\u540e\u53ef\u7528\u3002',
     usage_cn: '\u7ffb\u8bd1\u5b8c\u6210\u540e\uff0c\u6b64\u6309\u94ae\u51fa\u73b0\u5728\u5de5\u5177\u680f\u4e2d\u3002\u70b9\u51fb\u5373\u53ef\u4ece\u7ffb\u8bd1\u6bb5\u843d\u751f\u6210\u97f3\u9891\u3002MP3 \u81ea\u52a8\u4e0b\u8f7d\u3002'
+  },
+  {
+    name: 'Generate Bilingual Audio',
+    icon: '\ud83c\udfa7\ud83c\udf10',
+    description: 'Generate an MP3 audiobook that interleaves original (English voice) and translated (Chinese voice) paragraphs — like the bilingual markdown export, but as audio. Available after completing a full-book translation.',
+    usage: 'After translating the book, this button appears in the toolbar. Click it to generate a bilingual audiobook. Each original paragraph is read in English, followed by its translation in Chinese. The MP3 downloads automatically.',
+    name_cn: '\u751f\u6210\u53cc\u8bed\u97f3\u9891',
+    description_cn: '\u751f\u6210\u4e00\u4e2a\u4ea4\u66ff\u64ad\u653e\u539f\u6587\uff08\u82f1\u8bed\u8bed\u97f3\uff09\u548c\u8bd1\u6587\uff08\u4e2d\u6587\u8bed\u97f3\uff09\u7684 MP3 \u6709\u58f0\u4e66\u3002\u5b8c\u6210\u5168\u4e66\u7ffb\u8bd1\u540e\u53ef\u7528\u3002',
+    usage_cn: '\u7ffb\u8bd1\u5b8c\u6210\u540e\uff0c\u6b64\u6309\u94ae\u51fa\u73b0\u5728\u5de5\u5177\u680f\u4e2d\u3002\u70b9\u51fb\u5373\u53ef\u751f\u6210\u53cc\u8bed\u6709\u58f0\u4e66\u3002\u6bcf\u4e2a\u539f\u6587\u6bb5\u843d\u7528\u82f1\u8bed\u6717\u8bfb\uff0c\u7136\u540e\u662f\u4e2d\u6587\u7ffb\u8bd1\u3002MP3 \u81ea\u52a8\u4e0b\u8f7d\u3002'
   },
 ];
 
