@@ -242,6 +242,7 @@ function init() {
   bindEvents();
   setupBookGeneration();
   initSplitResizer();
+  setupSplitViewSync();
   const splitToggleBtn = document.getElementById('splitViewToggle');
   if (splitToggleBtn) splitToggleBtn.addEventListener('click', toggleSplitView);
 
@@ -1044,6 +1045,114 @@ function toggleSplitView() {
   if (!state.splitViewURL) return;
   state.splitViewVisible = !state.splitViewVisible;
   applySplitView();
+}
+
+// Synchronized scrolling: when the left reader pane scrolls, scroll the
+// right iframe so the paragraph at the top of each pane matches.
+//
+// Strategy: after the iframe loads its srcdoc, walk its block-level text
+// elements once and record (offsetTop, normalized-prefix) for each. Then
+// for every left .paragraph, find the iframe element whose normalized
+// prefix matches — preserving document order so duplicate sentences resolve
+// to their first un-claimed occurrence. The result is an array indexed by
+// left paragraph that yields the iframe scrollTop.
+function normalizeForSync(s) {
+  return (s || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+}
+
+function buildSplitViewMapping() {
+  state.splitViewMapping = null;
+  const iframe = document.getElementById('splitIframe');
+  if (!iframe) return;
+  let doc;
+  try { doc = iframe.contentDocument; } catch (e) { return; }
+  if (!doc || !doc.body) return;
+
+  const leftParas = Array.from(document.querySelectorAll('#readerContent .paragraph'));
+  if (leftParas.length === 0) return;
+
+  const candidates = Array.from(doc.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre'));
+  const candPrefixes = candidates.map(el => normalizeForSync(el.textContent));
+
+  const mapping = new Array(leftParas.length).fill(null);
+  let cursor = 0;
+  for (let i = 0; i < leftParas.length; i++) {
+    const target = normalizeForSync(leftParas[i].textContent);
+    if (!target) continue;
+    for (let j = cursor; j < candidates.length; j++) {
+      if (!candPrefixes[j]) continue;
+      if (candPrefixes[j] === target || candPrefixes[j].startsWith(target) || target.startsWith(candPrefixes[j])) {
+        let top = 0;
+        let n = candidates[j];
+        while (n) { top += n.offsetTop || 0; n = n.offsetParent; }
+        mapping[i] = top;
+        cursor = j + 1;
+        break;
+      }
+    }
+  }
+  state.splitViewMapping = mapping;
+}
+
+function syncRightToLeft() {
+  if (!state.splitViewVisible || !state.splitViewURL) return;
+  const mapping = state.splitViewMapping;
+  if (!mapping || mapping.length === 0) return;
+
+  const left = document.getElementById('readerContent');
+  const iframe = document.getElementById('splitIframe');
+  if (!left || !iframe) return;
+  let win;
+  try { win = iframe.contentWindow; } catch (e) { return; }
+  if (!win) return;
+
+  const paragraphs = left.querySelectorAll('.paragraph');
+  const containerTop = left.getBoundingClientRect().top;
+  let topIdx = -1;
+  for (let i = 0; i < paragraphs.length; i++) {
+    const r = paragraphs[i].getBoundingClientRect();
+    if (r.bottom > containerTop + 1) { topIdx = i; break; }
+  }
+  if (topIdx < 0) return;
+
+  let offset = null;
+  for (let i = topIdx; i < mapping.length; i++) {
+    if (mapping[i] != null) { offset = mapping[i]; break; }
+  }
+  if (offset == null) {
+    for (let i = topIdx - 1; i >= 0; i--) {
+      if (mapping[i] != null) { offset = mapping[i]; break; }
+    }
+  }
+  if (offset == null) return;
+
+  try { win.scrollTo(0, offset); } catch (e) { /* cross-origin */ }
+}
+
+function setupSplitViewSync() {
+  const iframe = document.getElementById('splitIframe');
+  if (iframe && !iframe._splitSyncSetup) {
+    iframe._splitSyncSetup = true;
+    iframe.addEventListener('load', () => {
+      // Wait one frame so layout is finalized before we measure offsetTop.
+      requestAnimationFrame(() => {
+        try { buildSplitViewMapping(); } catch (e) { /* ignore */ }
+      });
+    });
+  }
+  const left = document.getElementById('readerContent');
+  if (left && !left._splitScrollSetup) {
+    left._splitScrollSetup = true;
+    let rafPending = false;
+    left.addEventListener('scroll', () => {
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(() => {
+        rafPending = false;
+        syncRightToLeft();
+      });
+    }, { passive: true });
+  }
 }
 
 function initSplitResizer() {
