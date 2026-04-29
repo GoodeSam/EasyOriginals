@@ -242,6 +242,8 @@ function init() {
   bindEvents();
   setupBookGeneration();
   initSplitResizer();
+  const splitToggleBtn = document.getElementById('splitViewToggle');
+  if (splitToggleBtn) splitToggleBtn.addEventListener('click', toggleSplitView);
 
   if (readerScreen.classList.contains('active')) {
     startAutoHideTimer();
@@ -957,25 +959,57 @@ window.extractTextFromHTML = extractTextFromHTML;
 // ===== Split View (original-page comparison) =====
 // Render the live page in an iframe alongside the extracted reader content.
 // Some sites set X-Frame-Options or frame-ancestors and will refuse to embed.
-function activateSplitView(url) {
+//
+// Two pieces of state:
+//   state.splitViewURL — the URL associated with the current source (or null
+//     when the source is a local file). Drives toolbar-button visibility.
+//   state.splitViewVisible — whether the user wants the right pane shown.
+//     Defaults to true; persists across reloads of the same URL.
+function applySplitView() {
   const iframe = document.getElementById('splitIframe');
   const pane = document.getElementById('splitIframePane');
   const resizer = document.getElementById('splitResizer');
+  const toggleBtn = document.getElementById('splitViewToggle');
   if (!iframe || !pane || !resizer) return;
-  if (iframe.src !== url) iframe.src = url;
-  pane.hidden = false;
-  resizer.hidden = false;
-  readerScreen.classList.add('split-active');
+
+  const url = state.splitViewURL;
+  const showRightPane = !!url && state.splitViewVisible;
+
+  if (showRightPane) {
+    if (iframe.src !== url) iframe.src = url;
+    pane.hidden = false;
+    resizer.hidden = false;
+    readerScreen.classList.add('split-active');
+  } else {
+    readerScreen.classList.remove('split-active');
+    pane.hidden = true;
+    resizer.hidden = true;
+    if (!url) iframe.src = 'about:blank';
+  }
+
+  if (toggleBtn) {
+    toggleBtn.style.display = url ? '' : 'none';
+    toggleBtn.setAttribute('aria-pressed', state.splitViewVisible ? 'true' : 'false');
+    toggleBtn.title = state.splitViewVisible ? 'Hide original webpage' : 'Show original webpage';
+    toggleBtn.innerHTML = state.splitViewVisible ? '&#8862;' : '&#8861;';
+  }
+}
+
+function activateSplitView(url) {
+  state.splitViewURL = url;
+  if (typeof state.splitViewVisible !== 'boolean') state.splitViewVisible = true;
+  applySplitView();
 }
 
 function deactivateSplitView() {
-  const iframe = document.getElementById('splitIframe');
-  const pane = document.getElementById('splitIframePane');
-  const resizer = document.getElementById('splitResizer');
-  readerScreen.classList.remove('split-active');
-  if (pane) pane.hidden = true;
-  if (resizer) resizer.hidden = true;
-  if (iframe) iframe.src = 'about:blank';
+  state.splitViewURL = null;
+  applySplitView();
+}
+
+function toggleSplitView() {
+  if (!state.splitViewURL) return;
+  state.splitViewVisible = !state.splitViewVisible;
+  applySplitView();
 }
 
 function initSplitResizer() {
