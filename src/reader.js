@@ -957,14 +957,33 @@ function extractTextFromHTML(html) {
 window.extractTextFromHTML = extractTextFromHTML;
 
 // ===== Split View (original-page comparison) =====
-// Render the live page in an iframe alongside the extracted reader content.
-// Some sites set X-Frame-Options or frame-ancestors and will refuse to embed.
+// Render the original page in an iframe alongside the extracted reader.
+// Most sites set X-Frame-Options or frame-ancestors and refuse direct iframe
+// embedding, so we inject the already-fetched HTML via iframe.srcdoc instead
+// of loading the URL — srcdoc bypasses those headers because no cross-origin
+// load happens. A <base> tag is injected so relative URLs (CSS, images,
+// links) still resolve, and target="_blank" routes link clicks out of the
+// sandboxed iframe.
 //
-// Two pieces of state:
+// State:
 //   state.splitViewURL — the URL associated with the current source (or null
 //     when the source is a local file). Drives toolbar-button visibility.
+//   state.splitViewHtml — the page HTML fetched via the CORS proxy in
+//     handleURL, reused for srcdoc so toggling does not re-fetch.
 //   state.splitViewVisible — whether the user wants the right pane shown.
-//     Defaults to true; persists across reloads of the same URL.
+//     Defaults to true; persists across toggles of the same source.
+function injectBaseTag(html, url) {
+  const safeUrl = String(url).replace(/"/g, '&quot;');
+  const baseTag = '<base href="' + safeUrl + '" target="_blank">';
+  if (/<head[^>]*>/i.test(html)) {
+    return html.replace(/<head([^>]*)>/i, '<head$1>' + baseTag);
+  }
+  if (/<html[^>]*>/i.test(html)) {
+    return html.replace(/<html([^>]*)>/i, '<html$1><head>' + baseTag + '</head>');
+  }
+  return '<!DOCTYPE html><html><head>' + baseTag + '</head><body>' + html + '</body></html>';
+}
+
 function applySplitView() {
   const iframe = document.getElementById('splitIframe');
   const pane = document.getElementById('splitIframePane');
@@ -973,10 +992,20 @@ function applySplitView() {
   if (!iframe || !pane || !resizer) return;
 
   const url = state.splitViewURL;
+  const html = state.splitViewHtml;
   const showRightPane = !!url && state.splitViewVisible;
 
   if (showRightPane) {
-    if (iframe.src !== url) iframe.src = url;
+    if (html) {
+      const docHtml = injectBaseTag(html, url);
+      if (iframe.srcdoc !== docHtml) {
+        iframe.removeAttribute('src');
+        iframe.srcdoc = docHtml;
+      }
+    } else {
+      iframe.removeAttribute('srcdoc');
+      if (iframe.src !== url) iframe.src = url;
+    }
     pane.hidden = false;
     resizer.hidden = false;
     readerScreen.classList.add('split-active');
@@ -984,7 +1013,10 @@ function applySplitView() {
     readerScreen.classList.remove('split-active');
     pane.hidden = true;
     resizer.hidden = true;
-    if (!url) iframe.src = 'about:blank';
+    if (!url) {
+      iframe.removeAttribute('srcdoc');
+      iframe.src = 'about:blank';
+    }
   }
 
   if (toggleBtn) {
@@ -995,14 +1027,16 @@ function applySplitView() {
   }
 }
 
-function activateSplitView(url) {
+function activateSplitView(url, html) {
   state.splitViewURL = url;
+  state.splitViewHtml = html || null;
   if (typeof state.splitViewVisible !== 'boolean') state.splitViewVisible = true;
   applySplitView();
 }
 
 function deactivateSplitView() {
   state.splitViewURL = null;
+  state.splitViewHtml = null;
   applySplitView();
 }
 
@@ -1138,7 +1172,7 @@ async function handleURL(url) {
     updateBookmarkIcon();
     restoreBookmark();
 
-    activateSplitView(url);
+    activateSplitView(url, html);
 
     startAutoHideTimer();
   } catch (err) {
