@@ -1062,6 +1062,7 @@ function normalizeForSync(s) {
 
 function buildSplitViewMapping() {
   state.splitViewMapping = null;
+  state.splitViewReverseMapping = null;
   const iframe = document.getElementById('splitIframe');
   if (!iframe) return;
   let doc;
@@ -1092,9 +1093,22 @@ function buildSplitViewMapping() {
     }
   }
   state.splitViewMapping = mapping;
+
+  const reverse = [];
+  for (let i = 0; i < mapping.length; i++) {
+    if (mapping[i] != null) reverse.push({ iframeOffset: mapping[i], leftParaIdx: i });
+  }
+  reverse.sort((a, b) => a.iframeOffset - b.iframeOffset);
+  state.splitViewReverseMapping = reverse;
 }
 
-function syncRightToLeft() {
+// Per-side timestamps record the last programmatic scroll on that side,
+// so each scroll handler can ignore events caused by its own sync partner
+// without accidentally suppressing real user input on the other side.
+const SCROLL_SYNC_LOCKOUT_MS = 150;
+
+function syncRightToLeft() {  // user scrolled left → adjust right
+  if (Date.now() - (state.lastProgScrollLeftAt || 0) < SCROLL_SYNC_LOCKOUT_MS) return;
   if (!state.splitViewVisible || !state.splitViewURL) return;
   const mapping = state.splitViewMapping;
   if (!mapping || mapping.length === 0) return;
@@ -1126,7 +1140,47 @@ function syncRightToLeft() {
   }
   if (offset == null) return;
 
+  state.lastProgScrollRightAt = Date.now();
   try { win.scrollTo(0, offset); } catch (e) { /* cross-origin */ }
+}
+
+function syncLeftToRight() {  // user scrolled right → adjust left
+  if (Date.now() - (state.lastProgScrollRightAt || 0) < SCROLL_SYNC_LOCKOUT_MS) return;
+  if (!state.splitViewVisible || !state.splitViewURL) return;
+  const reverse = state.splitViewReverseMapping;
+  if (!reverse || reverse.length === 0) return;
+
+  const iframe = document.getElementById('splitIframe');
+  if (!iframe) return;
+  let win, doc;
+  try { win = iframe.contentWindow; doc = iframe.contentDocument; } catch (e) { return; }
+  if (!win || !doc) return;
+
+  const scrollTop = (doc.documentElement && doc.documentElement.scrollTop)
+    || (doc.body && doc.body.scrollTop)
+    || win.scrollY || 0;
+
+  // Binary search for largest entry with iframeOffset <= scrollTop.
+  let lo = 0, hi = reverse.length - 1, foundIdx = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (reverse[mid].iframeOffset <= scrollTop + 5) {
+      foundIdx = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  if (foundIdx < 0) foundIdx = 0;
+
+  const left = document.getElementById('readerContent');
+  if (!left) return;
+  const paragraphs = left.querySelectorAll('.paragraph');
+  const targetPara = paragraphs[reverse[foundIdx].leftParaIdx];
+  if (!targetPara) return;
+
+  state.lastProgScrollLeftAt = Date.now();
+  left.scrollTo(0, targetPara.offsetTop);
 }
 
 function setupSplitViewSync() {
@@ -1137,6 +1191,21 @@ function setupSplitViewSync() {
       // Wait one frame so layout is finalized before we measure offsetTop.
       requestAnimationFrame(() => {
         try { buildSplitViewMapping(); } catch (e) { /* ignore */ }
+        // Each srcdoc load creates a new contentWindow, so re-attach
+        // the right-pane scroll listener every time.
+        try {
+          const win = iframe.contentWindow;
+          if (!win) return;
+          let rafPending = false;
+          win.addEventListener('scroll', () => {
+            if (rafPending) return;
+            rafPending = true;
+            requestAnimationFrame(() => {
+              rafPending = false;
+              syncLeftToRight();
+            });
+          }, { passive: true });
+        } catch (e) { /* cross-origin etc */ }
       });
     });
   }
