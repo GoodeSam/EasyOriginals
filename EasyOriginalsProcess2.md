@@ -1,14 +1,12 @@
-Append the final report (English first, then Chinese) to the end of the current document at /Users/victor/projects/EasyOriginals/EasyOriginalsProcess2.md (append only, do not overwrite).
+Append the final report (English first, then Chinese) to the end of the current 
+
+document at /Users/victor/projects/EasyOriginals/EasyOriginalsProcess2.md (append only, do not overwrite).
 
 To avoid the `cat >>` heredoc being blocked by the sandbox during writing, use the Edit tool.
-
-
 
 将最终报告（英文在前，中文在后）追加到当前文档 /Users/victor/projects/EasyOriginals/EasyOriginalsProcess2.md 的末尾（仅追加，不要覆盖）。
 
 为了避免使用 `cat >>` heredoc 写入时被沙箱拦截，请使用 Edit 工具。
-
-
 
 ```shell
  cat >> heredoc
@@ -343,6 +341,8 @@ How URL loading works:
   top bar
 
   15 new tests, 148 total, all passing.
+
+
 
 
 
@@ -1754,7 +1754,7 @@ Ask Codex whether this Zustand pattern could cause stale state.
 **Audit type**: Mini (5-dim)
 **Fixer**: Claude
 **Model**: gpt-5.3-codex | **Effort**: high | **Sandbox**: workspace-write
-**Thread ID**: `019d3305-90d1-7830-9eae-046fe7c06404` *(use **********************************************`/continue 019d3305-90d1-7830-9eae-046fe7c06404`********************************************** to iterate further — Codex only)*
+**Thread ID**: `019d3305-90d1-7830-9eae-046fe7c06404` *(use **************************************************`/continue 019d3305-90d1-7830-9eae-046fe7c06404`************************************************** to iterate further — Codex only)*
 **Rounds**: 2
 
 ## Result: ACCEPTED
@@ -1853,7 +1853,7 @@ const wordNoteBtn = $('#wordNoteBtn');
 - `paraNoteBtn.click` → extracts `paraPopupText.textContent` → `addNote(text)`
 - `wordNoteBtn.click` → extracts `popupWord.textContent` → `addNote(text)`
 
-**New function — ************************************************************************************`updateNote(index, newText)`************************************************************************************:**
+**New function — ********************************************************************************************`updateNote(index, newText)`********************************************************************************************:**
 
 ```javascript
 function updateNote(index, newText) {
@@ -1864,7 +1864,7 @@ function updateNote(index, newText) {
 }
 ```
 
-**Updated ************************************************************************************`renderNotes()`************************************************************************************:**
+**Updated ********************************************************************************************`renderNotes()`********************************************************************************************:**
 
 - Each note item now renders a `.note-text` div, a `.note-actions` container with edit (✎) and delete (×) buttons.
 - Clicking the edit button replaces the `.note-text` div with a `<textarea>` for inline editing.
@@ -1937,7 +1937,7 @@ const wordNoteBtn = $('#wordNoteBtn');
 - `paraNoteBtn.click` → 提取 `paraPopupText.textContent` → `addNote(text)`
 - `wordNoteBtn.click` → 提取 `popupWord.textContent` → `addNote(text)`
 
-**新增函数 — ************************************************************************************`updateNote(index, newText)`************************************************************************************：**
+**新增函数 — ********************************************************************************************`updateNote(index, newText)`********************************************************************************************：**
 
 ```javascript
 function updateNote(index, newText) {
@@ -1948,7 +1948,7 @@ function updateNote(index, newText) {
 }
 ```
 
-**更新 ************************************************************************************`renderNotes()`************************************************************************************：**
+**更新 ********************************************************************************************`renderNotes()`********************************************************************************************：**
 
 - 每个笔记项现在渲染 `.note-text` 文本容器、`.note-actions` 操作容器（含编辑 ✎ 和删除 × 按钮）。
 - 点击编辑按钮将 `.note-text` 替换为 `<textarea>` 进行行内编辑。
@@ -2016,7 +2016,7 @@ Written **before** implementation (TDD red-green cycle). Two new test groups:
 
 ### 2. JavaScript Changes: `src/reader.js`
 
-**New function — ********************************************************************************`noteWithFeedback(btn, text, originalLabel)`********************************************************************************:**
+**New function — ****************************************************************************************`noteWithFeedback(btn, text, originalLabel)`****************************************************************************************:**
 
 ```javascript
 function noteWithFeedback(btn, text, originalLabel) {
@@ -2097,7 +2097,7 @@ All 14 new tests and all 413 existing tests pass.
 
 ### 2. JavaScript 变更：`src/reader.js`
 
-**新增函数 — ********************************************************************************`noteWithFeedback(btn, text, originalLabel)`********************************************************************************：**
+**新增函数 — ****************************************************************************************`noteWithFeedback(btn, text, originalLabel)`****************************************************************************************：**
 
 ```javascript
 function noteWithFeedback(btn, text, originalLabel) {
@@ -3385,7 +3385,7 @@ Evaluate and compare the three translations: /Users/victor/Downloads/003*prologu
 1. **EDGE 总体胜出** — 最佳文学质量、专有名词、隐喻保留和流畅度。唯一重大缺陷是 \$7.5 万亿解析错误（源文本 OCR 伪影）。
 2. **Google 紧随其后** — 动词细微差异（构想/创造）和舞蹈/乐曲行表现出色，但将"信息是惊喜"误译为形容词。
 3. **Ollama（qwen2.5:14b）具有竞争力** — 无幻觉且完整性扎实，但仍存在香农/Meta 错误、"钱是时间"颠倒及术语未翻译。新增词汇表和反向翻译验证器（尚未部署）预计可修复大部分问题。
-4. **三者均在 ********************************`$7. 5 trillion`******************************** 上出错** — 源文本 OCR 伪影。EDGE/Google 解析为"\$7"+"5 万亿"。Ollama 正确处理了该数字。
+4. **三者均在 ****************************************`$7. 5 trillion`**************************************** 上出错** — 源文本 OCR 伪影。EDGE/Google 解析为"\$7"+"5 万亿"。Ollama 正确处理了该数字。
 
 \>> 再次对比这三个 /Users/victor/Downloads/003\_prologue-the-theory-bilingual——Ollama2.docx ，/Users/victor/Downloads/003\_prologue-the-theory-bilingual——Google.docx ，/Users/victor/Downloads/003\_prologue-the-theory-bilingual——EDGE.docx
 
@@ -3707,3 +3707,67 @@ Added a hidden toolbar button `#generateBilingualAudioBtn` (icon: headphones + g
 ### 构建验证
 
 `vite build` 成功完成（14 模块，121.50 kB JS，gzip 39.10 kB）。
+
+- \>> 当[https\://goodesam.github.io/EasyOriginals/](https://goodesam.github.io/EasyOriginals/)是上传的网址时，将主屏幕的阅读区域分为左右两半，一半是现有显示的内容，一半是原网页的内容，便于观察原网页的格式。且左右侧的宽度可以调整
+
+## Final Report — Split-View Editor for goodesam.github.io/EasyOriginals
+
+### Goal
+
+When a user loads `https://goodesam.github.io/EasyOriginals/` (or any sub-path under `/EasyOriginals`) via the URL input, the reader screen splits into two side-by-side panes: the existing extracted/parsed reader content on the left, and the original webpage rendered live in an `<iframe>` on the right. A draggable divider between the panes lets the user adjust column widths freely. For all other sources (file uploads or non-matching URLs), the reader continues to render in its normal single-column layout.
+
+### Implementation Summary
+
+- **URL detection** — `isSplitViewURL(url)` matches `parsed.origin === 'https://goodesam.github.io'` with a path that starts with `/easyoriginals` (case-insensitive, trailing-slash tolerant). This is checked at the end of `handleURL`, after the extracted content has rendered.
+- **Activation / deactivation** — `activateSplitView(url)` reveals the resizer and iframe pane, sets the iframe `src` (only if changed, to avoid reloads), and adds a `split-active` class to `#readerScreen`. `deactivateSplitView()` reverses it and resets the iframe to `about:blank`. Deactivation is also called from the back button and `handleFile`, so split state never leaks between sessions.
+- **Layout** — A new wrapper, `.reader-split-container`, holds the existing `#readerContent`, the new `#splitResizer` handle, and a `#splitIframePane` containing the `<iframe>`. Under `.split-active`, the container becomes `display: flex; flex-direction: row`; the left pane width is driven by a CSS variable `--split-left-width` (default 50%); the iframe pane fills the remainder. Below 640 px viewport width, the split flips to a vertical stack and the resizer becomes a horizontal row-resize handle.
+- **Resizer interaction** — `initSplitResizer()` (wired in `init()`) handles pointer events with `setPointerCapture`, clamping the ratio to 15–85% on both axes. Keyboard support: arrow keys nudge by 2%, Home/End jump to the limits.
+- **Security** — The CSP `<meta>` was extended with `frame-src https://goodesam.github.io;` so the iframe is allowed to load. The iframe is sandboxed with `allow-scripts allow-same-origin allow-popups allow-forms` (necessary for the original page's own JS) and uses `referrerpolicy="no-referrer"`.
+
+### Files Modified
+
+| File             | Changes                                                                                                                                                                                                     |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.html`     | Added `frame-src` to CSP. Wrapped `#readerContent` in `.reader-split-container`; added `#splitResizer` and `#splitIframePane` (with `<iframe id="splitIframe">`).                                           |
+| `src/reader.css` | Added split-view styles: container layout, `--split-left-width` variable, resizer visuals (hover/dragging/grip), iframe pane fill, mobile vertical-stack fallback.                                          |
+| `src/reader.js`  | Added `isSplitViewURL`, `activateSplitView`, `deactivateSplitView`, and `initSplitResizer` (pointer + keyboard). Wired activation into `handleURL`, and deactivation into the back button and `handleFile`. |
+
+### Build Verification
+
+`vite build` completes successfully (14 modules, 123.30 kB JS, gzip 39.69 kB; CSS 26.61 kB, gzip 5.57 kB). The existing test suite shows no new failures introduced by this change.
+
+### Manual Smoke Test (recommended)
+
+Paste `https://goodesam.github.io/EasyOriginals/` into the URL input on the upload screen, click Load, and verify: (1) the reader content fills the left pane, (2) the original page renders in the right pane, (3) the central divider can be dragged to resize, and (4) clicking the back button or loading a local file restores the normal single-column layout.
+
+---
+
+## 最终报告 —— goodesam.github.io/EasyOriginals 分屏编辑视图
+
+### 目标
+
+当用户在网址输入框中加载 `https://goodesam.github.io/EasyOriginals/`（或 `/EasyOriginals` 下的任意子路径）时，阅读器主屏幕拆分为左右两个并排区域：左侧仍然显示已有的抽取/解析后的阅读内容，右侧则用 `<iframe>` 实时渲染原始网页。两个区域之间有一条可拖动的分隔条，用户可以自由调整左右列的宽度。对其他来源（本地文件上传或不匹配的网址），阅读器继续以原有的单列布局显示。
+
+### 实现概要
+
+- **网址识别** —— `isSplitViewURL(url)` 校验 `parsed.origin === 'https://goodesam.github.io'`，并要求路径以 `/easyoriginals` 开头（大小写不敏感、末尾斜杠可有可无）。在 `handleURL` 渲染完抽取内容之后进行判断。
+- **激活 / 停用** —— `activateSplitView(url)` 显示分隔条与右侧 iframe 区，仅在地址不同时才设置 `iframe.src`（避免重复加载），并在 `#readerScreen` 上添加 `split-active` 类。`deactivateSplitView()` 反向操作并将 iframe 重置为 `about:blank`。返回按钮和 `handleFile` 也会调用停用，确保分屏状态不会在会话间残留。
+- **布局** —— 新增包装层 `.reader-split-container` 内含原有的 `#readerContent`、新的 `#splitResizer` 拖动条以及包裹 `<iframe>` 的 `#splitIframePane`。在 `.split-active` 下，容器变为 `display: flex; flex-direction: row`；左侧宽度由 CSS 变量 `--split-left-width` 控制（默认 50%），iframe 区填满剩余空间。视口宽度小于 640 px 时，分屏自动切换为上下堆叠，拖动条变为横向 row-resize。
+- **拖动交互** —— `initSplitResizer()`（在 `init()` 中注册）使用 pointer 事件并调用 `setPointerCapture`，将比例限制在 15%–85%。键盘支持：方向键以 2% 递进，Home/End 跳到限值。
+- **安全策略** —— `<meta>` CSP 增加 `frame-src https://goodesam.github.io;` 以放行该来源的 iframe。iframe 使用 `sandbox="allow-scripts allow-same-origin allow-popups allow-forms"`（原页脚本运行所必需）和 `referrerpolicy="no-referrer"`。
+
+### 修改文件
+
+| 文件               | 更改内容                                                                                                                                          |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.html`     | CSP 增加 `frame-src`；将 `#readerContent` 包入 `.reader-split-container`，并新增 `#splitResizer` 和 `#splitIframePane`（内含 `<iframe id="splitIframe">`）。  |
+| `src/reader.css` | 新增分屏样式：容器布局、`--split-left-width` 变量、拖动条视觉（hover / dragging / 中央把手）、iframe 区填充、移动端竖排回退。                                                        |
+| `src/reader.js`  | 新增 `isSplitViewURL`、`activateSplitView`、`deactivateSplitView` 与 `initSplitResizer`（pointer 与键盘）；将激活逻辑接入 `handleURL`，停用逻辑接入返回按钮和 `handleFile`。 |
+
+### 构建验证
+
+`vite build` 成功完成（14 个模块，JS 123.30 kB / gzip 39.69 kB；CSS 26.61 kB / gzip 5.57 kB）。现有测试套件中本次改动未引入新的失败用例。
+
+### 建议手动验证
+
+在上传屏幕的网址输入框粘贴 `https://goodesam.github.io/EasyOriginals/` 并点击加载，验证：(1) 阅读内容填满左侧，(2) 右侧 iframe 渲染原网页，(3) 中间分隔条可拖动调整宽度，(4) 点击返回按钮或加载本地文件后恢复为正常的单列布局。

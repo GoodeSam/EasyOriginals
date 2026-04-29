@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- CSP: style-src 'unsafe-inline' required for dynamic element.style.* in reader.js and theme swatches.
        TODO: migrate inline styles to CSS classes and use nonces to remove 'unsafe-inline'. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://api.openai.com https://edge.microsoft.com https://api.cognitive.microsofttranslator.com https://translate.googleapis.com https://api.allorigins.win wss://speech.platform.bing.com http://localhost:11434; media-src 'self' blob:; img-src 'self' data: blob:; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://api.openai.com https://edge.microsoft.com https://api.cognitive.microsofttranslator.com https://translate.googleapis.com https://api.allorigins.win wss://speech.platform.bing.com http://localhost:11434; media-src 'self' blob:; img-src 'self' data: blob:; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; frame-src https://goodesam.github.io;">
   <title>English Reader</title>
   <link rel="icon" href="/icons/icon48.png">
   <link rel="stylesheet" href="/src/reader.css">
@@ -98,8 +98,14 @@
     <button class="toolbar-toggle" id="toolbarToggle" title="Toggle toolbar" aria-label="Toggle toolbar">&#9776;</button>
 
     <!-- Main Content -->
-    <div class="reader-content" id="readerContent">
-      <!-- Paragraphs with sentences will be injected here -->
+    <div class="reader-split-container" id="readerSplitContainer">
+      <div class="reader-content" id="readerContent">
+        <!-- Paragraphs with sentences will be injected here -->
+      </div>
+      <div class="split-resizer" id="splitResizer" role="separator" aria-orientation="vertical" aria-label="Resize split view" tabindex="0" hidden></div>
+      <div class="split-iframe-pane" id="splitIframePane" hidden>
+        <iframe class="split-iframe" id="splitIframe" title="Original webpage" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+      </div>
     </div>
 
   </div>

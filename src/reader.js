@@ -241,6 +241,7 @@ function init() {
   loadAutoPlayAudio();
   bindEvents();
   setupBookGeneration();
+  initSplitResizer();
 
   if (readerScreen.classList.contains('active')) {
     startAutoHideTimer();
@@ -481,6 +482,7 @@ function bindNavigationEvents() {
   backBtn.addEventListener('click', () => {
     readerScreen.classList.remove('active');
     uploadScreen.classList.add('active');
+    deactivateSplitView();
   });
 
   document.addEventListener('keydown', (e) => {
@@ -845,6 +847,7 @@ function clearHover() {
 async function handleFile(file) {
   if (!file) return;
   state.fileName = file.name;
+  deactivateSplitView();
   const ext = file.name.split('.').pop().toLowerCase();
 
   try {
@@ -932,6 +935,93 @@ function extractTextFromHTML(html) {
 
 window.extractTextFromHTML = extractTextFromHTML;
 
+// ===== Split View (original-page comparison) =====
+// When the source URL matches this origin+path prefix, render the live page
+// in an iframe alongside the extracted reader content.
+function isSplitViewURL(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.origin === 'https://goodesam.github.io'
+      && parsed.pathname.replace(/\/+$/, '').toLowerCase().startsWith('/easyoriginals');
+  } catch (e) {
+    return false;
+  }
+}
+
+function activateSplitView(url) {
+  const iframe = document.getElementById('splitIframe');
+  const pane = document.getElementById('splitIframePane');
+  const resizer = document.getElementById('splitResizer');
+  if (!iframe || !pane || !resizer) return;
+  if (iframe.src !== url) iframe.src = url;
+  pane.hidden = false;
+  resizer.hidden = false;
+  readerScreen.classList.add('split-active');
+}
+
+function deactivateSplitView() {
+  const iframe = document.getElementById('splitIframe');
+  const pane = document.getElementById('splitIframePane');
+  const resizer = document.getElementById('splitResizer');
+  readerScreen.classList.remove('split-active');
+  if (pane) pane.hidden = true;
+  if (resizer) resizer.hidden = true;
+  if (iframe) iframe.src = 'about:blank';
+}
+
+function initSplitResizer() {
+  const container = document.getElementById('readerSplitContainer');
+  const resizer = document.getElementById('splitResizer');
+  if (!container || !resizer) return;
+
+  let dragging = false;
+
+  function setRatio(clientX, clientY) {
+    const rect = container.getBoundingClientRect();
+    const isVertical = window.matchMedia('(max-width: 640px)').matches;
+    let pct;
+    if (isVertical) {
+      pct = ((clientY - rect.top) / rect.height) * 100;
+    } else {
+      pct = ((clientX - rect.left) / rect.width) * 100;
+    }
+    pct = Math.max(15, Math.min(85, pct));
+    container.style.setProperty('--split-left-width', pct + '%');
+  }
+
+  resizer.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    resizer.classList.add('dragging');
+    resizer.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  resizer.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    setRatio(e.clientX, e.clientY);
+  });
+  const endDrag = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    resizer.classList.remove('dragging');
+    try { resizer.releasePointerCapture(e.pointerId); } catch (_) {}
+  };
+  resizer.addEventListener('pointerup', endDrag);
+  resizer.addEventListener('pointercancel', endDrag);
+
+  resizer.addEventListener('keydown', (e) => {
+    const current = parseFloat(getComputedStyle(container).getPropertyValue('--split-left-width')) || 50;
+    let next = current;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = current - 2;
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = current + 2;
+    else if (e.key === 'Home') next = 15;
+    else if (e.key === 'End') next = 85;
+    else return;
+    next = Math.max(15, Math.min(85, next));
+    container.style.setProperty('--split-left-width', next + '%');
+    e.preventDefault();
+  });
+}
+
 async function handleURL(url) {
   if (!url) return;
 
@@ -1004,6 +1094,12 @@ async function handleURL(url) {
     renderAllContent(paragraphs);
     updateBookmarkIcon();
     restoreBookmark();
+
+    if (isSplitViewURL(url)) {
+      activateSplitView(url);
+    } else {
+      deactivateSplitView();
+    }
 
     startAutoHideTimer();
   } catch (err) {
