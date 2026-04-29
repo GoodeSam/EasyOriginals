@@ -936,18 +936,8 @@ function extractTextFromHTML(html) {
 window.extractTextFromHTML = extractTextFromHTML;
 
 // ===== Split View (original-page comparison) =====
-// When the source URL matches this origin+path prefix, render the live page
-// in an iframe alongside the extracted reader content.
-function isSplitViewURL(url) {
-  try {
-    const parsed = new URL(url);
-    return parsed.origin === 'https://goodesam.github.io'
-      && parsed.pathname.replace(/\/+$/, '').toLowerCase().startsWith('/easyoriginals');
-  } catch (e) {
-    return false;
-  }
-}
-
+// Render the live page in an iframe alongside the extracted reader content.
+// Some sites set X-Frame-Options or frame-ancestors and will refuse to embed.
 function activateSplitView(url) {
   const iframe = document.getElementById('splitIframe');
   const pane = document.getElementById('splitIframePane');
@@ -1095,11 +1085,7 @@ async function handleURL(url) {
     updateBookmarkIcon();
     restoreBookmark();
 
-    if (isSplitViewURL(url)) {
-      activateSplitView(url);
-    } else {
-      deactivateSplitView();
-    }
+    activateSplitView(url);
 
     startAutoHideTimer();
   } catch (err) {
