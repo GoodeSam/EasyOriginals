@@ -674,9 +674,11 @@ function handleReaderHover(e) {
     sentenceEl.classList.add('hover-active');
     state.hoveredWord = wordEl;
     state.hoveredSentence = sentenceEl;
+    highlightSentenceInIframe(sentenceEl);
   } else if (sentenceEl) {
     sentenceEl.classList.add('hover-active');
     state.hoveredSentence = sentenceEl;
+    highlightSentenceInIframe(sentenceEl);
   }
 }
 
@@ -844,6 +846,7 @@ function clearHover() {
     state.hoveredSentence.classList.remove('hover-active');
     state.hoveredSentence = null;
   }
+  unhighlightSentenceInIframe();
 }
 
 // ===== File Handling =====
@@ -1063,6 +1066,7 @@ function normalizeForSync(s) {
 function buildSplitViewMapping() {
   state.splitViewMapping = null;
   state.splitViewReverseMapping = null;
+  state.splitViewElementMapping = null;
   const iframe = document.getElementById('splitIframe');
   if (!iframe) return;
   let doc;
@@ -1076,6 +1080,7 @@ function buildSplitViewMapping() {
   const candPrefixes = candidates.map(el => normalizeForSync(el.textContent));
 
   const mapping = new Array(leftParas.length).fill(null);
+  const elementMapping = new Array(leftParas.length).fill(null);
   let cursor = 0;
   for (let i = 0; i < leftParas.length; i++) {
     const target = normalizeForSync(leftParas[i].textContent);
@@ -1087,12 +1092,14 @@ function buildSplitViewMapping() {
         let n = candidates[j];
         while (n) { top += n.offsetTop || 0; n = n.offsetParent; }
         mapping[i] = top;
+        elementMapping[i] = candidates[j];
         cursor = j + 1;
         break;
       }
     }
   }
   state.splitViewMapping = mapping;
+  state.splitViewElementMapping = elementMapping;
 
   const reverse = [];
   for (let i = 0; i < mapping.length; i++) {
@@ -1181,6 +1188,144 @@ function syncLeftToRight() {  // user scrolled right → adjust left
 
   state.lastProgScrollLeftAt = Date.now();
   left.scrollTo(0, targetPara.offsetTop);
+}
+
+// Build a Range over `text` inside `rootEl` (in the iframe doc), tolerating
+// whitespace differences between the left-pane normalized sentence and the
+// raw text node content. Returns null if no match found.
+function findRangeForTextInElement(rootEl, doc, text) {
+  if (!rootEl || !doc || !text) return null;
+  const targetNorm = text.replace(/\s+/g, ' ').trim();
+  if (targetNorm.length < 3) return null;
+
+  const walker = doc.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT, {
+    acceptNode(n) {
+      const tn = n.parentElement && n.parentElement.tagName;
+      if (tn === 'SCRIPT' || tn === 'STYLE' || tn === 'NOSCRIPT' || tn === 'TEMPLATE') return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  let node;
+  while ((node = walker.nextNode())) {
+    const orig = node.textContent;
+    let idx = orig.indexOf(text);
+    if (idx >= 0) {
+      const r = doc.createRange();
+      r.setStart(node, idx);
+      r.setEnd(node, idx + text.length);
+      return r;
+    }
+    // Whitespace-tolerant: build a normalized version with a back-map.
+    let norm = '';
+    const map = [];
+    let prevSpace = false;
+    for (let i = 0; i < orig.length; i++) {
+      const c = orig.charCodeAt(i);
+      const isSpace = c === 32 || c === 9 || c === 10 || c === 13 || c === 160;
+      if (isSpace) {
+        if (!prevSpace && norm.length > 0) {
+          norm += ' ';
+          map.push(i);
+          prevSpace = true;
+        }
+      } else {
+        norm += orig[i];
+        map.push(i);
+        prevSpace = false;
+      }
+    }
+    if (norm.endsWith(' ')) { norm = norm.slice(0, -1); map.pop(); }
+    const ni = norm.indexOf(targetNorm);
+    if (ni >= 0) {
+      const startInOrig = map[ni];
+      const lastNormIdx = ni + targetNorm.length - 1;
+      const endInOrig = lastNormIdx < map.length ? map[lastNormIdx] + 1 : orig.length;
+      const r = doc.createRange();
+      r.setStart(node, startInOrig);
+      r.setEnd(node, endInOrig);
+      return r;
+    }
+  }
+  return null;
+}
+
+function ensureIframeHighlightCSS(doc) {
+  if (!doc || !doc.head) return;
+  if (doc.getElementById('eo-hover-style')) return;
+  const style = doc.createElement('style');
+  style.id = 'eo-hover-style';
+  style.textContent = '::highlight(eo-hover) { background-color: #e8dcc8; }';
+  doc.head.appendChild(style);
+}
+
+function highlightSentenceInIframe(sentenceEl) {
+  unhighlightSentenceInIframe();
+  if (!state.splitViewVisible || !state.splitViewURL) return;
+  if (!sentenceEl) return;
+  const elementMapping = state.splitViewElementMapping;
+  if (!elementMapping) return;
+
+  const paraEl = sentenceEl.closest('.paragraph');
+  if (!paraEl) return;
+  const allParas = document.querySelectorAll('#readerContent .paragraph');
+  const paraIdx = Array.prototype.indexOf.call(allParas, paraEl);
+  if (paraIdx < 0) return;
+  const iframeEl = elementMapping[paraIdx];
+  if (!iframeEl) return;
+
+  const iframe = document.getElementById('splitIframe');
+  if (!iframe) return;
+  let doc, win;
+  try { doc = iframe.contentDocument; win = iframe.contentWindow; } catch (e) { return; }
+  if (!doc || !win) return;
+
+  const text = sentenceEl.textContent;
+  const range = findRangeForTextInElement(iframeEl, doc, text);
+  if (!range) return;
+
+  // Prefer the CSS Custom Highlight API — it does not modify the DOM and
+  // handles ranges that cross inline element boundaries (e.g. <a>, <em>).
+  if (win.CSS && win.CSS.highlights && typeof win.Highlight === 'function') {
+    try {
+      const hl = new win.Highlight(range);
+      win.CSS.highlights.set('eo-hover', hl);
+      ensureIframeHighlightCSS(doc);
+      state.iframeHighlightKind = 'css';
+      return;
+    } catch (e) { /* fall through */ }
+  }
+
+  // Fallback: wrap the range in a span. Fails silently if the range crosses
+  // element boundaries (surroundContents throws), in which case no highlight
+  // is shown for that sentence.
+  try {
+    const span = doc.createElement('span');
+    span.className = 'eo-hover-highlight-span';
+    span.style.cssText = 'background-color: #e8dcc8 !important; transition: background-color 0.15s;';
+    range.surroundContents(span);
+    state.iframeHighlightSpan = span;
+    state.iframeHighlightKind = 'span';
+  } catch (e) { /* ignore */ }
+}
+
+function unhighlightSentenceInIframe() {
+  const iframe = document.getElementById('splitIframe');
+  if (iframe) {
+    let doc, win;
+    try { doc = iframe.contentDocument; win = iframe.contentWindow; } catch (e) { doc = null; win = null; }
+    if (win && win.CSS && win.CSS.highlights) {
+      try { win.CSS.highlights.delete('eo-hover'); } catch (e) {}
+    }
+    if (state.iframeHighlightSpan && state.iframeHighlightSpan.parentNode) {
+      const span = state.iframeHighlightSpan;
+      const parent = span.parentNode;
+      while (span.firstChild) parent.insertBefore(span.firstChild, span);
+      parent.removeChild(span);
+      try { parent.normalize(); } catch (e) {}
+    }
+  }
+  state.iframeHighlightSpan = null;
+  state.iframeHighlightKind = null;
 }
 
 function setupSplitViewSync() {
