@@ -907,10 +907,29 @@ async function handleFile(file) {
 }
 
 // ===== URL Handling =====
-// WARNING: allorigins is a public CORS proxy — requested URLs and page content
+// WARNING: these are public CORS proxies — requested URLs and page content
 // are transmitted through a third party. For privacy-sensitive use cases,
 // deploy your own proxy with an allowlist and rate limiting.
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+const CORS_PROXIES = [
+  (u) => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
+  (u) => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u),
+  (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+];
+
+async function fetchViaProxy(url, signal) {
+  let lastError;
+  for (const buildProxyUrl of CORS_PROXIES) {
+    try {
+      const r = await fetch(buildProxyUrl(url), { signal });
+      if (r.ok) return r;
+      lastError = new Error('HTTP ' + r.status);
+    } catch (e) {
+      if (e.name === 'AbortError') throw e;
+      lastError = e;
+    }
+  }
+  throw lastError || new Error('All CORS proxies failed');
+}
 
 function extractTextFromHTML(html) {
   const parser = new DOMParser();
@@ -1038,7 +1057,7 @@ async function handleURL(url) {
   }
 
   // Privacy notice: URL content is fetched via a public CORS proxy
-  if (!confirm('This URL will be fetched through a public proxy (allorigins.win). The page content will be visible to the proxy. Continue?')) {
+  if (!confirm('This URL will be fetched through a public CORS proxy (corsproxy.io / codetabs / allorigins). The page content will be visible to the proxy. Continue?')) {
     return;
   }
 
@@ -1050,7 +1069,7 @@ async function handleURL(url) {
     const fetchTimeout = setTimeout(() => abortCtrl.abort(), 30000);
     let response;
     try {
-      response = await fetch(CORS_PROXY + encodeURIComponent(url), { signal: abortCtrl.signal });
+      response = await fetchViaProxy(url, abortCtrl.signal);
     } finally {
       clearTimeout(fetchTimeout);
     }
