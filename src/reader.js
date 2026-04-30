@@ -3144,15 +3144,87 @@ async function playEdgeTTS(text) {
   });
 }
 
+// Gender hints for our Edge TTS voice IDs — used by the browser-speech
+// fallback to honor the user's gender preference even when we have to
+// substitute a system voice.
+const VOICE_GENDER_HINTS = {
+  'en-US-AriaNeural': 'female',
+  'en-US-GuyNeural': 'male',
+  'en-US-JennyNeural': 'female',
+  'en-US-ChristopherNeural': 'male',
+  'en-GB-SoniaNeural': 'female',
+  'en-GB-RyanNeural': 'male',
+  'en-AU-NatashaNeural': 'female',
+  'zh-CN-XiaoxiaoNeural': 'female',
+  'zh-CN-YunjianNeural': 'male',
+  'zh-CN-XiaoyiNeural': 'female',
+  'zh-TW-HsiaoChenNeural': 'female',
+  'zh-TW-YunJheNeural': 'male',
+};
+
+const SYSTEM_VOICE_HINTS_MALE = ['Alex', 'Daniel', 'Fred', 'Tom', 'David', 'Mark', 'Aaron', 'Reed', 'Eric', 'Albert', 'Bruce', 'Diego', 'Lee', 'Ralph', 'Junior', 'Eddy', 'George', 'Oliver', 'Arthur', 'Bahh', 'Jacques', 'Yunjian', 'YunJhe', 'Guy', 'Christopher', 'Ryan'];
+const SYSTEM_VOICE_HINTS_FEMALE = ['Samantha', 'Victoria', 'Susan', 'Karen', 'Tessa', 'Moira', 'Fiona', 'Allison', 'Ava', 'Joelle', 'Kate', 'Veena', 'Zira', 'Aria', 'Jenny', 'Sonia', 'Natasha', 'Xiaoxiao', 'Xiaoyi', 'HsiaoChen'];
+
+function pickBrowserVoice(voiceId, voices) {
+  if (!voices || voices.length === 0) return null;
+  // 1. Exact match by name or voiceURI — works on Edge browser where
+  //    Microsoft neural voices show up directly.
+  let match = voices.find(v => v.name === voiceId || v.voiceURI === voiceId);
+  if (match) return match;
+  // 2. Match by friendly name extracted from the voice ID (e.g. "Guy"
+  //    from "en-US-GuyNeural").
+  const m = voiceId.match(/-([A-Z][a-z]+)Neural$/);
+  if (m) {
+    const friendly = m[1].toLowerCase();
+    match = voices.find(v => v.name.toLowerCase().includes(friendly));
+    if (match) return match;
+  }
+  // 3. Same-language voice with the right gender.
+  const targetLang = langFromVoice(voiceId);
+  const baseLang = targetLang.slice(0, 2);
+  const langVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith(baseLang));
+  const targetGender = VOICE_GENDER_HINTS[voiceId];
+  if (targetGender) {
+    const hints = targetGender === 'male' ? SYSTEM_VOICE_HINTS_MALE : SYSTEM_VOICE_HINTS_FEMALE;
+    match = langVoices.find(v => hints.some(name => v.name.includes(name)));
+    if (match) return match;
+  }
+  // 4. Any same-language voice; otherwise let the browser pick.
+  return langVoices[0] || null;
+}
+
+// Resolve the SpeechSynthesis voice list, waiting once for the
+// `voiceschanged` event if Chrome hasn't populated it yet.
+function getBrowserVoicesAsync() {
+  if (!window.speechSynthesis) return Promise.resolve([]);
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0) return Promise.resolve(voices);
+  return new Promise((resolve) => {
+    let done = false;
+    const handler = () => {
+      if (done) return;
+      done = true;
+      window.speechSynthesis.removeEventListener('voiceschanged', handler);
+      resolve(window.speechSynthesis.getVoices());
+    };
+    window.speechSynthesis.addEventListener('voiceschanged', handler);
+    setTimeout(() => { if (!done) handler(); }, 500);
+  });
+}
+
 function speakText(text) {
   ensureSettings().then(() => {
-    const browserFallback = () => {
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = langFromVoice(state.edgeTtsVoice || EDGE_TTS_DEFAULT_VOICE);
-        window.speechSynthesis.speak(utterance);
-      }
+    const browserFallback = async () => {
+      if (!window.speechSynthesis) return;
+      const voiceId = state.edgeTtsVoice || EDGE_TTS_DEFAULT_VOICE;
+      const voices = await getBrowserVoicesAsync();
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = langFromVoice(voiceId);
+      const picked = pickBrowserVoice(voiceId, voices);
+      if (picked) utterance.voice = picked;
+      console.info('[TTS] browser fallback for', voiceId, '→', picked ? picked.name : '(system default)');
+      window.speechSynthesis.speak(utterance);
     };
     if (state.ttsSource === 'openai' && state.apiKey) {
       // OpenAI TTS Voice Persona first, fall back to Edge TTS, then browser speech
@@ -3161,9 +3233,10 @@ function speakText(text) {
       });
     } else {
       // Edge TTS Read Aloud first (free), fall back to OpenAI TTS, then browser speech
-      playEdgeTTS(text).catch(() => {
+      playEdgeTTS(text).catch((err) => {
+        console.info('[TTS] Edge TTS failed, falling back:', err && err.message);
         if (state.apiKey) {
-          playTTS(text).catch(err => console.error('TTS error:', err));
+          playTTS(text).catch(e2 => { console.error('TTS error:', e2); browserFallback(); });
         } else {
           browserFallback();
         }
