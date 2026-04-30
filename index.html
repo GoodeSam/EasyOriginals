@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- CSP: style-src 'unsafe-inline' required for dynamic element.style.* in reader.js and theme swatches.
        TODO: migrate inline styles to CSS classes and use nonces to remove 'unsafe-inline'. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https: http:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://api.openai.com https://edge.microsoft.com https://api.cognitive.microsofttranslator.com https://translate.googleapis.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com wss://speech.platform.bing.com; media-src 'self' blob: https: http:; img-src 'self' data: blob: https: http:; font-src 'self' data: https: http:; object-src 'none'; base-uri 'none'; frame-ancestors 'self'; frame-src https: http:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://api.openai.com https://edge.microsoft.com https://api.cognitive.microsofttranslator.com https://translate.googleapis.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com wss://speech.platform.bing.com; media-src 'self' blob: https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; object-src 'none'; base-uri 'none'; frame-ancestors 'self'; frame-src https:;">
   <title>English Reader</title>
   <link rel="icon" href="/icons/icon48.png">
   <link rel="stylesheet" href="/src/reader.css">
@@ -104,7 +104,7 @@
       </div>
       <div class="split-resizer" id="splitResizer" role="separator" aria-orientation="vertical" aria-label="Resize split view" tabindex="0" hidden></div>
       <div class="split-iframe-pane" id="splitIframePane" hidden>
-        <iframe class="split-iframe" id="splitIframe" title="Original webpage" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+        <iframe class="split-iframe" id="splitIframe" title="Original webpage" referrerpolicy="no-referrer" sandbox="allow-same-origin allow-popups allow-forms"></iframe>
       </div>
     </div>
 

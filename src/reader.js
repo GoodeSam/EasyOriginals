@@ -955,6 +955,15 @@ function extractTextFromHTML(html) {
 
 window.extractTextFromHTML = extractTextFromHTML;
 
+// Once-per-session warning helper for split-view diagnostics. Avoids
+// spamming the console while still surfacing breakages during dev.
+const _splitWarnSeen = new Set();
+function splitViewWarn(tag, err) {
+  if (_splitWarnSeen.has(tag)) return;
+  _splitWarnSeen.add(tag);
+  try { console.warn('[split-view]', tag, err); } catch (_) {}
+}
+
 // ===== Split View (original-page comparison) =====
 // Render the original page in an iframe alongside the extracted reader.
 // Most sites set X-Frame-Options or frame-ancestors and refuse direct iframe
@@ -972,8 +981,21 @@ window.extractTextFromHTML = extractTextFromHTML;
 //   state.splitViewVisible — whether the user wants the right pane shown.
 //     Defaults to true; persists across toggles of the same source.
 function injectBaseTag(html, url) {
-  const safeUrl = String(url).replace(/"/g, '&quot;');
-  const baseTag = '<base href="' + safeUrl + '" target="_blank">';
+  // Build <base> via DOM APIs so the href and target attributes get the
+  // browser's attribute-context escaping — protects against quote /
+  // control-character injection in hostile URLs. Reject non-http(s) URLs
+  // (e.g. javascript:) up front.
+  let parsed;
+  try { parsed = new URL(url); } catch (e) { return html; }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return html;
+
+  const tmp = document.createElement('div');
+  const base = document.createElement('base');
+  base.href = parsed.href;
+  base.target = '_blank';
+  tmp.appendChild(base);
+  const baseTag = tmp.innerHTML;
+
   if (/<head[^>]*>/i.test(html)) {
     return html.replace(/<head([^>]*)>/i, '<head$1>' + baseTag);
   }
@@ -1104,13 +1126,27 @@ function buildSplitViewMapping() {
   state.splitViewReverseMapping = reverse;
 }
 
-// Per-side timestamps record the last programmatic scroll on that side,
-// so each scroll handler can ignore events caused by its own sync partner
-// without accidentally suppressing real user input on the other side.
-const SCROLL_SYNC_LOCKOUT_MS = 150;
+// Each side carries a "skip the next mirrored scroll event" flag plus a
+// short safety timer that clears the flag if the expected event never
+// fires (e.g. when the programmatic scrollTo is a no-op because we're
+// already at that position). Suppressing exactly one event avoids the
+// fixed-window approach starving real user input on the other side.
+const SCROLL_SYNC_SAFETY_MS = 80;
+
+function armSyncSuppression(side) {
+  const flagKey = side === 'left' ? 'suppressLeftSyncOnce' : 'suppressRightSyncOnce';
+  const timerKey = side === 'left' ? '_leftSyncSafetyTimer' : '_rightSyncSafetyTimer';
+  state[flagKey] = true;
+  if (state[timerKey]) clearTimeout(state[timerKey]);
+  state[timerKey] = setTimeout(() => { state[flagKey] = false; }, SCROLL_SYNC_SAFETY_MS);
+}
 
 function syncRightToLeft() {  // user scrolled left → adjust right
-  if (Date.now() - (state.lastProgScrollLeftAt || 0) < SCROLL_SYNC_LOCKOUT_MS) return;
+  if (state.suppressLeftSyncOnce) {
+    state.suppressLeftSyncOnce = false;
+    if (state._leftSyncSafetyTimer) { clearTimeout(state._leftSyncSafetyTimer); state._leftSyncSafetyTimer = null; }
+    return;
+  }
   if (!state.splitViewVisible || !state.splitViewURL) return;
   const mapping = state.splitViewMapping;
   if (!mapping || mapping.length === 0) return;
@@ -1142,12 +1178,16 @@ function syncRightToLeft() {  // user scrolled left → adjust right
   }
   if (offset == null) return;
 
-  state.lastProgScrollRightAt = Date.now();
-  try { win.scrollTo(0, offset); } catch (e) { /* cross-origin */ }
+  armSyncSuppression('right');
+  try { win.scrollTo(0, offset); } catch (e) { splitViewWarn('right-scroll-failed', e); }
 }
 
 function syncLeftToRight() {  // user scrolled right → adjust left
-  if (Date.now() - (state.lastProgScrollRightAt || 0) < SCROLL_SYNC_LOCKOUT_MS) return;
+  if (state.suppressRightSyncOnce) {
+    state.suppressRightSyncOnce = false;
+    if (state._rightSyncSafetyTimer) { clearTimeout(state._rightSyncSafetyTimer); state._rightSyncSafetyTimer = null; }
+    return;
+  }
   if (!state.splitViewVisible || !state.splitViewURL) return;
   const reverse = state.splitViewReverseMapping;
   if (!reverse || reverse.length === 0) return;
@@ -1181,13 +1221,17 @@ function syncLeftToRight() {  // user scrolled right → adjust left
   const targetPara = paragraphs[reverse[foundIdx].leftParaIdx];
   if (!targetPara) return;
 
-  state.lastProgScrollLeftAt = Date.now();
+  armSyncSuppression('left');
   left.scrollTo(0, targetPara.offsetTop);
 }
 
-// Build a Range over `text` inside `rootEl` (in the iframe doc), tolerating
-// whitespace differences between the left-pane normalized sentence and the
-// raw text node content. Returns null if no match found.
+// Build a Range over `text` inside `rootEl` (in the iframe doc).
+// Walks all text nodes under rootEl and concatenates them into one
+// normalized string with a per-character back-map, so a sentence that
+// crosses inline element boundaries (<a>, <em>, <strong>, …) still
+// matches. Whitespace differences between the left-pane normalized
+// sentence and raw HTML text are tolerated by collapsing runs of
+// whitespace and treating element boundaries as a single space.
 function findRangeForTextInElement(rootEl, doc, text) {
   if (!rootEl || !doc || !text) return null;
   const targetNorm = text.replace(/\s+/g, ' ').trim();
@@ -1200,57 +1244,80 @@ function findRangeForTextInElement(rootEl, doc, text) {
       return NodeFilter.FILTER_ACCEPT;
     }
   });
+
+  // Build flat normalized string + back-map: norm[i] → { node, offset }.
+  let norm = '';
+  const map = [];
+  let prevSpace = true; // leading whitespace collapses to nothing
   let node;
   while ((node = walker.nextNode())) {
     const orig = node.textContent;
-    let idx = orig.indexOf(text);
-    if (idx >= 0) {
-      const r = doc.createRange();
-      r.setStart(node, idx);
-      r.setEnd(node, idx + text.length);
-      return r;
-    }
-    // Whitespace-tolerant: build a normalized version with a back-map.
-    let norm = '';
-    const map = [];
-    let prevSpace = false;
     for (let i = 0; i < orig.length; i++) {
       const c = orig.charCodeAt(i);
       const isSpace = c === 32 || c === 9 || c === 10 || c === 13 || c === 160;
       if (isSpace) {
-        if (!prevSpace && norm.length > 0) {
+        if (!prevSpace) {
           norm += ' ';
-          map.push(i);
+          map.push({ node, offset: i });
           prevSpace = true;
         }
       } else {
         norm += orig[i];
-        map.push(i);
+        map.push({ node, offset: i });
         prevSpace = false;
       }
     }
-    if (norm.endsWith(' ')) { norm = norm.slice(0, -1); map.pop(); }
-    const ni = norm.indexOf(targetNorm);
-    if (ni >= 0) {
-      const startInOrig = map[ni];
-      const lastNormIdx = ni + targetNorm.length - 1;
-      const endInOrig = lastNormIdx < map.length ? map[lastNormIdx] + 1 : orig.length;
-      const r = doc.createRange();
-      r.setStart(node, startInOrig);
-      r.setEnd(node, endInOrig);
-      return r;
+    // Element boundary acts like a single space between flattened text.
+    if (!prevSpace) {
+      norm += ' ';
+      map.push({ node, offset: orig.length });
+      prevSpace = true;
     }
   }
-  return null;
+  if (norm.endsWith(' ')) { norm = norm.slice(0, -1); map.pop(); }
+
+  const ni = norm.indexOf(targetNorm);
+  if (ni < 0) return null;
+
+  const startEntry = map[ni];
+  const lastNormIdx = ni + targetNorm.length - 1;
+  const endEntry = map[Math.min(lastNormIdx, map.length - 1)];
+  if (!startEntry || !endEntry) return null;
+
+  const r = doc.createRange();
+  r.setStart(startEntry.node, startEntry.offset);
+  // endEntry.offset is the position of the last matched character — set
+  // range end one position past it, clamped to the node length.
+  const endNodeLen = endEntry.node.textContent.length;
+  r.setEnd(endEntry.node, Math.min(endEntry.offset + 1, endNodeLen));
+  return r;
+}
+
+// Pick a highlight color whose contrast holds across light/dark themes.
+// Sepia (#e8dcc8) is the left-pane hover color and reads well on white;
+// dark themes need a brighter / more saturated highlight to stay visible
+// against site backgrounds we don't control.
+function getIframeHighlightColor() {
+  const theme = (document.documentElement.getAttribute('data-theme')
+    || (document.body && document.body.getAttribute('data-theme'))
+    || 'brown');
+  if (theme === 'black') return '#fde68a';
+  return '#e8dcc8';
 }
 
 function ensureIframeHighlightCSS(doc) {
   if (!doc || !doc.head) return;
-  if (doc.getElementById('eo-hover-style')) return;
-  const style = doc.createElement('style');
-  style.id = 'eo-hover-style';
-  style.textContent = '::highlight(eo-hover) { background-color: #e8dcc8; }';
-  doc.head.appendChild(style);
+  const color = getIframeHighlightColor();
+  let style = doc.getElementById('eo-hover-style');
+  if (!style) {
+    style = doc.createElement('style');
+    style.id = 'eo-hover-style';
+    doc.head.appendChild(style);
+  }
+  style.textContent = '::highlight(eo-hover) { background-color: ' + color + '; }';
+  // Expose the same color to the span fallback via a CSS variable on
+  // the iframe's documentElement.
+  if (doc.documentElement) doc.documentElement.style.setProperty('--eo-hover-bg', color);
 }
 
 function highlightSentenceInIframe(sentenceEl) {
@@ -1262,8 +1329,12 @@ function highlightSentenceInIframe(sentenceEl) {
 
   const paraEl = sentenceEl.closest('.paragraph');
   if (!paraEl) return;
-  const allParas = document.querySelectorAll('#readerContent .paragraph');
-  const paraIdx = Array.prototype.indexOf.call(allParas, paraEl);
+  // Paragraph index is cached on the element at render time
+  // (renderAllContent), avoiding a per-hover NodeList scan over the
+  // entire reader.
+  const paraIdx = (typeof paraEl._eoParaIdx === 'number')
+    ? paraEl._eoParaIdx
+    : Array.prototype.indexOf.call(document.querySelectorAll('#readerContent .paragraph'), paraEl);
   if (paraIdx < 0) return;
   const iframeEl = elementMapping[paraIdx];
   if (!iframeEl) return;
@@ -1287,7 +1358,7 @@ function highlightSentenceInIframe(sentenceEl) {
       ensureIframeHighlightCSS(doc);
       state.iframeHighlightKind = 'css';
       return;
-    } catch (e) { /* fall through */ }
+    } catch (e) { splitViewWarn('css-highlight-failed', e); /* fall through */ }
   }
 
   // Fallback: wrap the range in a span. Fails silently if the range crosses
@@ -1296,11 +1367,11 @@ function highlightSentenceInIframe(sentenceEl) {
   try {
     const span = doc.createElement('span');
     span.className = 'eo-hover-highlight-span';
-    span.style.cssText = 'background-color: #e8dcc8 !important; transition: background-color 0.15s;';
+    span.style.cssText = 'background-color: var(--eo-hover-bg, #e8dcc8) !important; transition: background-color 0.15s;';
     range.surroundContents(span);
     state.iframeHighlightSpan = span;
     state.iframeHighlightKind = 'span';
-  } catch (e) { /* ignore */ }
+  } catch (e) { splitViewWarn('span-highlight-failed', e); }
 }
 
 function unhighlightSentenceInIframe() {
@@ -1323,6 +1394,17 @@ function unhighlightSentenceInIframe() {
   state.iframeHighlightKind = null;
 }
 
+// Schedule a debounced rebuild of the split-view mapping. Used after the
+// initial iframe load and again on viewport resize / late font load, so
+// the offsetTop values stay accurate as the iframe content reflows.
+function scheduleSplitMappingRebuild() {
+  if (state._splitMappingRebuildTimer) clearTimeout(state._splitMappingRebuildTimer);
+  state._splitMappingRebuildTimer = setTimeout(() => {
+    state._splitMappingRebuildTimer = null;
+    try { buildSplitViewMapping(); } catch (e) { splitViewWarn('mapping-rebuild-failed', e); }
+  }, 200);
+}
+
 function setupSplitViewSync() {
   const iframe = document.getElementById('splitIframe');
   if (iframe && !iframe._splitSyncSetup) {
@@ -1330,7 +1412,7 @@ function setupSplitViewSync() {
     iframe.addEventListener('load', () => {
       // Wait one frame so layout is finalized before we measure offsetTop.
       requestAnimationFrame(() => {
-        try { buildSplitViewMapping(); } catch (e) { /* ignore */ }
+        try { buildSplitViewMapping(); } catch (e) { splitViewWarn('mapping-build-failed', e); }
         // Each srcdoc load creates a new contentWindow, so re-attach
         // the right-pane scroll listener every time.
         try {
@@ -1345,7 +1427,12 @@ function setupSplitViewSync() {
               syncLeftToRight();
             });
           }, { passive: true });
-        } catch (e) { /* cross-origin etc */ }
+          // Also rebuild after late layout changes inside the iframe.
+          if (win.document && win.document.fonts && win.document.fonts.ready && typeof win.document.fonts.ready.then === 'function') {
+            win.document.fonts.ready.then(scheduleSplitMappingRebuild).catch((e) => splitViewWarn('fonts-ready-failed', e));
+          }
+          win.addEventListener('resize', scheduleSplitMappingRebuild, { passive: true });
+        } catch (e) { splitViewWarn('iframe-listener-failed', e); }
       });
     });
   }
@@ -1362,12 +1449,32 @@ function setupSplitViewSync() {
       });
     }, { passive: true });
   }
+  // Outer-window resize affects iframe layout via flex/percentages.
+  if (!window._splitResizeSetup) {
+    window._splitResizeSetup = true;
+    window.addEventListener('resize', () => {
+      if (state.splitViewURL) scheduleSplitMappingRebuild();
+    }, { passive: true });
+  }
 }
 
 function initSplitResizer() {
   const container = document.getElementById('readerSplitContainer');
   const resizer = document.getElementById('splitResizer');
   if (!container || !resizer) return;
+
+  // Keep aria-orientation in sync with layout: row split → vertical
+  // separator; mobile column stack → horizontal separator.
+  const mql = window.matchMedia('(max-width: 640px)');
+  function updateResizerOrientation() {
+    resizer.setAttribute('aria-orientation', mql.matches ? 'horizontal' : 'vertical');
+  }
+  updateResizerOrientation();
+  if (typeof mql.addEventListener === 'function') {
+    mql.addEventListener('change', updateResizerOrientation);
+  } else if (typeof mql.addListener === 'function') {
+    mql.addListener(updateResizerOrientation);
+  }
 
   let dragging = false;
 
@@ -2266,9 +2373,11 @@ function renderAllContent(paragraphs) {
   const transAudioBtn = $('#generateTranslatedAudioBtn');
   if (transAudioBtn) transAudioBtn.style.display = 'none';
 
-  for (const para of state.paragraphs) {
+  for (let _paraIdx = 0; _paraIdx < state.paragraphs.length; _paraIdx++) {
+    const para = state.paragraphs[_paraIdx];
     const pEl = document.createElement('div');
     pEl.className = 'paragraph';
+    pEl._eoParaIdx = _paraIdx;
     if (para.mdType) pEl.classList.add('md-' + para.mdType);
 
     if (para.type === 'image') {

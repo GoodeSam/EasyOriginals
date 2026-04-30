@@ -152,7 +152,7 @@ describe('toolbar order: grouped by function', () => {
       'wordListToggle', 'notesToggle', 'historyToggle',
       'fontDecrease', 'fontIncrease', 'widthDecrease', 'widthIncrease',
       'translateBookBtn', 'generateAudiobookBtn',
-      'generateTranslatedAudioBtn', 'exportDocxBtn',
+      'generateTranslatedAudioBtn', 'exportDocxBtn', 'splitViewToggle',
       'settingsToggle', 'helpBtn', 'pageInfo',
     ];
     for (const id of ids) {
@@ -202,17 +202,26 @@ describe('toolbar order: grouped by function', () => {
     expect(pos('fontIncrease')).toBeLessThan(pos('widthDecrease'));
   });
 
-  // Group 4 — Actions: translate, audiobook, translated audio, export
-  test('actions group: translate → audiobook → translatedAudio → export, after display', () => {
+  // Group 4 — Actions: translate, audiobook, translated audio, export, split-view toggle
+  test('actions group: translate → audiobook → translatedAudio → export → splitView, after display', () => {
     expect(pos('widthIncrease')).toBeLessThan(pos('translateBookBtn'));
     expect(pos('translateBookBtn')).toBeLessThan(pos('generateAudiobookBtn'));
     expect(pos('generateAudiobookBtn')).toBeLessThan(pos('generateTranslatedAudioBtn'));
     expect(pos('generateTranslatedAudioBtn')).toBeLessThan(pos('exportDocxBtn'));
+    expect(pos('exportDocxBtn')).toBeLessThan(pos('splitViewToggle'));
+  });
+
+  // splitViewToggle has correct ARIA semantics for a toggle button
+  test('splitViewToggle declares aria-pressed and is hidden by default', () => {
+    const m = actions.match(/<button[^>]*id="splitViewToggle"[^>]*>/);
+    expect(m).not.toBeNull();
+    expect(m[0]).toMatch(/aria-pressed=/);
+    expect(m[0]).toMatch(/style="display:none"/);
   });
 
   // Group 5 — System: settings, help, page info (rightmost)
   test('system group: settings → help → page, at end', () => {
-    expect(pos('exportDocxBtn')).toBeLessThan(pos('settingsToggle'));
+    expect(pos('splitViewToggle')).toBeLessThan(pos('settingsToggle'));
     expect(pos('settingsToggle')).toBeLessThan(pos('helpBtn'));
     expect(pos('helpBtn')).toBeLessThan(pos('pageInfo'));
   });
