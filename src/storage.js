@@ -14,8 +14,6 @@ const KEYS = {
   ttsSource: 'reader-tts-source',
   translatedTtsVoice: 'reader-translated-tts-voice',
   chineseSpeechRate: 'reader-chinese-speech-rate',
-  ollamaUrl: 'reader-ollama-url',
-  ollamaModel: 'reader-ollama-model',
 };
 
 // API key uses sessionStorage for reduced exposure — not persisted across sessions
@@ -33,8 +31,6 @@ const DEFAULTS = {
   ttsSource: 'edge',
   translatedTtsVoice: 'zh-CN-XiaoxiaoNeural',
   chineseSpeechRate: 0,
-  ollamaUrl: 'http://localhost:11434',
-  ollamaModel: 'qwen3:14b',
 };
 
 let _cache = null;

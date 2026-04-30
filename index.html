@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- CSP: style-src 'unsafe-inline' required for dynamic element.style.* in reader.js and theme swatches.
        TODO: migrate inline styles to CSS classes and use nonces to remove 'unsafe-inline'. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https: http:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://api.openai.com https://edge.microsoft.com https://api.cognitive.microsofttranslator.com https://translate.googleapis.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com wss://speech.platform.bing.com http://localhost:11434; media-src 'self' blob: https: http:; img-src 'self' data: blob: https: http:; font-src 'self' data: https: http:; object-src 'none'; base-uri 'none'; frame-ancestors 'self'; frame-src https: http:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https: http:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://api.openai.com https://edge.microsoft.com https://api.cognitive.microsofttranslator.com https://translate.googleapis.com https://api.allorigins.win https://corsproxy.io https://api.codetabs.com wss://speech.platform.bing.com; media-src 'self' blob: https: http:; img-src 'self' data: blob: https: http:; font-src 'self' data: https: http:; object-src 'none'; base-uri 'none'; frame-ancestors 'self'; frame-src https: http:;">
   <title>English Reader</title>
   <link rel="icon" href="/icons/icon48.png">
   <link rel="stylesheet" href="/src/reader.css">
@@ -72,7 +72,6 @@
         <span class="toolbar-divider"></span>
         <!-- Actions -->
         <button class="icon-btn" id="translateBookBtn" title="Translate Book (Google/Microsoft)" aria-label="Translate Book with default provider">&#127760;</button>
-        <button class="icon-btn" id="ollamaTranslateBtn" title="Translate Book (Ollama local AI)" aria-label="Translate Book with Ollama">&#129302;</button>
         <button class="icon-btn" id="generateAudiobookBtn" title="Generate Audiobook" aria-label="Generate Audiobook">&#127911;</button>
         <button class="icon-btn" id="generateTranslatedAudioBtn" title="Generate Translated Audio" aria-label="Generate Translated Audio" style="display:none">&#127908;</button>
         <button class="icon-btn" id="generateBilingualAudioBtn" title="Generate Bilingual Audio (Original + Translated)" aria-label="Generate Bilingual Audio" style="display:none">&#127911;&#127760;</button>
@@ -241,18 +240,6 @@
       </div>
       <div class="generation-progress-status" id="translationStatus">Preparing...</div>
       <button class="btn btn-sm" id="cancelTranslationBtn">Cancel</button>
-    </div>
-  </div>
-
-  <!-- Ollama Translation Progress -->
-  <div class="generation-progress" id="ollamaTranslationProgress" style="display:none" role="status" aria-label="Ollama translation progress">
-    <div class="generation-progress-inner">
-      <div class="generation-progress-header" id="ollamaTranslationHeader">Translating &amp; Exporting Markdown...</div>
-      <div class="generation-progress-bar-track">
-        <div class="generation-progress-bar" id="ollamaTranslationProgressBar" style="width:0%"></div>
-      </div>
-      <div class="generation-progress-status" id="ollamaTranslationStatus">Preparing...</div>
-      <button class="btn btn-sm" id="cancelOllamaTranslationBtn">Cancel</button>
     </div>
   </div>
 

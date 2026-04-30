@@ -92,3 +92,60 @@ export function cancelTranslation() {
   _cancelled = true;
   if (_abortController) _abortController.abort();
 }
+
+/**
+ * Export as bilingual markdown (original + translated interleaved).
+ *
+ * @param {Array} originalParagraphs - Original paragraph objects.
+ * @param {Array} translatedParagraphs - Translated paragraph objects.
+ * @param {string} [title] - Book title for the heading.
+ * @returns {string} Markdown content.
+ */
+export function exportAsMarkdown(originalParagraphs, translatedParagraphs, title = 'Translated Book') {
+  const lines = [`# ${title}\n`];
+
+  for (let i = 0; i < originalParagraphs.length; i++) {
+    const orig = originalParagraphs[i];
+    const trans = translatedParagraphs[i];
+
+    if (orig.type === 'image') {
+      const imgSrc = (orig.src && !orig.src.startsWith('blob:')) ? orig.src : '[image]';
+      lines.push(`![${orig.alt || ''}](${imgSrc})\n`);
+      continue;
+    }
+
+    const originalText = orig.sentences.join(' ');
+    const translatedText = trans ? trans.sentences.join(' ') : '';
+
+    if (!originalText.trim() && !translatedText.trim()) continue;
+
+    lines.push(`**Original:** ${originalText}\n`);
+    lines.push(`**Translated:** ${translatedText}\n`);
+    lines.push('---\n');
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Export as translation-only markdown.
+ *
+ * @param {Array} translatedParagraphs - Translated paragraph objects.
+ * @param {string} [title] - Book title for the heading.
+ * @returns {string} Markdown content.
+ */
+export function exportTranslationMarkdown(translatedParagraphs, title = 'Translated Book') {
+  const lines = [`# ${title}\n`];
+
+  for (const para of translatedParagraphs) {
+    if (para.type === 'image') {
+      const pSrc = (para.src && !para.src.startsWith('blob:')) ? para.src : '[image]';
+      lines.push(`![${para.alt || ''}](${pSrc})\n`);
+      continue;
+    }
+    const text = para.sentences.join(' ');
+    if (text.trim()) lines.push(text + '\n');
+  }
+
+  return lines.join('\n');
+}

@@ -5,7 +5,7 @@ import { setItem as syncSetItem, removeItem as syncRemoveItem } from './sync-sto
 import { parseEnglishDefinition } from './definition-utils.js';
 import { generateBookAudio, generateBilingualAudio, cancelBookAudio, downloadAudio, detectContentLanguage, voiceForLanguage } from './book-audio.js';
 import { translateBook, cancelTranslation } from './book-translator.js';
-import { translateBookWithOllama, cancelOllamaTranslation, exportAsMarkdown, exportTranslationMarkdown, checkOllamaConnection } from './ollama-translator.js';
+import { exportAsMarkdown, exportTranslationMarkdown } from './book-translator.js';
 import { saveTranslationCheckpoint, loadTranslationCheckpoint, clearTranslationCheckpoint, getCheckpointInfo, RESUME_OVERLAP, contentFingerprint } from './checkpoint.js';
 const TTS_MODEL = 'tts-1';
 const OPENAI_TTS_VOICES = [
@@ -124,9 +124,6 @@ let state = {
   translatedTtsVoice: 'zh-CN-XiaoxiaoNeural',
   // Chinese speech rate (independent from English)
   chineseSpeechRate: 0,
-  // Ollama settings for local AI translation
-  ollamaUrl: 'http://localhost:11434',
-  ollamaModel: 'llama3',
 };
 
 // Expose state for testing (only in dev/test)
@@ -377,8 +374,6 @@ function loadSettings() {
   state.ttsSource = s.ttsSource || 'edge';
   state.translatedTtsVoice = s.translatedTtsVoice || 'zh-CN-XiaoxiaoNeural';
   state.chineseSpeechRate = Number(s.chineseSpeechRate) || 0;
-  state.ollamaUrl = s.ollamaUrl || 'http://localhost:11434';
-  state.ollamaModel = s.ollamaModel || 'llama3';
   state._settingsLoaded = true;
 }
 
@@ -2495,8 +2490,6 @@ async function ensureSettings() {
     state.ttsSource = s.ttsSource || 'edge';
     state.translatedTtsVoice = s.translatedTtsVoice || 'zh-CN-XiaoxiaoNeural';
     state.chineseSpeechRate = Number(s.chineseSpeechRate) || 0;
-    state.ollamaUrl = s.ollamaUrl || 'http://localhost:11434';
-    state.ollamaModel = s.ollamaModel || 'llama3';
     state._settingsLoaded = true;
     _apiKeyAlertShown = false;
   }
@@ -3084,7 +3077,6 @@ window.translateSentence = translateSentence;
 window.speakSentence = speakSentence;
 window.generateBookAudio = generateBookAudio;
 window.translateBook = translateBook;
-window.translateBookWithOllama = translateBookWithOllama;
 
 // ===== Book Generation (Audiobook & Translation) =====
 let translatedParagraphs = null;
@@ -3102,12 +3094,6 @@ function setupBookGeneration() {
   const translationStatus = $('#translationStatus');
   const generateTranslatedAudioBtn = $('#generateTranslatedAudioBtn');
   const generateBilingualAudioBtn = $('#generateBilingualAudioBtn');
-  const ollamaTranslateBtn = $('#ollamaTranslateBtn');
-  const cancelOllamaTranslationBtn = $('#cancelOllamaTranslationBtn');
-  const ollamaTranslationProgress = $('#ollamaTranslationProgress');
-  const ollamaTranslationProgressBar = $('#ollamaTranslationProgressBar');
-  const ollamaTranslationStatus = $('#ollamaTranslationStatus');
-
   if (generateAudiobookBtn) {
     generateAudiobookBtn.addEventListener('click', async () => {
       if (!state.paragraphs || state.paragraphs.length === 0) return;
@@ -3298,94 +3284,6 @@ function setupBookGeneration() {
     });
   }
 
-  if (ollamaTranslateBtn) {
-    ollamaTranslateBtn.addEventListener('click', async () => {
-      if (!state.paragraphs || state.paragraphs.length === 0) return;
-      if (ollamaTranslateBtn.disabled) return;
-      ollamaTranslateBtn.disabled = true;
-      await ensureSettings();
-
-      const ollamaBaseUrl = state.ollamaUrl || 'http://localhost:11434';
-      ollamaTranslationProgress.style.display = '';
-      ollamaTranslationStatus.textContent = 'Checking Ollama connection...';
-      ollamaTranslationProgressBar.style.width = '0%';
-
-      const check = await checkOllamaConnection(ollamaBaseUrl);
-      if (!check.ok) {
-        ollamaTranslationProgress.style.display = 'none';
-        ollamaTranslateBtn.disabled = false;
-        showMessage(
-          'Cannot connect to Ollama at ' + ollamaBaseUrl + '.\n' +
-          'Ollama must be installed and running on THIS computer.\n\n' +
-          (check.error ? 'Error: ' + check.error + '\n\n' : '') +
-          'Setup steps:\n' +
-          '1. Install Ollama: https://ollama.com\n' +
-          '2. Pull a model: ollama pull ' + (state.ollamaModel || 'llama3') + '\n' +
-          '3. Start with CORS: OLLAMA_ORIGINS="' + location.origin + '" ollama serve\n\n' +
-          'Or use the globe icon (\ud83c\udf10) to translate with Google/Microsoft — no setup needed.'
-        );
-        return;
-      }
-
-      const header = $('#ollamaTranslationHeader');
-      const modelLabel = state.ollamaModel || 'llama3';
-      if (header) header.textContent = 'Translating with Ollama (' + modelLabel + ')...';
-
-      const oFp = contentFingerprint(state.paragraphs);
-      const oCkptInfo = getCheckpointInfo(state.fileName, 'ollama-translate', oFp);
-      let oResumeStart = 0;
-      let oResumeResults = [];
-      if (oCkptInfo.exists) {
-        const resume = confirm('Previous Ollama progress found (paragraph ' + oCkptInfo.completedIndex + ' of ' + oCkptInfo.totalParagraphs + '). Resume?');
-        if (resume) {
-          const ckpt = loadTranslationCheckpoint(state.fileName, 'ollama-translate', oFp);
-          if (ckpt && ckpt.translatedParagraphs) {
-            oResumeStart = Math.max(0, ckpt.completedIndex - RESUME_OVERLAP);
-            oResumeResults = ckpt.translatedParagraphs;
-          }
-        } else {
-          clearTranslationCheckpoint(state.fileName, 'ollama-translate', oFp);
-        }
-      }
-      ollamaTranslationStatus.textContent = oResumeStart > 0 ? 'Resuming from paragraph ' + oResumeStart + ' (re-verifying last ' + RESUME_OVERLAP + ')...' : 'Preparing...';
-
-      try {
-        translatedParagraphs = await translateBookWithOllama(state.paragraphs, {
-          ollamaUrl: ollamaBaseUrl + '/api/chat',
-          model: state.ollamaModel,
-          startIndex: oResumeStart,
-          existingResults: oResumeResults,
-          onProgress(current, total) {
-            const pct = Math.round((current / total) * 100);
-            ollamaTranslationProgressBar.style.width = pct + '%';
-            ollamaTranslationStatus.textContent = `Ollama (${modelLabel}): paragraph ${current} of ${total}`;
-          },
-          onParagraphComplete(idx, results) {
-            saveTranslationCheckpoint(state.fileName, 'ollama-translate', { completedIndex: idx, translatedParagraphs: results, totalParagraphs: state.paragraphs.filter(p => p.type !== 'image').length, fingerprint: oFp });
-          },
-        });
-        clearTranslationCheckpoint(state.fileName, 'ollama-translate', oFp);
-        generateTranslatedAudioBtn.style.display = '';
-        generateBilingualAudioBtn.style.display = '';
-        const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'book';
-        const title = state.fileName || 'Translated Book';
-        ollamaTranslationStatus.textContent = 'Exporting files...';
-        const files = await downloadTranslationFiles(state.paragraphs, translatedParagraphs, baseName, title);
-        showMessage('Ollama translation complete! Files saved to Downloads:\n\n' + files.map(f => '  \u2022 ' + f).join('\n'));
-      } catch (err) {
-        if (err.message !== 'Ollama translation cancelled' && err.name !== 'AbortError') {
-          showMessage('Ollama translation failed: ' + err.message);
-        }
-      } finally {
-        ollamaTranslationProgress.style.display = 'none';
-        ollamaTranslateBtn.disabled = false;
-      }
-    });
-  }
-
-  if (cancelOllamaTranslationBtn) {
-    cancelOllamaTranslationBtn.addEventListener('click', () => cancelOllamaTranslation());
-  }
 }
 
 // ===== Word Definition =====
@@ -4613,15 +4511,6 @@ const FEATURE_REGISTRY = [
     name_cn: '\u7ffb\u8bd1\u5168\u4e66',
     description_cn: '\u4f7f\u7528\u914d\u7f6e\u7684\u7ffb\u8bd1\u63d0\u4f9b\u5546\uff08\u8c37\u6b4c\u3001\u5fae\u8f6f\u6216 ChatGPT\uff09\u7ffb\u8bd1\u6574\u672c\u4e66\u3002\u5bfc\u51fa 4 \u4e2a\u6587\u4ef6\u5230\u4e0b\u8f7d\u6587\u4ef6\u5939\uff1a\u7eaf\u8bd1\u6587\uff08.md + .docx\uff09\u548c\u53cc\u8bed\u539f\u6587+\u8bd1\u6587\uff08.md + .docx\uff09\u3002\u540c\u65f6\u542f\u7528\u201c\u751f\u6210\u7ffb\u8bd1\u97f3\u9891\u201d\u6309\u94ae\u3002',
     usage_cn: '\u70b9\u51fb\u5730\u7403\u56fe\u6807\u3002\u8fdb\u5ea6\u6761\u8ddf\u8e2a\u7ffb\u8bd1\u8fdb\u5ea6\u3002\u5b8c\u6210\u540e 4 \u4e2a\u6587\u4ef6\u81ea\u52a8\u4e0b\u8f7d\uff0c\u5e76\u663e\u793a\u4fdd\u5b58\u6587\u4ef6\u540d\u6458\u8981\u3002'
-  },
-  {
-    name: 'Translate with Ollama',
-    icon: '\ud83e\udd16',
-    description: 'Translate the entire book using a local Ollama AI model (e.g. llama3). Exports 4 files to Downloads: full translation (.md + .docx) and bilingual original+translation (.md + .docx). Requires Ollama running locally.',
-    usage: 'Click the robot icon. Requires Ollama at localhost:11434. A progress bar tracks translation. On completion, 4 files download automatically and a summary shows the saved file names.',
-    name_cn: '\u4f7f\u7528 Ollama \u7ffb\u8bd1',
-    description_cn: '\u4f7f\u7528\u672c\u5730 Ollama AI \u6a21\u578b\uff08\u5982 llama3\uff09\u7ffb\u8bd1\u6574\u672c\u4e66\u3002\u5bfc\u51fa 4 \u4e2a\u6587\u4ef6\u5230\u4e0b\u8f7d\u6587\u4ef6\u5939\uff1a\u7eaf\u8bd1\u6587\uff08.md + .docx\uff09\u548c\u53cc\u8bed\u539f\u6587+\u8bd1\u6587\uff08.md + .docx\uff09\u3002\u9700\u8981\u672c\u5730\u8fd0\u884c Ollama\u3002',
-    usage_cn: '\u70b9\u51fb\u673a\u5668\u4eba\u56fe\u6807\u3002\u9700\u8981 Ollama \u5728 localhost:11434 \u8fd0\u884c\u3002\u8fdb\u5ea6\u6761\u8ddf\u8e2a\u7ffb\u8bd1\u8fdb\u5ea6\u3002\u5b8c\u6210\u540e 4 \u4e2a\u6587\u4ef6\u81ea\u52a8\u4e0b\u8f7d\uff0c\u5e76\u663e\u793a\u4fdd\u5b58\u6587\u4ef6\u540d\u6458\u8981\u3002'
   },
   {
     name: 'Generate Translated Audio',

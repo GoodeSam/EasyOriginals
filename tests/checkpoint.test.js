@@ -7,7 +7,7 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 
-let checkpointSrc, readerSrc, bookTranslatorSrc, ollamaSrc, bookAudioSrc;
+let checkpointSrc, readerSrc, bookTranslatorSrc, bookAudioSrc;
 
 beforeEach(() => {
   checkpointSrc = fs.readFileSync(
@@ -18,9 +18,6 @@ beforeEach(() => {
   );
   bookTranslatorSrc = fs.readFileSync(
     path.resolve(__dirname, '../src/book-translator.js'), 'utf-8'
-  );
-  ollamaSrc = fs.readFileSync(
-    path.resolve(__dirname, '../src/ollama-translator.js'), 'utf-8'
   );
   bookAudioSrc = fs.readFileSync(
     path.resolve(__dirname, '../src/book-audio.js'), 'utf-8'
@@ -130,20 +127,6 @@ describe('translateBook resume support', () => {
   });
 });
 
-describe('translateBookWithOllama resume support', () => {
-  test('translateBookWithOllama accepts startIndex option', () => {
-    const body = ollamaSrc.match(/function translateBookWithOllama[\s\S]*?\n\}/);
-    expect(body).not.toBeNull();
-    expect(body[0]).toMatch(/startIndex/);
-  });
-
-  test('translateBookWithOllama accepts onParagraphComplete callback', () => {
-    const body = ollamaSrc.match(/function translateBookWithOllama[\s\S]*?\n\}/);
-    expect(body).not.toBeNull();
-    expect(body[0]).toMatch(/onParagraphComplete/);
-  });
-});
-
 describe('generateBookAudio resume support', () => {
   test('generateBookAudio accepts startIndex option', () => {
     const body = bookAudioSrc.match(/function generateBookAudio[\s\S]*?\n\}/);
@@ -181,12 +164,6 @@ describe('resume overlap', () => {
 
   test('translateBook fills gaps in existingResults', () => {
     const body = bookTranslatorSrc.match(/function translateBook[\s\S]*?\n\}/);
-    expect(body).not.toBeNull();
-    expect(body[0]).toMatch(/!translatedParagraphs\[j\]/);
-  });
-
-  test('translateBookWithOllama fills gaps in existingResults', () => {
-    const body = ollamaSrc.match(/function translateBookWithOllama[\s\S]*?\n\}/);
     expect(body).not.toBeNull();
     expect(body[0]).toMatch(/!translatedParagraphs\[j\]/);
   });

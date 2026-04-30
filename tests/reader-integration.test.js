@@ -151,7 +151,7 @@ describe('toolbar order: grouped by function', () => {
       'searchToggle', 'bookmarkBtn', 'autoPlayBtn', 'gestureModeBtn',
       'wordListToggle', 'notesToggle', 'historyToggle',
       'fontDecrease', 'fontIncrease', 'widthDecrease', 'widthIncrease',
-      'translateBookBtn', 'ollamaTranslateBtn', 'generateAudiobookBtn',
+      'translateBookBtn', 'generateAudiobookBtn',
       'generateTranslatedAudioBtn', 'exportDocxBtn',
       'settingsToggle', 'helpBtn', 'pageInfo',
     ];
@@ -202,11 +202,10 @@ describe('toolbar order: grouped by function', () => {
     expect(pos('fontIncrease')).toBeLessThan(pos('widthDecrease'));
   });
 
-  // Group 4 — Actions: translate, ollama, audiobook, translated audio, export
-  test('actions group: translate → ollama → audiobook → translatedAudio → export, after display', () => {
+  // Group 4 — Actions: translate, audiobook, translated audio, export
+  test('actions group: translate → audiobook → translatedAudio → export, after display', () => {
     expect(pos('widthIncrease')).toBeLessThan(pos('translateBookBtn'));
-    expect(pos('translateBookBtn')).toBeLessThan(pos('ollamaTranslateBtn'));
-    expect(pos('ollamaTranslateBtn')).toBeLessThan(pos('generateAudiobookBtn'));
+    expect(pos('translateBookBtn')).toBeLessThan(pos('generateAudiobookBtn'));
     expect(pos('generateAudiobookBtn')).toBeLessThan(pos('generateTranslatedAudioBtn'));
     expect(pos('generateTranslatedAudioBtn')).toBeLessThan(pos('exportDocxBtn'));
   });
