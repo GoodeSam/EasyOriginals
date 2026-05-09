@@ -932,25 +932,55 @@ async function fetchViaProxy(url, signal) {
   throw lastError || new Error('All CORS proxies failed');
 }
 
+// Selectors used to locate the article-like content root on a page.
+// Keep these in sync between extractTextFromHTML (drives the left pane)
+// and buildSplitViewMapping (drives right-pane sync) — if the two diverge,
+// short headings on the left can match nav/sidebar candidates on the
+// right, causing later paragraphs (e.g. mid-article body text) to map to
+// nothing.
+const CONTENT_ROOT_SELECTOR = 'article, [role="main"], main, .post-content, .entry-content, .article-body';
+const CONTENT_BLOCK_SELECTOR = 'p, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre';
+const NON_CONTENT_SELECTOR = 'script, style, nav, header, footer, aside, [role="navigation"]';
+
+// True if `el` lives inside a chrome region (nav/header/footer/aside or
+// role=navigation). Used when the iframe doc has no article-like root and
+// we have to scan the whole body.
+function isInsideNonContent(el) {
+  for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+    const tag = n.tagName;
+    if (tag === 'NAV' || tag === 'HEADER' || tag === 'FOOTER' || tag === 'ASIDE') return true;
+    const role = n.getAttribute && n.getAttribute('role');
+    if (role === 'navigation') return true;
+  }
+  return false;
+}
+
+// Pick the same content root in `doc` as extractTextFromHTML uses on the
+// left pane, so block ordering between the two panes lines up. Returns
+// { root, scoped } — `scoped` is true when an article-like root was found
+// (and chrome filtering can be skipped); false when we fell back to body.
+function findContentRoot(doc) {
+  if (!doc) return null;
+  const root = doc.querySelector(CONTENT_ROOT_SELECTOR);
+  if (root) return { root, scoped: true };
+  if (doc.body) return { root: doc.body, scoped: false };
+  return null;
+}
+
 function extractTextFromHTML(html) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
-  // Remove script, style, nav, header, footer elements
-  doc.querySelectorAll('script, style, nav, header, footer, aside, [role="navigation"]').forEach(el => el.remove());
-  // Try to find main content area
-  const main = doc.querySelector('article, [role="main"], main, .post-content, .entry-content, .article-body');
-  const source = main || doc.body;
-  if (!source) return '';
-  // Extract text from paragraphs and headings for structure
-  const blocks = source.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre');
+  doc.querySelectorAll(NON_CONTENT_SELECTOR).forEach(el => el.remove());
+  const found = findContentRoot(doc);
+  if (!found) return '';
+  const blocks = found.root.querySelectorAll(CONTENT_BLOCK_SELECTOR);
   if (blocks.length > 0) {
     return Array.from(blocks)
       .map(el => el.textContent.trim())
       .filter(t => t.length > 0)
       .join('\n\n');
   }
-  // Fallback: use full textContent
-  return (source.textContent || '').trim();
+  return (found.root.textContent || '').trim();
 }
 
 window.extractTextFromHTML = extractTextFromHTML;
@@ -1080,6 +1110,31 @@ function normalizeForSync(s) {
   return (s || '').replace(/\s+/g, ' ').trim().slice(0, 40);
 }
 
+// Minimum normalized-prefix length required for a "starts-with" match to
+// count. Below this threshold, short shared prefixes (e.g. "What", "Why")
+// match too many unrelated candidates and let the cursor advance past
+// the real article. Exact-equality matches still apply at any length.
+const SPLIT_SYNC_MIN_PREFIX = 8;
+
+function isPrefixMatch(candPrefix, target) {
+  if (!candPrefix || !target) return false;
+  if (candPrefix === target) return true;
+  const shorter = Math.min(candPrefix.length, target.length);
+  if (shorter < SPLIT_SYNC_MIN_PREFIX) return false;
+  return candPrefix.startsWith(target) || target.startsWith(candPrefix);
+}
+
+function collectIframeCandidates(doc) {
+  const found = findContentRoot(doc);
+  if (!found) return [];
+  const all = Array.from(found.root.querySelectorAll(CONTENT_BLOCK_SELECTOR));
+  // When we fell back to <body>, exclude blocks that live inside chrome
+  // regions (nav, header, footer, aside, role=navigation). With a real
+  // content root these regions are already outside our scope.
+  if (found.scoped) return all;
+  return all.filter(el => !isInsideNonContent(el));
+}
+
 function buildSplitViewMapping() {
   state.splitViewMapping = null;
   state.splitViewReverseMapping = null;
@@ -1093,7 +1148,7 @@ function buildSplitViewMapping() {
   const leftParas = Array.from(document.querySelectorAll('#readerContent .paragraph'));
   if (leftParas.length === 0) return;
 
-  const candidates = Array.from(doc.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre'));
+  const candidates = collectIframeCandidates(doc);
   const candPrefixes = candidates.map(el => normalizeForSync(el.textContent));
 
   const mapping = new Array(leftParas.length).fill(null);
@@ -1104,7 +1159,7 @@ function buildSplitViewMapping() {
     if (!target) continue;
     for (let j = cursor; j < candidates.length; j++) {
       if (!candPrefixes[j]) continue;
-      if (candPrefixes[j] === target || candPrefixes[j].startsWith(target) || target.startsWith(candPrefixes[j])) {
+      if (isPrefixMatch(candPrefixes[j], target)) {
         let top = 0;
         let n = candidates[j];
         while (n) { top += n.offsetTop || 0; n = n.offsetParent; }
