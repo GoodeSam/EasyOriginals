@@ -16,8 +16,7 @@ const KEYS = {
   chineseSpeechRate: 'reader-chinese-speech-rate',
 };
 
-// API key uses sessionStorage for reduced exposure — not persisted across sessions
-const SESSION_KEYS = new Set(['openaiApiKey']);
+const SESSION_KEYS = new Set();
 
 export const DEFAULT_MODEL = 'gpt-4o-mini';
 
