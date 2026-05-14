@@ -2,7 +2,7 @@
  * Settings panel UI — replaces popup.html/popup.js.
  * Creates an inline settings panel for the web app.
  */
-import { loadSettings, saveSettings } from './storage.js';
+import { loadSettings, saveSettings, getEnvApiKey } from './storage.js';
 
 export function createSettingsPanel() {
   const settings = loadSettings();
@@ -25,6 +25,9 @@ export function createSettingsPanel() {
       </select>
 
       <div id="settingsChatgpt">
+        <div id="envKeyNotice" style="display:none;font-size:12px;color:#059669;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:6px;padding:8px 10px;margin-bottom:8px;">
+          API key detected from environment variable (<code>OPENAI_API_KEY</code>). Leave the field below blank to use it.
+        </div>
         <label for="settingsApiKey" style="display:block;font-size:13px;font-weight:600;margin-bottom:4px;">OpenAI API Key</label>
         <input type="password" id="settingsApiKey" placeholder="sk-..." style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:12px;">
 
@@ -94,6 +97,13 @@ export function createSettingsPanel() {
   providerSelect.value = settings.translationProvider;
   apiKeyInput.value = settings.openaiApiKey;
   modelSelect.value = settings.openaiModel;
+
+  const envKey = getEnvApiKey();
+  const envNotice = panel.querySelector('#envKeyNotice');
+  if (envKey) {
+    envNotice.style.display = 'block';
+    if (!apiKeyInput.value) apiKeyInput.placeholder = 'Using environment variable — leave blank to keep';
+  }
   ttsSourceSelect.value = settings.ttsSource || 'edge';
 
   // Populate voice options from EDGE_TTS_VOICES (exposed by reader.js)
@@ -153,7 +163,7 @@ export function createSettingsPanel() {
   providerSelect.addEventListener('change', updateChatgptVisibility);
 
   saveBtn.addEventListener('click', () => {
-    if (providerSelect.value === 'chatgpt' && !apiKeyInput.value.trim()) {
+    if (providerSelect.value === 'chatgpt' && !apiKeyInput.value.trim() && !getEnvApiKey()) {
       status.textContent = 'API key is required for ChatGPT provider';
       status.style.display = 'block';
       status.style.color = '#e11d48';

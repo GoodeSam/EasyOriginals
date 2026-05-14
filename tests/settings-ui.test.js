@@ -4,21 +4,25 @@
  *
  * @vitest-environment happy-dom
  */
-import { describe, test, expect, beforeEach, vi } from 'vitest';
+import { describe, test, expect, beforeEach, vi, afterEach } from 'vitest';
 
-let panel, createSettingsPanel, loadSettings, saveSettings;
+let panel, createSettingsPanel, loadSettings, saveSettings, storageMod;
 
 beforeEach(async () => {
   window.localStorage.clear();
   vi.resetModules();
-  const storageModule = await import('../src/storage.js');
-  loadSettings = storageModule.loadSettings;
-  saveSettings = storageModule.saveSettings;
+  storageMod = await import('../src/storage.js');
+  loadSettings = storageMod.loadSettings;
+  saveSettings = storageMod.saveSettings;
   const settingsModule = await import('../src/settings-ui.js');
   createSettingsPanel = settingsModule.createSettingsPanel;
   document.body.innerHTML = '';
   panel = createSettingsPanel();
   document.body.appendChild(panel);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 describe('settings panel creation', () => {
@@ -99,7 +103,8 @@ describe('settings panel save', () => {
     expect(status.style.display).not.toBe('none');
   });
 
-  test('shows error when chatgpt provider has no API key', () => {
+  test('shows error when chatgpt provider has no API key and no env var', () => {
+    vi.spyOn(storageMod, 'getEnvApiKey').mockReturnValue('');
     panel.querySelector('#provider').value = 'chatgpt';
     panel.querySelector('#settingsApiKey').value = '';
     panel.querySelector('#settingsSaveBtn').click();

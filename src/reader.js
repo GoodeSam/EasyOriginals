@@ -1,5 +1,5 @@
 // ===== Web App Storage (replaces chrome.storage) =====
-import { loadSettings as loadStorageSettings, DEFAULT_MODEL } from './storage.js';
+import { loadSettings as loadStorageSettings, DEFAULT_MODEL, getEnvApiKey } from './storage.js';
 import { createSettingsPanel } from './settings-ui.js';
 import { setItem as syncSetItem, removeItem as syncRemoveItem } from './sync-storage.js';
 import { parseEnglishDefinition } from './definition-utils.js';
@@ -365,7 +365,7 @@ function applyAutoPlayAudio() {
 
 function loadSettings() {
   const s = loadStorageSettings();
-  state.apiKey = s.openaiApiKey;
+  state.apiKey = s.openaiApiKey || getEnvApiKey();
   state.model = s.openaiModel;
   state.translationProvider = s.translationProvider;
   state.edgeTtsVoice = s.edgeTtsVoice || EDGE_TTS_DEFAULT_VOICE;
@@ -821,7 +821,7 @@ function bindSettingsPanel() {
   // Re-sync state and close panel when Save is clicked
   panel.querySelector('#settingsSaveBtn').addEventListener('click', () => {
     const s = loadStorageSettings();
-    state.apiKey = s.openaiApiKey;
+    state.apiKey = s.openaiApiKey || getEnvApiKey();
     state.model = s.openaiModel;
     state.translationProvider = s.translationProvider;
     setTimeout(() => panel.classList.remove('active'), 800);
@@ -2645,7 +2645,7 @@ let _apiKeyAlertShown = false;
 async function ensureSettings() {
   if (!state._settingsLoaded) {
     const s = loadStorageSettings();
-    state.apiKey = s.openaiApiKey;
+    state.apiKey = s.openaiApiKey || getEnvApiKey();
     state.model = s.openaiModel;
     state.translationProvider = s.translationProvider;
     state.edgeTtsVoice = s.edgeTtsVoice || EDGE_TTS_DEFAULT_VOICE;

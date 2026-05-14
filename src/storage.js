@@ -88,3 +88,17 @@ export function getSettings() {
   if (!_cache) return loadSettings();
   return { ..._cache };
 }
+
+/**
+ * Returns the OpenAI API key from build-time environment variables.
+ * Supports OPENAI_API_KEY (standard) or VITE_OPENAI_API_KEY.
+ * Returns '' when no env key is set or env is unavailable.
+ */
+export function getEnvApiKey() {
+  try {
+    const env = import.meta.env;
+    return (env && (env.VITE_OPENAI_API_KEY || env.OPENAI_API_KEY)) || '';
+  } catch {
+    return '';
+  }
+}
