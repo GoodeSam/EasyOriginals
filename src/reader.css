@@ -5,12 +5,20 @@
 html, body { height: 100%; }
 body {
   font-family: 'Georgia', 'Noto Serif', serif;
-  background-color: #f5f0e8;
-  background-image: radial-gradient(circle, #c8bfaf 1px, transparent 1px);
-  background-size: 24px 24px;
+  background: #f5f0e8;
   color: #2d2a24;
   line-height: 1.8;
   overflow: hidden;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(20,22,28,0.04) 1px, transparent 1px);
+  background-size: 3px 3px;
+  mix-blend-mode: multiply;
+  z-index: 0;
 }
 
 /* ===== Screens ===== */
@@ -21,11 +29,7 @@ body {
 #uploadScreen {
   justify-content: center;
   align-items: center;
-  background-color: #667eea;
-  background-image:
-    radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px),
-    linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  background-size: 24px 24px, 100% 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 .upload-area {
   background: #fff;
