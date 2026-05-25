@@ -5,7 +5,9 @@
 html, body { height: 100%; }
 body {
   font-family: 'Georgia', 'Noto Serif', serif;
-  background: #f5f0e8;
+  background-color: #f5f0e8;
+  background-image: radial-gradient(circle, #c8bfaf 1px, transparent 1px);
+  background-size: 24px 24px;
   color: #2d2a24;
   line-height: 1.8;
   overflow: hidden;
@@ -19,7 +21,11 @@ body {
 #uploadScreen {
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-color: #667eea;
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px),
+    linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-size: 24px 24px, 100% 100%;
 }
 .upload-area {
   background: #fff;
