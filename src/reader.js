@@ -875,13 +875,15 @@ async function handleFile(file) {
       return;
     } else if (ext === 'docx') {
       text = await parseDOCX(file);
+    } else if (ext === 'html' || ext === 'htm') {
+      text = await parseHTMLFile(file);
     } else if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
       text = await parseImage(file);
     } else if (ext === 'doc') {
       alert('Legacy .doc format is not supported. Please convert to .docx first.');
       return;
     } else {
-      alert('Unsupported file format. Please upload a PDF, EPUB, DOCX, TXT, MD, or image file.');
+      alert('Unsupported file format. Please upload a PDF, EPUB, DOCX, TXT, MD, HTML, or image file.');
       return;
     }
 
@@ -2035,6 +2037,13 @@ async function parseTXT(file) {
 }
 
 window.parseTXT = parseTXT;
+
+async function parseHTMLFile(file) {
+  const html = await file.text();
+  return extractTextFromHTML(html);
+}
+
+window.parseHTMLFile = parseHTMLFile;
 
 function stripInlineMarkdown(text) {
   return text
