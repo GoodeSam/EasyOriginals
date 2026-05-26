@@ -876,7 +876,19 @@ async function handleFile(file) {
     } else if (ext === 'docx') {
       text = await parseDOCX(file);
     } else if (ext === 'html' || ext === 'htm') {
-      text = await parseHTMLFile(file);
+      const htmlBlocks = await parseHTMLToBlocks(file);
+      if (htmlBlocks.length === 0) {
+        alert('No readable content found in this file.');
+        return;
+      }
+      bookTitle.textContent = file.name.replace(/\.[^.]+$/, '');
+      uploadScreen.classList.remove('active');
+      readerScreen.classList.add('active');
+      renderAllContent(htmlBlocks);
+      updateBookmarkIcon();
+      restoreBookmark();
+      startAutoHideTimer();
+      return;
     } else if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
       text = await parseImage(file);
     } else if (ext === 'doc') {
@@ -2038,12 +2050,68 @@ async function parseTXT(file) {
 
 window.parseTXT = parseTXT;
 
-async function parseHTMLFile(file) {
+async function parseHTMLToBlocks(file) {
   const html = await file.text();
-  return extractTextFromHTML(html);
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  doc.querySelectorAll(NON_CONTENT_SELECTOR).forEach(el => el.remove());
+  const found = findContentRoot(doc);
+  if (!found) return [];
+
+  const blocks = [];
+  const BLOCK_TAGS = new Set(['P','H1','H2','H3','H4','H5','H6','LI','BLOCKQUOTE','TD','PRE']);
+  const seenSvgIds = new Set();
+
+  function walk(node) {
+    if (node.nodeType !== 1) return; // element nodes only
+
+    const tag = node.tagName;
+
+    if (tag === 'SVG') {
+      const id = node.id;
+      if (id && seenSvgIds.has(id)) return;
+      if (id) seenSvgIds.add(id);
+      blocks.push({ type: 'svg', svgHtml: node.outerHTML });
+      return;
+    }
+
+    if (tag === 'IMG') {
+      const src = node.getAttribute('src');
+      if (src) blocks.push({ type: 'image', src, alt: node.alt || '' });
+      return;
+    }
+
+    if (BLOCK_TAGS.has(tag)) {
+      const svgEl = node.querySelector('svg');
+      if (svgEl) {
+        const id = svgEl.id;
+        if (!id || !seenSvgIds.has(id)) {
+          if (id) seenSvgIds.add(id);
+          blocks.push({ type: 'svg', svgHtml: svgEl.outerHTML });
+        }
+        return;
+      }
+      const text = node.textContent.trim();
+      if (!text) return;
+      let mdType = null;
+      if (tag === 'H1') mdType = 'h1';
+      else if (tag === 'H2') mdType = 'h2';
+      else if (tag === 'H3') mdType = 'h3';
+      else if (tag === 'LI') mdType = 'li';
+      else if (tag === 'BLOCKQUOTE') mdType = 'blockquote';
+      else if (tag === 'PRE') mdType = 'code';
+      blocks.push({ type: 'text', mdType, text, sentences: splitIntoSentences(text) });
+      return;
+    }
+
+    for (const child of node.childNodes) walk(child);
+  }
+
+  walk(found.root);
+  return blocks;
 }
 
-window.parseHTMLFile = parseHTMLFile;
+window.parseHTMLToBlocks = parseHTMLToBlocks;
 
 function stripInlineMarkdown(text) {
   return text
@@ -2454,6 +2522,16 @@ function renderAllContent(paragraphs) {
       img.style.margin = '0 auto';
       img.style.height = 'auto';
       pEl.appendChild(img);
+      readerContent.appendChild(pEl);
+      continue;
+    }
+
+    if (para.type === 'svg') {
+      pEl.classList.add('image-paragraph', 'svg-paragraph');
+      const wrapper = document.createElement('div');
+      wrapper.style.overflowX = 'auto';
+      wrapper.innerHTML = para.svgHtml;
+      pEl.appendChild(wrapper);
       readerContent.appendChild(pEl);
       continue;
     }

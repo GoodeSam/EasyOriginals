@@ -338,6 +338,15 @@ body::before {
   text-indent: 0;
   text-align: center;
 }
+.paragraph.svg-paragraph {
+  border-left-width: 0;
+  padding-left: 4px;
+  text-align: left;
+}
+.paragraph.svg-paragraph svg {
+  max-width: 100%;
+  height: auto;
+}
 .paragraph.image-paragraph img {
   max-width: 100%;
   height: auto;
