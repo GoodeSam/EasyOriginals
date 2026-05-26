@@ -2067,7 +2067,7 @@ async function parseHTMLToBlocks(file) {
 
     const tag = node.tagName;
 
-    if (tag === 'SVG') {
+    if (tag === 'svg') {
       const id = node.id;
       if (id && seenSvgIds.has(id)) return;
       if (id) seenSvgIds.add(id);
