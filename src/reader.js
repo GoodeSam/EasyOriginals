@@ -2054,6 +2054,16 @@ async function parseHTMLToBlocks(file) {
   const html = await file.text();
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
+
+  // HTML5 parser ejects <style> from SVG content into the surrounding HTML.
+  // Collect these styles BEFORE NON_CONTENT_SELECTOR removes all <style> elements.
+  const svgStyleMap = new Map();
+  doc.querySelectorAll('style').forEach(styleEl => {
+    const text = styleEl.textContent;
+    const m = text.match(/#([a-zA-Z][\w-]*)\s*\{/);
+    if (m) svgStyleMap.set(m[1], text);
+  });
+
   doc.querySelectorAll(NON_CONTENT_SELECTOR).forEach(el => el.remove());
   const found = findContentRoot(doc);
   if (!found) return [];
@@ -2061,6 +2071,30 @@ async function parseHTMLToBlocks(file) {
   const blocks = [];
   const BLOCK_TAGS = new Set(['P','H1','H2','H3','H4','H5','H6','LI','BLOCKQUOTE','TD','PRE']);
   const seenSvgIds = new Set();
+
+  function normalizeSvg(svgEl) {
+    // Re-inject ejected <style> if missing
+    if (!svgEl.querySelector('style')) {
+      const styleText = svgEl.id ? svgStyleMap.get(svgEl.id) : null;
+      if (styleText) {
+        const styleEl = doc.createElement('style');
+        styleEl.textContent = styleText;
+        svgEl.insertBefore(styleEl, svgEl.firstChild);
+      }
+    }
+    // Move <marker> elements outside <defs> into <defs> so marker-end
+    // url() references work reliably across browsers.
+    const markers = svgEl.querySelectorAll('marker');
+    const hasOrphan = Array.from(markers).some(m => !m.closest('defs'));
+    if (hasOrphan) {
+      let defs = svgEl.querySelector('defs');
+      if (!defs) {
+        defs = doc.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        svgEl.insertBefore(defs, svgEl.firstChild);
+      }
+      markers.forEach(m => { if (!m.closest('defs')) defs.appendChild(m); });
+    }
+  }
 
   function walk(node) {
     if (node.nodeType !== 1) return; // element nodes only
@@ -2071,6 +2105,7 @@ async function parseHTMLToBlocks(file) {
       const id = node.id;
       if (id && seenSvgIds.has(id)) return;
       if (id) seenSvgIds.add(id);
+      normalizeSvg(node);
       blocks.push({ type: 'svg', svgHtml: node.outerHTML });
       return;
     }
@@ -2087,6 +2122,7 @@ async function parseHTMLToBlocks(file) {
         const id = svgEl.id;
         if (!id || !seenSvgIds.has(id)) {
           if (id) seenSvgIds.add(id);
+          normalizeSvg(svgEl);
           blocks.push({ type: 'svg', svgHtml: svgEl.outerHTML });
         }
         return;
@@ -2530,7 +2566,16 @@ function renderAllContent(paragraphs) {
       pEl.classList.add('image-paragraph', 'svg-paragraph');
       const wrapper = document.createElement('div');
       wrapper.style.overflowX = 'auto';
-      wrapper.innerHTML = para.svgHtml;
+      // Parse as SVG XML so foreignObject HTML content and marker references
+      // get proper namespace treatment (innerHTML loses this).
+      const svgParser = new DOMParser();
+      const svgDoc = svgParser.parseFromString(para.svgHtml, 'image/svg+xml');
+      const parseErr = svgDoc.querySelector('parsererror');
+      if (parseErr) {
+        wrapper.innerHTML = para.svgHtml;
+      } else {
+        wrapper.appendChild(document.adoptNode(svgDoc.documentElement));
+      }
       pEl.appendChild(wrapper);
       readerContent.appendChild(pEl);
       continue;
