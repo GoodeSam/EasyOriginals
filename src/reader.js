@@ -2107,6 +2107,7 @@ async function parseHTMLToBlocks(file) {
       if (id) seenSvgIds.add(id);
       normalizeSvg(node);
       blocks.push({ type: 'svg', svgHtml: node.outerHTML });
+      blocks.push(...extractSvgLabels(node));
       return;
     }
 
@@ -2124,6 +2125,7 @@ async function parseHTMLToBlocks(file) {
           if (id) seenSvgIds.add(id);
           normalizeSvg(svgEl);
           blocks.push({ type: 'svg', svgHtml: svgEl.outerHTML });
+          blocks.push(...extractSvgLabels(svgEl));
         }
         return;
       }
@@ -2148,6 +2150,36 @@ async function parseHTMLToBlocks(file) {
 }
 
 window.parseHTMLToBlocks = parseHTMLToBlocks;
+
+// Extract readable text labels from an SVG (Mermaid node labels, SVG text elements).
+// Returns an array of { type:'text', mdType:'diagram-label', ... } blocks.
+function extractSvgLabels(svgEl) {
+  const seen = new Set();
+  const labels = [];
+
+  function collect(text) {
+    const t = text.replace(/\s+/g, ' ').trim();
+    if (t && !seen.has(t)) { seen.add(t); labels.push(t); }
+  }
+
+  // foreignObject HTML content (Mermaid node labels etc.)
+  svgEl.querySelectorAll('foreignObject').forEach(fo => {
+    // Replace <br> with spaces before extracting text
+    const clone = fo.cloneNode(true);
+    clone.querySelectorAll('br').forEach(br => br.replaceWith(' '));
+    collect(clone.textContent);
+  });
+
+  // Plain SVG <text> elements
+  svgEl.querySelectorAll('text').forEach(t => collect(t.textContent));
+
+  return labels.map(text => ({
+    type: 'text',
+    mdType: 'diagram-label',
+    text,
+    sentences: splitIntoSentences(text),
+  }));
+}
 
 function stripInlineMarkdown(text) {
   return text

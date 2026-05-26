@@ -354,6 +354,16 @@ body::before {
   margin: 0 auto;
   border-radius: 4px;
 }
+/* ===== Diagram text transcript ===== */
+.paragraph.md-diagram-label {
+  text-indent: 0;
+  font-size: 0.88em;
+  border-left: 3px solid rgba(0,0,0,0.12);
+  padding-left: 12px;
+  background: rgba(0,0,0,0.025);
+  border-radius: 0 4px 4px 0;
+  opacity: 0.9;
+}
 /* ===== Markdown Block Styles ===== */
 .paragraph.md-h1 { text-indent: 0; font-size: 1.6em; font-weight: 700; border-left-width: 0; padding-left: 18px; }
 .paragraph.md-h2 { text-indent: 0; font-size: 1.3em; font-weight: 600; border-left-width: 0; padding-left: 18px; }
