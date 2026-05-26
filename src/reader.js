@@ -1955,7 +1955,8 @@ async function extractEPUBSectionItems(section, book, archive) {
   const body = (doc.querySelector && doc.querySelector('body')) || doc;
 
   const hasImages = body.querySelectorAll('img').length > 0;
-  if (hasImages) {
+  const hasSvgs = body.querySelectorAll('svg').length > 0;
+  if (hasImages || hasSvgs) {
     const sectionHref = section.href || '';
     const extracted = extractContentItems(body, (src) => {
       try {
@@ -2072,30 +2073,6 @@ async function parseHTMLToBlocks(file) {
   const BLOCK_TAGS = new Set(['P','H1','H2','H3','H4','H5','H6','LI','BLOCKQUOTE','TD','PRE']);
   const seenSvgIds = new Set();
 
-  function normalizeSvg(svgEl) {
-    // Re-inject ejected <style> if missing
-    if (!svgEl.querySelector('style')) {
-      const styleText = svgEl.id ? svgStyleMap.get(svgEl.id) : null;
-      if (styleText) {
-        const styleEl = doc.createElement('style');
-        styleEl.textContent = styleText;
-        svgEl.insertBefore(styleEl, svgEl.firstChild);
-      }
-    }
-    // Move <marker> elements outside <defs> into <defs> so marker-end
-    // url() references work reliably across browsers.
-    const markers = svgEl.querySelectorAll('marker');
-    const hasOrphan = Array.from(markers).some(m => !m.closest('defs'));
-    if (hasOrphan) {
-      let defs = svgEl.querySelector('defs');
-      if (!defs) {
-        defs = doc.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        svgEl.insertBefore(defs, svgEl.firstChild);
-      }
-      markers.forEach(m => { if (!m.closest('defs')) defs.appendChild(m); });
-    }
-  }
-
   function walk(node) {
     if (node.nodeType !== 1) return; // element nodes only
 
@@ -2105,7 +2082,7 @@ async function parseHTMLToBlocks(file) {
       const id = node.id;
       if (id && seenSvgIds.has(id)) return;
       if (id) seenSvgIds.add(id);
-      normalizeSvg(node);
+      normalizeSvg(node, svgStyleMap);
       blocks.push({ type: 'svg', svgHtml: node.outerHTML });
       blocks.push(...extractSvgLabels(node));
       return;
@@ -2123,7 +2100,7 @@ async function parseHTMLToBlocks(file) {
         const id = svgEl.id;
         if (!id || !seenSvgIds.has(id)) {
           if (id) seenSvgIds.add(id);
-          normalizeSvg(svgEl);
+          normalizeSvg(svgEl, svgStyleMap);
           blocks.push({ type: 'svg', svgHtml: svgEl.outerHTML });
           blocks.push(...extractSvgLabels(svgEl));
         }
@@ -2150,6 +2127,31 @@ async function parseHTMLToBlocks(file) {
 }
 
 window.parseHTMLToBlocks = parseHTMLToBlocks;
+
+// Normalise an SVG element before serialisation:
+//   • re-inject a <style> block that the HTML5 parser ejected (pass svgStyleMap when available)
+//   • move <marker> elements outside <defs> into <defs>
+function normalizeSvg(svgEl, svgStyleMap) {
+  const ownerDoc = svgEl.ownerDocument;
+  if (svgStyleMap && !svgEl.querySelector('style')) {
+    const styleText = svgEl.id ? svgStyleMap.get(svgEl.id) : null;
+    if (styleText) {
+      const styleEl = ownerDoc.createElement('style');
+      styleEl.textContent = styleText;
+      svgEl.insertBefore(styleEl, svgEl.firstChild);
+    }
+  }
+  const markers = svgEl.querySelectorAll('marker');
+  const hasOrphan = Array.from(markers).some(m => !m.closest('defs'));
+  if (hasOrphan) {
+    let defs = svgEl.querySelector('defs');
+    if (!defs) {
+      defs = ownerDoc.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      svgEl.insertBefore(defs, svgEl.firstChild);
+    }
+    markers.forEach(m => { if (!m.closest('defs')) defs.appendChild(m); });
+  }
+}
 
 // Extract readable text labels from an SVG (Mermaid node labels, SVG text elements).
 // Returns an array of { type:'text', mdType:'diagram-label', ... } blocks.
@@ -2502,15 +2504,26 @@ function extractContentItems(body, resolveImageSrc) {
 
     if (tag === 'IMG') {
       pushResolvedImage(items, node, resolveImageSrc);
+    } else if (tag === 'svg') {
+      normalizeSvg(node);
+      items.push({ type: 'svg', svgHtml: node.outerHTML });
+      for (const label of extractSvgLabels(node)) items.push(label);
     } else if (tag === 'FIGURE') {
       extractFigureItems(items, node, resolveImageSrc);
     } else if (blockTags.has(tag)) {
-      const imgs = node.querySelectorAll('img');
-      if (imgs.length > 0) {
-        extractBlockItems(items, node, resolveImageSrc);
+      const svgEl = node.querySelector('svg');
+      if (svgEl) {
+        normalizeSvg(svgEl);
+        items.push({ type: 'svg', svgHtml: svgEl.outerHTML });
+        for (const label of extractSvgLabels(svgEl)) items.push(label);
       } else {
-        const text = node.textContent.trim();
-        if (text) items.push(text);
+        const imgs = node.querySelectorAll('img');
+        if (imgs.length > 0) {
+          extractBlockItems(items, node, resolveImageSrc);
+        } else {
+          const text = node.textContent.trim();
+          if (text) items.push(text);
+        }
       }
     } else {
       for (const child of node.childNodes) {
@@ -2547,11 +2560,13 @@ function splitIntoParagraphs(input) {
         sentences: splitIntoSentences(p)
       }));
   }
-  // Array of strings and image objects
+  // Array of strings, image objects, svg objects, and pre-formed text objects
   const result = [];
   for (const item of input) {
-    if (typeof item === 'object' && item.type === 'image') {
+    if (typeof item === 'object' && (item.type === 'image' || item.type === 'svg')) {
       result.push(item);
+    } else if (typeof item === 'object' && item.type === 'text') {
+      result.push(item); // pre-formed paragraph (e.g. diagram-label from extractSvgLabels)
     } else if (typeof item === 'string') {
       const trimmed = item.replace(/\s+/g, ' ').trim();
       if (trimmed.length > 0) {
