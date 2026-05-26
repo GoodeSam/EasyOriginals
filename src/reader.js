@@ -697,7 +697,7 @@ function handleReaderClick(e) {
   if (paraEl) {
     const rect = paraEl.getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
-    if (offsetX <= 6) {
+    if (offsetX <= 18) {
       e.stopPropagation();
       openParaPopup(paraEl);
       return;
@@ -2595,6 +2595,7 @@ function translateParaPopup() {
 }
 
 function openParaPopup(paraEl) {
+  paraEl.classList.add('para-visited');
   const text = paraEl.textContent.trim();
   paraPopupText.textContent = text;
   paraListenTransBtn.style.display = 'none';

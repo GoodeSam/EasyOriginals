@@ -327,8 +327,12 @@ body::before {
   margin-bottom: 5px;
   padding: 14px 18px;
   background: #faf8f4;
-  border-left: 6px solid #d6cdbf;
+  border-left: 18px solid #d6cdbf;
   border-radius: 0 6px 6px 0;
+  cursor: default;
+}
+.paragraph.para-visited {
+  border-left-color: #22c55e;
 }
 .paragraph.image-paragraph {
   text-indent: 0;
