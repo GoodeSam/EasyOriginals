@@ -887,6 +887,8 @@ async function handleFile(file) {
       renderAllContent(htmlBlocks);
       updateBookmarkIcon();
       restoreBookmark();
+      const rawHtml = await file.text();
+      activateSplitView(null, rawHtml);
       startAutoHideTimer();
       return;
     } else if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
@@ -1058,7 +1060,7 @@ function applySplitView() {
 
   const url = state.splitViewURL;
   const html = state.splitViewHtml;
-  const showRightPane = !!url && state.splitViewVisible;
+  const showRightPane = !!(url || html) && state.splitViewVisible;
 
   if (showRightPane) {
     if (html) {
@@ -1078,16 +1080,16 @@ function applySplitView() {
     readerScreen.classList.remove('split-active');
     pane.hidden = true;
     resizer.hidden = true;
-    if (!url) {
+    if (!url && !html) {
       iframe.removeAttribute('srcdoc');
       iframe.src = 'about:blank';
     }
   }
 
   if (toggleBtn) {
-    toggleBtn.style.display = url ? '' : 'none';
+    toggleBtn.style.display = (url || html) ? '' : 'none';
     toggleBtn.setAttribute('aria-pressed', state.splitViewVisible ? 'true' : 'false');
-    toggleBtn.title = state.splitViewVisible ? 'Hide original webpage' : 'Show original webpage';
+    toggleBtn.title = state.splitViewVisible ? 'Hide original page' : 'Show original page';
     toggleBtn.innerHTML = state.splitViewVisible ? '&#8862;' : '&#8861;';
   }
 }
@@ -1106,7 +1108,7 @@ function deactivateSplitView() {
 }
 
 function toggleSplitView() {
-  if (!state.splitViewURL) return;
+  if (!state.splitViewURL && !state.splitViewHtml) return;
   state.splitViewVisible = !state.splitViewVisible;
   applySplitView();
 }
@@ -1216,7 +1218,7 @@ function syncRightToLeft() {  // user scrolled left → adjust right
     if (state._leftSyncSafetyTimer) { clearTimeout(state._leftSyncSafetyTimer); state._leftSyncSafetyTimer = null; }
     return;
   }
-  if (!state.splitViewVisible || !state.splitViewURL) return;
+  if (!state.splitViewVisible || (!state.splitViewURL && !state.splitViewHtml)) return;
   const mapping = state.splitViewMapping;
   if (!mapping || mapping.length === 0) return;
 
@@ -1257,7 +1259,7 @@ function syncLeftToRight() {  // user scrolled right → adjust left
     if (state._rightSyncSafetyTimer) { clearTimeout(state._rightSyncSafetyTimer); state._rightSyncSafetyTimer = null; }
     return;
   }
-  if (!state.splitViewVisible || !state.splitViewURL) return;
+  if (!state.splitViewVisible || (!state.splitViewURL && !state.splitViewHtml)) return;
   const reverse = state.splitViewReverseMapping;
   if (!reverse || reverse.length === 0) return;
 
@@ -1391,7 +1393,7 @@ function ensureIframeHighlightCSS(doc) {
 
 function highlightSentenceInIframe(sentenceEl) {
   unhighlightSentenceInIframe();
-  if (!state.splitViewVisible || !state.splitViewURL) return;
+  if (!state.splitViewVisible || (!state.splitViewURL && !state.splitViewHtml)) return;
   if (!sentenceEl) return;
   const elementMapping = state.splitViewElementMapping;
   if (!elementMapping) return;
