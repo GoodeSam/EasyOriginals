@@ -340,6 +340,8 @@ function applyTheme(theme) {
   swatches.forEach(s => {
     s.classList.toggle('active', s.dataset.theme === theme);
   });
+
+  updateSplitPaneTheme(t);
 }
 
 function setTheme(theme) {
@@ -1051,6 +1053,26 @@ function injectBaseTag(html, url) {
   return '<!DOCTYPE html><html><head>' + baseTag + '</head><body>' + html + '</body></html>';
 }
 
+function injectThemeStyle(html, bg) {
+  const style = `<style id="reader-theme-inject">html,body{background-color:${bg}!important}</style>`;
+  if (/<\/head>/i.test(html)) return html.replace(/<\/head>/i, style + '</head>');
+  if (/<head[^>]*>/i.test(html)) return html.replace(/(<head[^>]*>)/i, '$1' + style);
+  return style + html;
+}
+
+function updateSplitPaneTheme(t) {
+  const pane = document.getElementById('splitIframePane');
+  if (pane) pane.style.background = t.bg;
+  const iframe = document.getElementById('splitIframe');
+  if (!iframe) return;
+  try {
+    const doc = iframe.contentDocument;
+    if (!doc) return;
+    const style = doc.getElementById('reader-theme-inject');
+    if (style) style.textContent = `html,body{background-color:${t.bg}!important}`;
+  } catch (e) { /* cross-origin — pane background is all we can do */ }
+}
+
 function applySplitView() {
   const iframe = document.getElementById('splitIframe');
   const pane = document.getElementById('splitIframePane');
@@ -1062,9 +1084,12 @@ function applySplitView() {
   const html = state.splitViewHtml;
   const showRightPane = !!(url || html) && state.splitViewVisible;
 
+  const themeBg = (THEMES[state.theme] || THEMES.brown).bg;
+  pane.style.background = themeBg;
+
   if (showRightPane) {
     if (html) {
-      const docHtml = injectBaseTag(html, url);
+      const docHtml = injectThemeStyle(injectBaseTag(html, url), themeBg);
       if (iframe.srcdoc !== docHtml) {
         iframe.removeAttribute('src');
         iframe.srcdoc = docHtml;

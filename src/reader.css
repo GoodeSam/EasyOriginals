@@ -294,7 +294,6 @@ body::before {
   display: block;
   flex: 1 1 auto;
   min-width: 0;
-  background: #fff;
   position: relative;
 }
 #readerScreen.split-active .split-iframe {
