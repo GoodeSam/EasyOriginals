@@ -296,10 +296,10 @@ function changeContentWidth(delta) {
 
 // ===== Page Theme =====
 const THEMES = {
-  white:  { bg: '#ffffff', text: '#2d2a24', paraBg: '#f5f5f5', paraBorder: '#d6d6d6', barBg: '#ffffff', searchBarBg: '#f5f5f5' },
-  black:  { bg: '#1a1a1a', text: '#d4d4d4', paraBg: '#232323', paraBorder: '#444444', barBg: '#1e1e1e', searchBarBg: '#1e1e1e' },
-  brown:  { bg: '#f5f0e8', text: '#2d2a24', paraBg: '#faf8f4', paraBorder: '#d6cdbf', barBg: '#ffffff', searchBarBg: '#ffffff' },
-  green:  { bg: '#e8f5e9', text: '#1b3a1b', paraBg: '#d6edd8', paraBorder: '#a3d1a7', barBg: '#dff0e0', searchBarBg: '#dff0e0' },
+  white:  { bg: '#ffffff', text: '#2d2a24', paraBg: '#f5f5f5', paraBorder: '#d6d6d6', barBg: '#ffffff', searchBarBg: '#f5f5f5', selBg: '#b3d4fc', selText: '#2d2a24' },
+  black:  { bg: '#1a1a1a', text: '#d4d4d4', paraBg: '#232323', paraBorder: '#444444', barBg: '#1e1e1e', searchBarBg: '#1e1e1e', selBg: '#fde68a', selText: '#1a1a1a' },
+  brown:  { bg: '#f5f0e8', text: '#2d2a24', paraBg: '#faf8f4', paraBorder: '#d6cdbf', barBg: '#ffffff', searchBarBg: '#ffffff', selBg: '#d6cdbf', selText: '#2d2a24' },
+  green:  { bg: '#e8f5e9', text: '#1b3a1b', paraBg: '#d6edd8', paraBorder: '#a3d1a7', barBg: '#dff0e0', searchBarBg: '#dff0e0', selBg: '#a3d1a7', selText: '#1b3a1b' },
 };
 
 function loadTheme() {
@@ -1053,8 +1053,13 @@ function injectBaseTag(html, url) {
   return '<!DOCTYPE html><html><head>' + baseTag + '</head><body>' + html + '</body></html>';
 }
 
-function injectThemeStyle(html, bg) {
-  const style = `<style id="reader-theme-inject">html,body{background-color:${bg}!important}</style>`;
+function themeStyleContent(t) {
+  return `html,body{background-color:${t.bg}!important;color:${t.text}!important}` +
+         `::selection{background-color:${t.selBg}!important;color:${t.selText}!important}`;
+}
+
+function injectThemeStyle(html, t) {
+  const style = `<style id="reader-theme-inject">${themeStyleContent(t)}</style>`;
   if (/<\/head>/i.test(html)) return html.replace(/<\/head>/i, style + '</head>');
   if (/<head[^>]*>/i.test(html)) return html.replace(/(<head[^>]*>)/i, '$1' + style);
   return style + html;
@@ -1069,7 +1074,7 @@ function updateSplitPaneTheme(t) {
     const doc = iframe.contentDocument;
     if (!doc) return;
     const style = doc.getElementById('reader-theme-inject');
-    if (style) style.textContent = `html,body{background-color:${t.bg}!important}`;
+    if (style) style.textContent = themeStyleContent(t);
   } catch (e) { /* cross-origin — pane background is all we can do */ }
 }
 
@@ -1084,12 +1089,12 @@ function applySplitView() {
   const html = state.splitViewHtml;
   const showRightPane = !!(url || html) && state.splitViewVisible;
 
-  const themeBg = (THEMES[state.theme] || THEMES.brown).bg;
-  pane.style.background = themeBg;
+  const currentTheme = THEMES[state.theme] || THEMES.brown;
+  pane.style.background = currentTheme.bg;
 
   if (showRightPane) {
     if (html) {
-      const docHtml = injectThemeStyle(injectBaseTag(html, url), themeBg);
+      const docHtml = injectThemeStyle(injectBaseTag(html, url), currentTheme);
       if (iframe.srcdoc !== docHtml) {
         iframe.removeAttribute('src');
         iframe.srcdoc = docHtml;
