@@ -600,7 +600,7 @@ body::before {
 .word-popup {
   display: none;
   position: fixed;
-  background: #fff;
+  background: var(--popup-bg, #fff);
   border-radius: 12px;
   box-shadow: 0 8px 30px rgba(0,0,0,0.18);
   z-index: 200;
@@ -614,38 +614,39 @@ body::before {
   align-items: center;
   justify-content: space-between;
   padding: 14px 18px 10px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--popup-border, #eee);
 }
 .word-popup-word { font-size: calc(var(--reader-font-size, 18px) + 2px); font-weight: 700; color: #4f46e5; }
-.word-popup-close { font-size: 20px; }
-.word-popup-body { padding: 14px 18px 18px; }
-.def-loading { color: #666; font-size: var(--reader-font-size, 18px); font-family: sans-serif; }
+.word-popup-close { font-size: 20px; color: var(--popup-text, inherit); }
+.word-popup-body { padding: 14px 18px 18px; color: var(--popup-text, #1f2937); }
+.def-loading { color: var(--popup-secondary, #666); font-size: var(--reader-font-size, 18px); font-family: sans-serif; }
 .def-section { margin-bottom: 12px; }
 .def-label {
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
-  color: #999;
+  color: var(--popup-secondary, #999);
   margin-bottom: 4px;
   font-family: sans-serif;
 }
 .def-text { font-size: var(--reader-font-size, 18px); line-height: 1.6; white-space: pre-wrap; }
-.def-cn-text { color: #555; }
+.def-cn-text { color: var(--popup-secondary, #555); }
 .btn-toggle-cn {
   padding: 5px 12px;
   font-size: 12px;
-  background: #eee;
+  background: var(--popup-border, #eee);
+  color: var(--popup-text, inherit);
   border: none;
   border-radius: 5px;
   cursor: pointer;
   font-family: sans-serif;
   margin-bottom: 6px;
 }
-.btn-toggle-cn:hover { background: #ddd; }
+.btn-toggle-cn:hover { opacity: 0.8; }
 .def-pronunciation {
   padding: 0 18px 8px;
   font-size: var(--reader-font-size, 18px);
-  color: #666;
+  color: var(--popup-secondary, #666);
   font-family: sans-serif;
 }
 .btn-pronounce {
@@ -871,7 +872,7 @@ body::before {
   width: 90%;
   max-width: var(--reader-content-width, 800px);
   max-height: 80vh;
-  background: #fff;
+  background: var(--popup-bg, #fff);
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.2);
   z-index: 1101;
@@ -883,7 +884,8 @@ body::before {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--popup-border, #e5e7eb);
+  color: var(--popup-text, inherit);
 }
 .para-popup-body {
   padding: 16px;
@@ -893,17 +895,17 @@ body::before {
 .para-popup-text {
   font-size: var(--reader-font-size, 18px);
   line-height: 1.7;
-  color: #1f2937;
+  color: var(--popup-text, #1f2937);
   margin-bottom: 16px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--popup-border, #e5e7eb);
   cursor: pointer;
 }
 .para-popup-actions { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
 .para-popup-translation {
   font-size: var(--reader-font-size, 18px);
   line-height: 1.7;
-  color: #4b5563;
+  color: var(--popup-secondary, #4b5563);
 }
 
 /* ===== White theme – query panels ===== */
@@ -919,28 +921,6 @@ body::before {
 [data-theme="white"] .panel-result {
   background: #ebebeb;
 }
-[data-theme="white"] .word-popup {
-  background: #f5f5f5;
-}
-[data-theme="white"] .word-popup-header {
-  border-bottom-color: #d6d6d6;
-}
-[data-theme="white"] .word-popup-body {
-  color: #2d2a24;
-}
-[data-theme="white"] .para-popup {
-  background: #f5f5f5;
-}
-[data-theme="white"] .para-popup-header {
-  border-bottom-color: #d6d6d6;
-}
-[data-theme="white"] .para-popup-text {
-  color: #2d2a24;
-  border-bottom-color: #d6d6d6;
-}
-[data-theme="white"] .para-popup-translation {
-  color: #555;
-}
 
 /* ===== Dark theme – query panels ===== */
 [data-theme="black"] .sentence-panel {
@@ -955,28 +935,6 @@ body::before {
 [data-theme="black"] .panel-result {
   background: #2e2e2e;
 }
-[data-theme="black"] .word-popup {
-  background: #232323;
-}
-[data-theme="black"] .word-popup-header {
-  border-bottom-color: #444;
-}
-[data-theme="black"] .word-popup-body {
-  color: #d4d4d4;
-}
-[data-theme="black"] .para-popup {
-  background: #232323;
-}
-[data-theme="black"] .para-popup-header {
-  border-bottom-color: #444;
-}
-[data-theme="black"] .para-popup-text {
-  color: #d4d4d4;
-  border-bottom-color: #444;
-}
-[data-theme="black"] .para-popup-translation {
-  color: #a0a0a0;
-}
 
 /* ===== Green theme – query panels ===== */
 [data-theme="green"] .sentence-panel {
@@ -990,28 +948,6 @@ body::before {
 }
 [data-theme="green"] .panel-result {
   background: #c8e6c9;
-}
-[data-theme="green"] .word-popup {
-  background: #dff0e0;
-}
-[data-theme="green"] .word-popup-header {
-  border-bottom-color: #a3d1a7;
-}
-[data-theme="green"] .word-popup-body {
-  color: #1b3a1b;
-}
-[data-theme="green"] .para-popup {
-  background: #dff0e0;
-}
-[data-theme="green"] .para-popup-header {
-  border-bottom-color: #a3d1a7;
-}
-[data-theme="green"] .para-popup-text {
-  color: #1b3a1b;
-  border-bottom-color: #a3d1a7;
-}
-[data-theme="green"] .para-popup-translation {
-  color: #2e5e2f;
 }
 
 /* ===== Book Generation Progress ===== */

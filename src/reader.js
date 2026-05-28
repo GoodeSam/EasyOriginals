@@ -296,10 +296,10 @@ function changeContentWidth(delta) {
 
 // ===== Page Theme =====
 const THEMES = {
-  white:  { bg: '#ffffff', text: '#2d2a24', paraBg: '#f5f5f5', paraBorder: '#d6d6d6', barBg: '#ffffff', searchBarBg: '#f5f5f5', selBg: '#b3d4fc', selText: '#2d2a24' },
-  black:  { bg: '#1a1a1a', text: '#d4d4d4', paraBg: '#232323', paraBorder: '#444444', barBg: '#1e1e1e', searchBarBg: '#1e1e1e', selBg: '#fde68a', selText: '#1a1a1a' },
-  brown:  { bg: '#f5f0e8', text: '#2d2a24', paraBg: '#faf8f4', paraBorder: '#d6cdbf', barBg: '#ffffff', searchBarBg: '#ffffff', selBg: '#d6cdbf', selText: '#2d2a24' },
-  green:  { bg: '#e8f5e9', text: '#1b3a1b', paraBg: '#d6edd8', paraBorder: '#a3d1a7', barBg: '#dff0e0', searchBarBg: '#dff0e0', selBg: '#a3d1a7', selText: '#1b3a1b' },
+  white:  { bg: '#ffffff', text: '#2d2a24', paraBg: '#f5f5f5', paraBorder: '#d6d6d6', barBg: '#ffffff', searchBarBg: '#f5f5f5', selBg: '#b3d4fc', selText: '#2d2a24', popupBg: '#f5f5f5', secondaryText: '#555555' },
+  black:  { bg: '#1a1a1a', text: '#d4d4d4', paraBg: '#232323', paraBorder: '#444444', barBg: '#1e1e1e', searchBarBg: '#1e1e1e', selBg: '#fde68a', selText: '#1a1a1a', popupBg: '#232323', secondaryText: '#a0a0a0' },
+  brown:  { bg: '#f5f0e8', text: '#2d2a24', paraBg: '#faf8f4', paraBorder: '#d6cdbf', barBg: '#ffffff', searchBarBg: '#ffffff', selBg: '#d6cdbf', selText: '#2d2a24', popupBg: '#faf8f4', secondaryText: '#5a4a3a' },
+  green:  { bg: '#e8f5e9', text: '#1b3a1b', paraBg: '#d6edd8', paraBorder: '#a3d1a7', barBg: '#dff0e0', searchBarBg: '#dff0e0', selBg: '#a3d1a7', selText: '#1b3a1b', popupBg: '#dff0e0', secondaryText: '#2e5e2f' },
 };
 
 function loadTheme() {
@@ -334,6 +334,12 @@ function applyTheme(theme) {
   // Update search bar background
   const searchBar = document.querySelector('.search-bar');
   if (searchBar) searchBar.style.background = t.searchBarBg;
+
+  // Update popup CSS variables
+  readerScreen.style.setProperty('--popup-bg', t.popupBg || t.paraBg);
+  readerScreen.style.setProperty('--popup-text', t.text);
+  readerScreen.style.setProperty('--popup-border', t.paraBorder);
+  readerScreen.style.setProperty('--popup-secondary', t.secondaryText || t.text);
 
   // Update swatch active state
   const swatches = document.querySelectorAll('#themePicker .theme-swatch');
