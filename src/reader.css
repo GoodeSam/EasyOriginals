@@ -327,11 +327,13 @@ body::before {
   padding: 14px 18px;
   background: #faf8f4;
   border-left: 18px solid #d6cdbf;
-  border-radius: 0 6px 6px 0;
+  border-right: 18px solid #d6cdbf;
+  border-radius: 6px;
   cursor: default;
 }
 .paragraph.para-visited {
   border-left-color: #22c55e;
+  border-right-color: #22c55e;
 }
 .paragraph.image-paragraph {
   text-indent: 0;
@@ -339,6 +341,7 @@ body::before {
 }
 .paragraph.svg-paragraph {
   border-left-width: 0;
+  border-right-width: 0;
   padding-left: 4px;
   text-align: left;
 }
@@ -358,21 +361,22 @@ body::before {
   text-indent: 0;
   font-size: 0.88em;
   border-left: 3px solid rgba(0,0,0,0.12);
+  border-right-width: 0;
   padding-left: 12px;
   background: rgba(0,0,0,0.025);
   border-radius: 0 4px 4px 0;
   opacity: 0.9;
 }
 /* ===== Markdown Block Styles ===== */
-.paragraph.md-h1 { text-indent: 0; font-size: 1.6em; font-weight: 700; border-left-width: 0; padding-left: 18px; }
-.paragraph.md-h2 { text-indent: 0; font-size: 1.3em; font-weight: 600; border-left-width: 0; padding-left: 18px; }
-.paragraph.md-h3 { text-indent: 0; font-size: 1.1em; font-weight: 600; border-left-width: 0; padding-left: 18px; }
-.paragraph.md-blockquote { text-indent: 0; border-left: 4px solid #a0a0a0; font-style: italic; opacity: 0.9; }
-.paragraph.md-code { text-indent: 0; font-family: 'Courier New', Courier, monospace; font-size: 0.9em; background: rgba(0,0,0,0.05); border-radius: 6px; border-left-width: 0; white-space: pre-wrap; }
-.paragraph.md-li { text-indent: 0; padding-left: 36px; }
+.paragraph.md-h1 { text-indent: 0; font-size: 1.6em; font-weight: 700; border-left-width: 0; border-right-width: 0; padding-left: 18px; }
+.paragraph.md-h2 { text-indent: 0; font-size: 1.3em; font-weight: 600; border-left-width: 0; border-right-width: 0; padding-left: 18px; }
+.paragraph.md-h3 { text-indent: 0; font-size: 1.1em; font-weight: 600; border-left-width: 0; border-right-width: 0; padding-left: 18px; }
+.paragraph.md-blockquote { text-indent: 0; border-left: 4px solid #a0a0a0; border-right-width: 0; font-style: italic; opacity: 0.9; }
+.paragraph.md-code { text-indent: 0; font-family: 'Courier New', Courier, monospace; font-size: 0.9em; background: rgba(0,0,0,0.05); border-radius: 6px; border-left-width: 0; border-right-width: 0; white-space: pre-wrap; }
+.paragraph.md-li { text-indent: 0; padding-left: 36px; border-right-width: 0; }
 .paragraph.md-li::before { content: '\2022'; position: absolute; left: 18px; }
 .paragraph.md-li { position: relative; }
-.paragraph.md-hr { text-indent: 0; border-left-width: 0; border-top: 1px solid currentColor; opacity: 0.2; padding: 0; margin: 8px 0; min-height: 0; font-size: 0; line-height: 0; overflow: hidden; }
+.paragraph.md-hr { text-indent: 0; border-left-width: 0; border-right-width: 0; border-top: 1px solid currentColor; opacity: 0.2; padding: 0; margin: 8px 0; min-height: 0; font-size: 0; line-height: 0; overflow: hidden; }
 .sentence {
   cursor: pointer;
   border-radius: 4px;

@@ -323,6 +323,7 @@ function applyTheme(theme) {
   document.querySelectorAll('.paragraph').forEach(p => {
     p.style.background = t.paraBg;
     p.style.borderLeftColor = t.paraBorder;
+    p.style.borderRightColor = t.paraBorder;
   });
 
   // Update bars
@@ -700,12 +701,12 @@ function closeAllSidePanels() {
 function handleReaderClick(e) {
   if (window.getSelection().toString().trim().length > 0) return;
 
-  // Check for margin bar click (left border zone) on a paragraph
+  // Check for margin bar click (left or right border zone) on a paragraph
   const paraEl = e.target.closest('.paragraph');
   if (paraEl) {
     const rect = paraEl.getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
-    if (offsetX <= 18) {
+    if (offsetX <= 18 || offsetX >= rect.width - 18) {
       e.stopPropagation();
       openParaPopup(paraEl);
       return;
@@ -2702,6 +2703,7 @@ function renderAllContent(paragraphs) {
     document.querySelectorAll('.paragraph').forEach(p => {
       p.style.background = t.paraBg;
       p.style.borderLeftColor = t.paraBorder;
+      p.style.borderRightColor = t.paraBorder;
     });
   }
 
