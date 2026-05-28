@@ -3849,7 +3849,7 @@ async function lookupWord(word, sentenceContext) {
       if (pos) {
         const posSpan = document.createElement('strong');
         posSpan.className = 'pos-tag';
-        posSpan.textContent = pos;
+        posSpan.textContent = '【' + pos + '】';
         const spacer = document.createElement('span');
         spacer.className = 'pos-spacer';
         spacer.textContent = separator;

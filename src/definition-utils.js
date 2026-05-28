@@ -8,7 +8,7 @@ export function parseEnglishDefinition(raw) {
   if (posMatch) {
     return {
       pos: posMatch[1],
-      separator: '\uFF1A ',
+      separator: ' ',
       definition: raw.slice(posMatch[0].length),
     };
   }
