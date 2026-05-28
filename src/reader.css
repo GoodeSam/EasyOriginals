@@ -647,26 +647,25 @@ body::before {
   margin-bottom: 6px;
 }
 .btn-toggle-cn:hover { opacity: 0.8; }
+.word-popup-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-bottom: 1px solid var(--popup-border, #eee);
+  flex-wrap: wrap;
+}
 .def-pronunciation {
-  padding: 0 18px 8px;
-  font-size: var(--reader-font-size, 18px);
+  font-size: calc(var(--reader-font-size, 18px) - 2px);
   color: var(--popup-secondary, #666);
   font-family: sans-serif;
 }
-.btn-pronounce {
-  font-size: 18px;
-  margin-right: auto;
-  margin-left: 8px;
-  cursor: pointer;
-}
+.pos-tag-slot { margin-left: auto; }
 .pos-tag {
-  display: inline;
   font-weight: 700;
-  font-size: var(--reader-font-size, 18px);
+  font-size: calc(var(--reader-font-size, 18px) - 2px);
   font-family: sans-serif;
-}
-.pos-spacer {
-  display: inline;
+  color: var(--popup-secondary, #666);
 }
 
 /* ===== Selection Toolbar ===== */
@@ -788,11 +787,6 @@ body::before {
   border-radius: 4px;
   padding: 4px 6px;
   resize: vertical;
-}
-.word-popup-actions {
-  display: flex;
-  gap: 8px;
-  padding: 4px 16px 0;
 }
 .noted {
   background: #22c55e;

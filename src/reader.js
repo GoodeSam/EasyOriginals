@@ -3745,10 +3745,8 @@ function setupBookGeneration() {
 
 // ===== Word Definition =====
 function clearPosTag() {
-  const oldPosTag = defEnglish.querySelector('.pos-tag');
-  if (oldPosTag) oldPosTag.remove();
-  const oldSpacer = defEnglish.querySelector('.pos-spacer');
-  if (oldSpacer) oldSpacer.remove();
+  const slot = document.getElementById('posTagSlot');
+  if (slot) slot.textContent = '';
 }
 
 function showWordPopup(word, sentenceContext, event) {
@@ -3762,7 +3760,7 @@ function showWordPopup(word, sentenceContext, event) {
   defCnText.style.display = 'none';
   toggleChinese.textContent = 'Show Chinese Definition';
   defPronunciation.textContent = '';
-  defPronunciation.style.display = 'none';
+  defPronunciation.classList.add('hidden');
   clearPosTag();
 
   // Use pointer coordinates if available, otherwise fall back to target element rect
@@ -3846,26 +3844,25 @@ async function lookupWord(word, sentenceContext) {
     const pronMatch = pronLine ? [null, pronLine.replace(/^.*?PRON:\s*/, '')] : null;
 
     if (enMatch) {
-      const { pos, separator, definition } = parseEnglishDefinition(enMatch[1].trim());
+      const { pos, definition } = parseEnglishDefinition(enMatch[1].trim());
       clearPosTag();
       if (pos) {
-        const posSpan = document.createElement('strong');
-        posSpan.className = 'pos-tag';
-        posSpan.textContent = '【' + pos + '】';
-        const spacer = document.createElement('span');
-        spacer.className = 'pos-spacer';
-        spacer.textContent = separator;
-        defEnglish.insertBefore(spacer, defEnText);
-        defEnglish.insertBefore(posSpan, spacer);
+        const slot = document.getElementById('posTagSlot');
+        if (slot) {
+          const posSpan = document.createElement('strong');
+          posSpan.className = 'pos-tag';
+          posSpan.textContent = '【' + pos + '】';
+          slot.appendChild(posSpan);
+        }
       }
       defEnText.textContent = definition;
       defEnglish.style.display = 'block';
     }
     if (pronMatch) {
       defPronunciation.textContent = pronMatch[1].trim();
-      defPronunciation.style.display = 'block';
+      defPronunciation.classList.remove('hidden');
     } else {
-      defPronunciation.style.display = 'none';
+      defPronunciation.classList.add('hidden');
     }
     if (cnMatch) {
       defCnText.textContent = cnMatch[1].trim();
