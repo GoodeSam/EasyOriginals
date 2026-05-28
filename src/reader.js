@@ -3120,9 +3120,9 @@ function buildDictPrompt(word, sentenceContext) {
 3. The IPA pronunciation (1 line).
 
 Format your response exactly as:
-EN: [part of speech] [English definition]
-CN: [Chinese definition]
-PRON: [IPA pronunciation]`
+EN: (part of speech) English definition
+CN: Chinese definition
+PRON: IPA pronunciation`
     },
     { role: 'user', content: `Word: "${word}"\nSentence: "${sentenceContext}"` }
   ];
