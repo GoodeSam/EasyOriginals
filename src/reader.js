@@ -335,11 +335,11 @@ function applyTheme(theme) {
   const searchBar = document.querySelector('.search-bar');
   if (searchBar) searchBar.style.background = t.searchBarBg;
 
-  // Update popup CSS variables
-  readerScreen.style.setProperty('--popup-bg', t.popupBg || t.paraBg);
-  readerScreen.style.setProperty('--popup-text', t.text);
-  readerScreen.style.setProperty('--popup-border', t.paraBorder);
-  readerScreen.style.setProperty('--popup-secondary', t.secondaryText || t.text);
+  // Update popup CSS variables on root so siblings of readerScreen inherit them
+  document.documentElement.style.setProperty('--popup-bg', t.popupBg || t.paraBg);
+  document.documentElement.style.setProperty('--popup-text', t.text);
+  document.documentElement.style.setProperty('--popup-border', t.paraBorder);
+  document.documentElement.style.setProperty('--popup-secondary', t.secondaryText || t.text);
 
   // Update swatch active state
   const swatches = document.querySelectorAll('#themePicker .theme-swatch');
